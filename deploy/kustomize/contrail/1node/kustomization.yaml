@@ -1,4 +1,0 @@
-bases:
-- ../../base/contrail
-patchesStrategicMerge:
-- contrail.yaml
