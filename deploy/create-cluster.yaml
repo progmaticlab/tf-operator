@@ -1,0 +1,7 @@
+apiVersion: contrail.juniper.net/v1alpha1
+kind: Vrouter
+metadata:
+  labels:
+    contrail_cluster: cluster1
+  name: vrouter1
+  namespace: contrail
