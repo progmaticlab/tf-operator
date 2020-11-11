@@ -95,47 +95,6 @@ rules:
     - "*"
     verbs:
     - "*"
-#- apiGroups:
-#  - ""
-#  resources:
-#  - pods
-#  - services
-#  - endpoints
-#  - events
-#  - configmaps
-#  verbs:
-#  - get
-#  - list
-#  - update
-#  - watch
-#  - patch
-#- apiGroups:
-#  - apiextensions.k8s.io
-#  - extensions
-#  resources:
-#  - customresourcedefinitions
-#  verbs:
-#  - get
-#  - create
-#  - list
-#  - update
-#  - watch
-#  - delete
-#  - patch
-#- apiGroups:
-#  - rbac
-#  - rbac.authorization.k8s.io
-#  resources:
-#  - clusterroles
-#  - clusterrolebindings
-#  verbs:
-#  - get
-#  - create
-#  - list
-#  - update
-#  - watch
-#  - delete
-#  - patch
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -194,13 +153,11 @@ spec:
           effect: "NoSchedule"
       initContainers:
         - name: init
-          # Replace this with the built image name
-          image: registry:5000/contrail-operator/engprod-269421/contrail-operator-crdsloader:master.latest
+          image: localhost:5000/contrail-operator-crdsloader
           imagePullPolicy: Always
       containers:
         - name: contrail-operator
-          # Replace this with the built image name
-          image: registry:5000/contrail-operator/engprod-269421/contrail-operator:master.latest
+          image: localhost:5000/contrail-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
