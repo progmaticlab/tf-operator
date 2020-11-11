@@ -6,7 +6,7 @@ Run these commands:
 scripts/setup_docker.sh
 sudo usermod -a -G docker centos
 # relogin to use docker without sudo
-scripts/setup_build_softfare.sh
+scripts/setup_build_sofware.sh
 python3 -m venv ~/env
 source ~/env/bin/activate
 ```
