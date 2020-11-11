@@ -29,8 +29,8 @@ container_push(
     format = "Docker",
     image = ":contrail-operator-crdsloader-image",
     registry = "{LOCAL_REGISTRY}",
-    repository = "contrail-operator/engprod-269421/contrail-operator-crdsloader",
-    tag = "master.latest",
+    repository = "contrail-operator-crdsloader",
+    tag = "latest",
 )
 
 container_push(

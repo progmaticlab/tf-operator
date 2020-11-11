@@ -59,8 +59,8 @@ container_push(
     format = "Docker",
     image = ":contrail-operator-image",
     registry = "{LOCAL_REGISTRY}",
-    repository = "contrail-operator/engprod-269421/contrail-operator",
-    tag = "master.latest",
+    repository = "contrail-operator",
+    tag = "latest",
 )
 
 go_binary(
