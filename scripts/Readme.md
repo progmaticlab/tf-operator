@@ -1,11 +1,10 @@
 # Setup build env
 
-Run these commands:
-
 ```bash
+cd contrail-operator
 scripts/setup_docker.sh
 sudo usermod -a -G docker centos
-# relogin to use docker without sudo
+# relogin here to use docker without sudo
 scripts/setup_build_sofware.sh
 python3 -m venv ~/env
 source ~/env/bin/activate
