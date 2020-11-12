@@ -107,27 +107,35 @@ var DefaultContainers = []*Container{
 		Name:  "init",
 		Image: "python:3.8.2-alpine",
 	},
+	{
+		Name:  "nodeinit",
+		Image: "opencontrailnightly/contrail-node-init",
+	},
+	{
+		Name:  "vrouteragent",
+		Image: "opencontrailnightly/contrail-vrouter-agent",
+	},
+	{
+		Name:  "vroutercni",
+		Image: "opencontrailnightly/contrail-kubernetes-cni-init",
+	},
+	{
+		Name:  "vrouterkernelbuildinit",
+		Image: "opencontrailnightly/contrail-vrouter-kernel-build-init",
+	},
+	{
+		Name:  "vrouterkernelinit",
+		Image: "opencontrailnightly/contrail-vrouter-kernel-init",
+	},
+	{
+		Name:  "multusconfig",
+		Image: "busybox:1.31",
+	},
 }
-
-/* type Container struct {
-	Name    string   `json:"name,omitempty"`
-	Image   string   `json:"image,omitempty"`
-	Command []string `json:"command,omitempty"`
-}*/
 
 var DefailtVrouter = VrouterConfiguration{
 	Containers: DefaultContainers,
 }
-
-/* var DefaultContainers = map[string]string{
-	"init": "python:3.8.2-alpine",
-	"nodeinit": "opencontrailnightly/contrail-node-init",
-	"vrouteragent": "opencontrailnightly/contrail-vrouter-agent",
-	"vroutercni": "opencontrailnightly/contrail-kubernetes-cni-init",
-	"vrouterkernelbuildinit", "opencontrailnightly/contrail-vrouter-kernel-build-init",
-	"vrouterkernelinit", "opencontrailnightly/contrail-vrouter-kernel-init",
-	"multusconfig", "busybox:1.31",
-}*/
 
 func init() {
 	SchemeBuilder.Register(&Vrouter{}, &VrouterList{})

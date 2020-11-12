@@ -334,6 +334,10 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			log.Info(fmt.Sprintf("DDDD instanceContainer = %v ", instanceContainer))
 			log.Info(fmt.Sprintf("DDDD container.Name = %v ", container.Name))
 
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+			}
+
 			if instanceContainer.Command == nil {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
