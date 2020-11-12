@@ -81,6 +81,25 @@ type CassandraList struct {
 	Items           []Cassandra `json:"items"`
 }
 
+var CassandraDefaultContainers = []*Container{
+	{
+		Name:  "cassandra",
+		Image: "cassandra:3.11.4",
+	},
+	{
+		Name:  "init",
+		Image: "python:3.8.2-alpine",
+	},
+	{
+		Name:  "init2",
+		Image: "cassandra:3.11.4",
+	},
+}
+
+var DefailtCassandra = VrouterConfiguration{
+	Containers: CassandraDefaultContainers,
+}
+
 func init() {
 	SchemeBuilder.Register(&Cassandra{}, &CassandraList{})
 }

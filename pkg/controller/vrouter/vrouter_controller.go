@@ -331,7 +331,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				"/entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
-				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
 			}
 			if instanceContainer.Command == nil {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -415,7 +415,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 		if instanceContainer == nil {
-			instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+			instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
 		}
 		(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 		if instanceContainer.Command != nil {
@@ -444,7 +444,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 					"tar -C /host/opt_cni_bin -xzf /opt/cni-v0.3.0.tgz"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
-				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
 			}
 			if instanceContainer.Command == nil {
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = command
@@ -478,7 +478,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		if container.Name == "multusconfig" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
-				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
 			}
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts) > 0 {

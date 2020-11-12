@@ -270,6 +270,9 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			command := []string{"bash", "-c",
 				"/docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///mydata/${POD_IP}.yaml"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
+			}
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -374,6 +377,9 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		if container.Name == "init" {
 			command := []string{"sh", "-c", "until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
+			}
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
@@ -398,6 +404,9 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 				return reconcile.Result{}, err
 			}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
+			}
 			command := []string{"bash", "-c", cassandraInit2CommandBuffer.String()}
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = command

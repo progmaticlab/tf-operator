@@ -102,7 +102,7 @@ const (
 	UBUNTU Distribution = "ubuntu"
 )
 
-var DefaultContainers = []*Container{
+var VrouterDefaultContainers= []*Container{
 	{
 		Name:  "init",
 		Image: "python:3.8.2-alpine",
@@ -133,8 +133,8 @@ var DefaultContainers = []*Container{
 	},
 }
 
-var DefailtVrouter = VrouterConfiguration{
-	Containers: DefaultContainers,
+var DefaultVrouter = VrouterConfiguration{
+	Containers: VrouterDefaultContainers,
 }
 
 func init() {
