@@ -2,7 +2,6 @@ package vrouter
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -331,13 +330,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			command := []string{"bash", "-c",
 				"/entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			log.Info(fmt.Sprintf("DDDD instanceContainer = %v ", instanceContainer))
-			log.Info(fmt.Sprintf("DDDD container.Name = %v ", container.Name))
-
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
 			}
-
 			if instanceContainer.Command == nil {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -419,6 +414,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	ubuntu := v1alpha1.UBUNTU
 	for idx, container := range daemonSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+		if instanceContainer == nil {
+			instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+		}
 		(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 		if instanceContainer.Command != nil {
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command
@@ -445,6 +443,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 					"cp -f /etc/contrailconfigmaps/10-contrail.conf /host/etc_cni/net.d/10-contrail.conf && " +
 					"tar -C /host/opt_cni_bin -xzf /opt/cni-v0.3.0.tgz"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+			}
 			if instanceContainer.Command == nil {
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
@@ -476,6 +477,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 		if container.Name == "multusconfig" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer == nil {
+				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefailtVrouter.Containers)
+			}
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts
