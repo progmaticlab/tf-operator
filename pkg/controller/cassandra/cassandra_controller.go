@@ -477,8 +477,10 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	localVolumeSource := corev1.LocalVolumeSource{
 		Path: cassandraDefaultConfiguration.Storage.Path,
 	}
-
-	replicasInt := int(*instance.Spec.CommonConfiguration.Replicas)
+	replicasInt := 1
+	if instance.Spec.CommonConfiguration.Replicas != nil {
+		replicasInt = int(*instance.Spec.CommonConfiguration.Replicas)
+	}
 	for i := 0; i < replicasInt; i++ {
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
