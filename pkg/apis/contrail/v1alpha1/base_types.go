@@ -581,7 +581,11 @@ func UpdateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.R
 		return err
 	}
 	replicasChanged := false
-	if *sts.Spec.Replicas != *currentSTS.Spec.Replicas {
+	replicas := int32(1)
+	if sts.Spec.Replicas != nil {
+		replicas = int32(*sts.Spec.Replicas)
+	}
+	if replicas != *currentSTS.Spec.Replicas {
 		replicasChanged = true
 	}
 	imagesChanged := false
