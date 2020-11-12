@@ -102,7 +102,7 @@ const (
 	UBUNTU Distribution = "ubuntu"
 )
 
-var VrouterDefaultContainers= []*Container{
+var VrouterDefaultContainers = []*Container{
 	{
 		Name:  "init",
 		Image: "python:3.8.2-alpine",

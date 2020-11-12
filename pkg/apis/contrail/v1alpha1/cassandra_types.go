@@ -96,7 +96,7 @@ var CassandraDefaultContainers = []*Container{
 	},
 }
 
-var DefailtCassandra = VrouterConfiguration{
+var DefaultCassandra = VrouterConfiguration{
 	Containers: CassandraDefaultContainers,
 }
 
