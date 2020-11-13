@@ -12,3 +12,8 @@ metadata:
     contrail_cluster: cluster1
   name: cassandra1
   namespace: contrail
+spec:
+  commonConfiguration:
+    hostNetwork: true
+  serviceConfiguration:
+    clusterName: cluster1

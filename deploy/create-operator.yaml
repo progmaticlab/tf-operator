@@ -153,11 +153,11 @@ spec:
           effect: "NoSchedule"
       initContainers:
         - name: init
-          image: localhost:5000/contrail-operator-crdsloader
+          image: tf-nexus.progmaticlab.com:5002/contrail-operator-crdsloader
           imagePullPolicy: Always
       containers:
         - name: contrail-operator
-          image: localhost:5000/contrail-operator
+          image: tf-nexus.progmaticlab.com:5002/contrail-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
