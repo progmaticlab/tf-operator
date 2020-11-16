@@ -1,0 +1,10 @@
+bases:
+- ../../base/operator
+
+images:
+- name: contrail-operator
+  newTag: latest
+  newName: localhost:5000/contrail-operator
+- name: crdsloader
+  newTag: latest
+  newName: localhost:5000/crdsloader
