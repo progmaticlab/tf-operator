@@ -1,8 +1,13 @@
+# Setup kubernetes
+```bash
+git clone https://github.com/tungstenfabric/tf-devstack.git
+./tf-devstack/k8s_manifests/run.sh platform
+```
+
 # Setup build env
 
 ```bash
 cd contrail-operator
-scripts/setup_docker.sh
 sudo usermod -a -G docker centos
 # relogin here to use docker without sudo
 scripts/setup_build_sofware.sh
@@ -14,4 +19,8 @@ source ~/env/bin/activate
 ```bash
 scripts/build_containers_bazel.sh
 ```
-
+# Run contrail
+```bash
+kubectl apply -f deploy/create-operator.yaml
+kubectl apply -k deploy/kustomize/operator/latest
+```
