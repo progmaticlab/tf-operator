@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKSPACE=${WORKSPACE:-$HOME/contrail-operator}
+WORKSPACE=${WORKSPACE:-$HOME/tf-operator}
 if [[ ! -d ${HOME}/env ]]; then
   python3 -m venv ${HOME}/env
 fi
