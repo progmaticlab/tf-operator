@@ -3,8 +3,8 @@ bases:
 
 images:
 - name: contrail-operator
-  newTag: R2008
+  newTag: latest
   newName: localhost:5000/contrail-operator
 - name: crdsloader
-  newTag: R2008
+  newTag: latest
   newName: localhost:5000/crdsloader

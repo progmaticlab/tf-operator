@@ -21,6 +21,6 @@ scripts/build_containers_bazel.sh
 ```
 # Run contrail AIO
 ```bash
-kubectl apply -f deploy/create-operator.yaml
+kubectl apply -f deploy/kustomize/operator/latest
 kubectl apply -k deploy/kustomize/contrail/1node/latest
 ```
