@@ -4,7 +4,7 @@ resources:
 images:
 - name: contrail-operator
   newTag: R2008
-  newName: michaelhenkel/contrail-operator
+  newName: localhost:5000/contrail-operator
 - name: crdsloader
   newTag: R2008
-  newName: michaelhenkel/crdsloader
+  newName: localhost:5000/crdsloader

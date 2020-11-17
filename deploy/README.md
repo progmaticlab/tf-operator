@@ -24,7 +24,7 @@ kubectl wait crds --for=condition=Established --timeout=2m managers.contrail.jun
 ```
 REPLICA=1
 ```
-or    
+or
 ```
 REPLICA=3
 ```

@@ -23,7 +23,6 @@ import (
 	"github.com/Juniper/contrail-operator/pkg/controller/contrailcni"
 	"github.com/Juniper/contrail-operator/pkg/controller/kubemanager"
 	"github.com/Juniper/contrail-operator/pkg/k8s"
-	"github.com/Juniper/contrail-operator/pkg/openshift"
 )
 
 var log = logf.Log.WithName("cmd")
@@ -99,23 +98,11 @@ func main() {
 
 	var kubemanagerClusterInfo v1alpha1.KubemanagerClusterInfo
 	var cniClusterInfo v1alpha1.CNIClusterInfo
-	if os.Getenv("CLUSTER_TYPE") == "Openshift" {
-		dynamicClient, err := v1alpha1.GetDynamicClient()
-		if err != nil {
-			log.Error(err, "Dynamic client could not be gathered")
-			os.Exit(1)
-		}
-		config := openshift.ClusterConfig{
-			Client:        clientset.CoreV1(),
-			DynamicClient: dynamicClient,
-		}
-		kubemanagerClusterInfo = config
-		cniClusterInfo = config
-	} else {
-		config := k8s.ClusterConfig{Client: clientset.CoreV1()}
-		kubemanagerClusterInfo = config
-		cniClusterInfo = config
-	}
+
+	config := k8s.ClusterConfig{Client: clientset.CoreV1()}
+	kubemanagerClusterInfo = config
+	cniClusterInfo = config
+
 
 	// Setup all Controllers.
 	if err := controller.AddToManager(mgr); err != nil {
