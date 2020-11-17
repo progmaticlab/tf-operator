@@ -7,7 +7,7 @@ git clone https://github.com/tungstenfabric/tf-devstack.git
 # Setup build env
 
 ```bash
-cd contrail-operator
+cd tf-operator
 sudo usermod -a -G docker centos
 # relogin here to use docker without sudo
 scripts/setup_build_sofware.sh
