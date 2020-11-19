@@ -54,19 +54,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &contrailv1alpha1.Postgres{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &contrailv1alpha1.Contrailmonitor{},
-	})
-	if err != nil {
-		return err
-	}
-	err = c.Watch(&source.Kind{Type: &contrailv1alpha1.Memcached{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &contrailv1alpha1.Contrailmonitor{},
-	})
-	if err != nil {
-		return err
-	}
-
 	err = c.Watch(&source.Kind{Type: &contrailv1alpha1.Cassandra{}}, &handler.EnqueueRequestForOwner{
 		OwnerType: &contrailv1alpha1.Contrailmonitor{},
 	})
@@ -80,12 +67,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 	err = c.Watch(&source.Kind{Type: &contrailv1alpha1.Config{}}, &handler.EnqueueRequestForOwner{
-		OwnerType: &contrailv1alpha1.Contrailmonitor{},
-	})
-	if err != nil {
-		return err
-	}
-	err = c.Watch(&source.Kind{Type: &contrailv1alpha1.Keystone{}}, &handler.EnqueueRequestForOwner{
 		OwnerType: &contrailv1alpha1.Contrailmonitor{},
 	})
 	if err != nil {
@@ -476,21 +457,6 @@ func (r *ReconcileContrailmonitor) Reconcile(request reconcile.Request) (reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileContrailmonitor) getPostgres(cr *contrailv1alpha1.Contrailmonitor) (*contrailv1alpha1.Postgres, error) {
-	psql := &contrailv1alpha1.Postgres{}
-	name := types.NamespacedName{Namespace: cr.Namespace,
-		Name: cr.Spec.ServiceConfiguration.PostgresInstance}
-	err := r.client.Get(context.Background(), name, psql)
-	return psql, err
-}
-
-func (r *ReconcileContrailmonitor) getMemcached(cr *contrailv1alpha1.Contrailmonitor) (*contrailv1alpha1.Memcached, error) {
-	key := &contrailv1alpha1.Memcached{}
-	name := types.NamespacedName{Namespace: cr.Namespace, Name: cr.Spec.ServiceConfiguration.MemcachedInstance}
-	err := r.client.Get(context.Background(), name, key)
-	return key, err
-}
-
 func (r *ReconcileContrailmonitor) getZookeeper(cr *contrailv1alpha1.Contrailmonitor) (*contrailv1alpha1.Zookeeper, error) {
 
 	key := &contrailv1alpha1.Zookeeper{}
@@ -510,14 +476,6 @@ func (r *ReconcileContrailmonitor) getControl(cr *contrailv1alpha1.Contrailmonit
 
 	key := &contrailv1alpha1.Control{}
 	name := types.NamespacedName{Namespace: cr.Namespace, Name: cr.Spec.ServiceConfiguration.ControlInstance}
-	err := r.client.Get(context.Background(), name, key)
-	return key, err
-}
-
-func (r *ReconcileContrailmonitor) getKeystone(cr *contrailv1alpha1.Contrailmonitor) (*contrailv1alpha1.Keystone, error) {
-
-	key := &contrailv1alpha1.Keystone{}
-	name := types.NamespacedName{Namespace: cr.Namespace, Name: cr.Spec.ServiceConfiguration.KeystoneInstance}
 	err := r.client.Get(context.Background(), name, key)
 	return key, err
 }
