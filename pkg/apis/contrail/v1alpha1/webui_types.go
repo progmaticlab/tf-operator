@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -140,14 +139,6 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 	}
 
 	manager := "none"
-	keystoneData := &keystoneEndpoint{}
-	if configNodesInformation.AuthMode == AuthenticationModeKeystone {
-		manager = "openstack"
-		err = c.getKeystoneEndpoint(keystoneData, client)
-		if err != nil {
-			return err
-		}
-	}
 
 	configApiIPListCommaSeparatedQuoted := configtemplates.JoinListWithSeparatorAndSingleQuotes(configNodesInformation.APIServerIPList, ",")
 	analyticsIPListCommaSeparatedQuoted := configtemplates.JoinListWithSeparatorAndSingleQuotes(configNodesInformation.AnalyticsServerIPList, ",")
@@ -174,11 +165,6 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 			AdminPassword          string
 			Manager                string
 			CAFilePath             string
-			KeystoneAddress        string
-			KeystonePort           string
-			KeystoneRegion         string
-			KeystoneAuthProtocol   string
-			KeystoneUserDomainName string
 		}{
 			HostIP:                 podList.Items[idx].Status.PodIP,
 			Hostname:               podList.Items[idx].Name,
@@ -196,11 +182,6 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 			AdminPassword:          webUIConfig.AdminPassword,
 			Manager:                manager,
 			CAFilePath:             certificates.SignerCAFilepath,
-			KeystoneAddress:        keystoneData.address,
-			KeystonePort:           strconv.Itoa(keystoneData.port),
-			KeystoneRegion:         keystoneData.region,
-			KeystoneAuthProtocol:   keystoneData.authProtocol,
-			KeystoneUserDomainName: keystoneData.userDomainName,
 		})
 		data["config.global.js."+podList.Items[idx].Status.PodIP] = webuiWebConfigBuffer.String()
 		//fmt.Println("DATA ", data)
@@ -208,13 +189,9 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 		configtemplates.WebuiAuthConfig.Execute(&webuiAuthConfigBuffer, struct {
 			AdminUsername             string
 			AdminPassword             string
-			KeystoneProjectDomainName string
-			KeystoneUserDomainName    string
 		}{
 			AdminUsername:             webUIConfig.AdminUsername,
 			AdminPassword:             webUIConfig.AdminPassword,
-			KeystoneUserDomainName:    keystoneData.userDomainName,
-			KeystoneProjectDomainName: keystoneData.projectDomainName,
 		})
 		data["contrail-webui-userauth.js"] = webuiAuthConfigBuffer.String()
 	}
@@ -317,23 +294,5 @@ func (c *Webui) ManageNodeStatus(podNameIPMap map[string]string,
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (c *Webui) getKeystoneEndpoint(k *keystoneEndpoint, client client.Client) error {
-	keystoneInstanceName := c.Spec.ServiceConfiguration.KeystoneInstance
-	keystone := &Keystone{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Namespace: c.Namespace, Name: keystoneInstanceName}, keystone); err != nil {
-		return err
-	}
-	if keystone.Status.Endpoint == "" {
-		return fmt.Errorf("%q Status.Endpoint empty", keystoneInstanceName)
-	}
-	k.address = keystone.Status.Endpoint
-	k.port = keystone.Spec.ServiceConfiguration.ListenPort
-	k.region = keystone.Spec.ServiceConfiguration.Region
-	k.authProtocol = keystone.Spec.ServiceConfiguration.AuthProtocol
-	k.userDomainName = keystone.Spec.ServiceConfiguration.UserDomainName
-	k.projectDomainName = keystone.Spec.ServiceConfiguration.ProjectDomainName
 	return nil
 }

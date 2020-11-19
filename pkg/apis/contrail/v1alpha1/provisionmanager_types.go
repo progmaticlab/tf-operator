@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -230,37 +229,6 @@ func (c *ProvisionManager) getGlobalVrouterConfig() (*GlobalVrouterConfiguration
 	return g, nil
 }
 
-func (c *ProvisionManager) getAuthParameters(client client.Client, podIP string) (*KeystoneAuthParameters, error) {
-	k := &KeystoneAuthParameters{
-		AdminUsername: "admin",
-		TenantName:    "admin",
-		Encryption: Encryption{
-			CA:       certificates.SignerCAFilepath,
-			Key:      "/etc/certificates/server-key-" + podIP + ".pem",
-			Cert:     "/etc/certificates/server-" + podIP + ".crt",
-			Insecure: false,
-		},
-	}
-	adminPasswordSecretName := c.Spec.ServiceConfiguration.KeystoneSecretName
-	adminPasswordSecret := &corev1.Secret{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: adminPasswordSecretName, Namespace: c.Namespace}, adminPasswordSecret); err != nil {
-		return nil, err
-	}
-	k.AdminPassword = string(adminPasswordSecret.Data["password"])
-
-	keystoneInstanceName := c.Spec.ServiceConfiguration.KeystoneInstance
-	keystone := &Keystone{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Namespace: c.Namespace, Name: keystoneInstanceName}, keystone); err != nil {
-		return nil, err
-	}
-	if keystone.Status.Endpoint == "" {
-		return nil, fmt.Errorf("%q Status.Endpoint empty", keystoneInstanceName)
-	}
-	k.AuthUrl = fmt.Sprintf("%s://%s:%d/v3/auth", keystone.Spec.ServiceConfiguration.AuthProtocol, keystone.Status.Endpoint, keystone.Spec.ServiceConfiguration.ListenPort)
-
-	return k, nil
-}
-
 func (c *ProvisionManager) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
 	client client.Client) error {
@@ -349,20 +317,6 @@ func (c *ProvisionManager) InstanceConfiguration(request reconcile.Request,
 		return err
 	}
 	globalVrouterData["globalvrouter.json"] = string(globalVrouterJson)
-
-	if configNodesInformation.AuthMode == AuthenticationModeKeystone {
-		for _, pod := range podList.Items {
-			keystoneAuth, err := c.getAuthParameters(client, pod.Status.PodIP)
-			if err != nil {
-				return err
-			}
-			keystoneAuthYaml, err := yaml.Marshal(keystoneAuth)
-			if err != nil {
-				return err
-			}
-			keystoneAuthData["keystone-auth-"+pod.Status.PodIP+".yaml"] = string(keystoneAuthYaml)
-		}
-	}
 
 	if len(configList.Items) > 0 {
 		nodeList := []*ConfigNode{}
