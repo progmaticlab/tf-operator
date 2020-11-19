@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -87,8 +86,6 @@ type ConfigConfiguration struct {
 	RabbitmqPassword            string             `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost               string             `json:"rabbitmqVhost,omitempty"`
 	LogLevel                    string             `json:"logLevel,omitempty"`
-	KeystoneSecretName          string             `json:"keystoneSecretName,omitempty"`
-	KeystoneInstance            string             `json:"keystoneInstance,omitempty"`
 	AuthMode                    AuthenticationMode `json:"authMode,omitempty"`
 	AAAMode                     AAAMode            `json:"aaaMode,omitempty"`
 	Storage                     Storage            `json:"storage,omitempty"`
@@ -613,30 +610,6 @@ func (c *Config) AuthParameters(client client.Client) (*ConfigAuthParameters, er
 	w := &ConfigAuthParameters{
 		AdminUsername: "admin",
 	}
-	adminPasswordSecretName := c.Spec.ServiceConfiguration.KeystoneSecretName
-	adminPasswordSecret := &corev1.Secret{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: adminPasswordSecretName, Namespace: c.Namespace}, adminPasswordSecret); err != nil {
-		return nil, err
-	}
-	w.AdminPassword = string(adminPasswordSecret.Data["password"])
-
-	if c.Spec.ServiceConfiguration.AuthMode == AuthenticationModeKeystone {
-		keystoneInstanceName := c.Spec.ServiceConfiguration.KeystoneInstance
-		keystone := &Keystone{}
-		if err := client.Get(context.TODO(), types.NamespacedName{Namespace: c.Namespace, Name: keystoneInstanceName}, keystone); err != nil {
-			return nil, err
-		}
-		if keystone.Status.Endpoint == "" {
-			return nil, fmt.Errorf("%q Status.Endpoint empty", keystoneInstanceName)
-		}
-		w.Port = keystone.Spec.ServiceConfiguration.ListenPort
-		w.Region = keystone.Spec.ServiceConfiguration.Region
-		w.AuthProtocol = keystone.Spec.ServiceConfiguration.AuthProtocol
-		w.UserDomainName = keystone.Spec.ServiceConfiguration.UserDomainName
-		w.ProjectDomainName = keystone.Spec.ServiceConfiguration.ProjectDomainName
-		w.Address = keystone.Status.Endpoint
-	}
-
 	return w, nil
 }
 

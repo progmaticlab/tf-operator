@@ -283,21 +283,6 @@ func (m Manager) IsClusterReady() bool {
 	if m.Spec.Services.Rabbitmq != nil && !m.Status.Rabbitmq.ready() {
 		return false
 	}
-	if m.Spec.Services.Postgres != nil && !m.Status.Postgres.ready() {
-		return false
-	}
-	if m.Spec.Services.Command != nil && !m.Status.Command.ready() {
-		return false
-	}
-	if m.Spec.Services.Keystone != nil && !m.Status.Keystone.ready() {
-		return false
-	}
-	if m.Spec.Services.Swift != nil && !m.Status.Swift.ready() {
-		return false
-	}
-	if m.Spec.Services.Memcached != nil && !m.Status.Memcached.ready() {
-		return false
-	}
 	if m.Spec.Services.Contrailmonitor != nil && !m.Status.Contrailmonitor.ready() {
 		return false
 	}
