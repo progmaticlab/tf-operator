@@ -134,42 +134,6 @@ func (r *ReconcileContrailmonitor) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	serIns := &contrailv1alpha1.Contrailstatusmonitor{ObjectMeta: metav1.ObjectMeta{Name: psql.Name, Namespace: "contrail"}}
-	var datasql string
-	if psql.Status.Active {
-		datasql = "Active"
-	} else {
-		datasql = "NotActive"
-	}
-	_, err = controllerutil.CreateOrUpdate(context.Background(), r.client, serIns, func() error {
-		serIns.Status = datasql
-		return controllerutil.SetControllerReference(instance, serIns, r.scheme)
-	})
-	if err != nil {
-		return reconcile.Result{}, nil
-	}
-
-	memcached, err := r.getMemcached(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	serInsmemcached := &contrailv1alpha1.Contrailstatusmonitor{ObjectMeta: metav1.ObjectMeta{Name: memcached.Name, Namespace: "contrail"}}
-
-	var datamemcached string
-	if memcached.Status.Active {
-		datamemcached = "Active"
-	} else {
-		datamemcached = "NotActive"
-	}
-	_, err = controllerutil.CreateOrUpdate(context.Background(), r.client, serInsmemcached, func() error {
-		serInsmemcached.Status = datamemcached
-		return controllerutil.SetControllerReference(instance, serInsmemcached, r.scheme)
-	})
-	if err != nil {
-		return reconcile.Result{}, nil
-	}
-
 	rabbitmq, err := r.getRabbitmq(instance)
 	if err != nil {
 		return reconcile.Result{}, err

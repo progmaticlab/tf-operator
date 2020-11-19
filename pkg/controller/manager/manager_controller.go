@@ -37,11 +37,6 @@ var resourcesList = []runtime.Object{
 	&v1alpha1.Config{},
 	&v1alpha1.Control{},
 	&v1alpha1.Rabbitmq{},
-	&v1alpha1.Postgres{},
-	&v1alpha1.Command{},
-	&v1alpha1.Keystone{},
-	&v1alpha1.Swift{},
-	&v1alpha1.Memcached{},
 	&v1alpha1.Vrouter{},
 	&v1alpha1.Kubemanager{},
 	&v1alpha1.Contrailmonitor{},
@@ -154,16 +149,6 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.KeystoneSecretName == "" {
-		instance.Spec.KeystoneSecretName = instance.Name + "-admin-password"
-	}
-	adminPasswordSecretName := instance.Spec.KeystoneSecretName
-	if err = r.secret(adminPasswordSecretName, "manager", instance).ensureAdminPassSecretExist(); err != nil {
-		return reconcile.Result{}, err
-	}
-	if err = r.client.Update(context.TODO(), instance); err != nil {
-		return reconcile.Result{}, err
-	}
 	nodes, err := r.getNodes(labels.SelectorFromSet(instance.Spec.CommonConfiguration.NodeSelector))
 	if err != nil {
 		return reconcile.Result{}, err
@@ -511,7 +496,6 @@ func (r *ReconcileManager) processConfig(manager *v1alpha1.Manager, replicas int
 	config := &v1alpha1.Config{}
 	config.ObjectMeta = manager.Spec.Services.Config.ObjectMeta
 	config.ObjectMeta.Namespace = manager.Namespace
-	manager.Spec.Services.Config.Spec.ServiceConfiguration.KeystoneSecretName = manager.Spec.KeystoneSecretName
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, config, func() error {
 		config.Spec = manager.Spec.Services.Config.Spec
 		config.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, config.Spec.CommonConfiguration)
@@ -777,208 +761,6 @@ func (r *ReconcileManager) processContrailCNIs(manager *v1alpha1.Manager) error 
 
 	manager.Status.ContrailCNIs = ContrailCNIServiceStatus
 	return nil
-}
-
-func (r *ReconcileManager) processCommand(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.Command == nil {
-		if manager.Status.Command != nil {
-			oldCommand := &v1alpha1.Command{}
-			oldCommand.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.Command.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldCommand)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.Command = nil
-		}
-		return nil
-	}
-
-	command := &v1alpha1.Command{}
-	command.ObjectMeta = manager.Spec.Services.Command.ObjectMeta
-	command.ObjectMeta.Namespace = manager.Namespace
-	manager.Spec.Services.Command.Spec.ServiceConfiguration.KeystoneSecretName = manager.Spec.KeystoneSecretName
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, command, func() error {
-		command.Spec = manager.Spec.Services.Command.Spec
-		command.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, command.Spec.CommonConfiguration)
-		if command.Spec.ServiceConfiguration.ClusterName == "" {
-			command.Spec.ServiceConfiguration.ClusterName = manager.GetName()
-		}
-		if command.Spec.CommonConfiguration.Replicas == nil {
-			command.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, command, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &command.Name
-	status.Active = &command.Status.Active
-	manager.Status.Command = status
-	return err
-}
-
-func (r *ReconcileManager) processKeystone(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.Keystone == nil {
-		if manager.Status.Keystone != nil {
-			oldKeystone := &v1alpha1.Keystone{}
-			oldKeystone.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.Keystone.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldKeystone)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.Keystone = nil
-		}
-		return nil
-	}
-
-	keystone := &v1alpha1.Keystone{}
-	keystone.ObjectMeta = manager.Spec.Services.Keystone.ObjectMeta
-	keystone.ObjectMeta.Namespace = manager.Namespace
-	manager.Spec.Services.Keystone.Spec.ServiceConfiguration.KeystoneSecretName = manager.Spec.KeystoneSecretName
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, keystone, func() error {
-		keystone.Spec = manager.Spec.Services.Keystone.Spec
-		keystone.SetDefaultValues()
-		keystone.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, keystone.Spec.CommonConfiguration)
-		if keystone.Spec.CommonConfiguration.Replicas == nil {
-			keystone.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, keystone, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &keystone.Name
-	status.Active = &keystone.Status.Active
-	manager.Status.Keystone = status
-	return err
-}
-
-func (r *ReconcileManager) processPostgres(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.Postgres == nil {
-		if manager.Status.Postgres != nil {
-			oldPostgres := &v1alpha1.Postgres{}
-			oldPostgres.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.Postgres.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldPostgres)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.Postgres = nil
-		}
-		return nil
-	}
-
-	psql := &v1alpha1.Postgres{}
-	psql.ObjectMeta = manager.Spec.Services.Postgres.ObjectMeta
-	psql.ObjectMeta.Namespace = manager.Namespace
-	manager.Spec.Services.Postgres.Spec.ServiceConfiguration.RootPassSecretName = manager.Spec.KeystoneSecretName
-	_, err := controllerutil.CreateOrUpdate(context.Background(), r.client, psql, func() error {
-		psql.Spec = manager.Spec.Services.Postgres.Spec
-		if psql.Spec.ServiceConfiguration.ListenPort == 0 {
-			psql.Spec.ServiceConfiguration.ListenPort = 5432
-		}
-		psql.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, psql.Spec.CommonConfiguration)
-		if psql.Spec.CommonConfiguration.Replicas == nil {
-			psql.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, psql, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &psql.Name
-	status.Active = &psql.Status.Active
-	manager.Status.Postgres = status
-	return err
-}
-
-func (r *ReconcileManager) processSwift(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.Swift == nil {
-		if manager.Status.Swift != nil {
-			oldSwift := &v1alpha1.Swift{}
-			oldSwift.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.Swift.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldSwift)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.Swift = nil
-		}
-		return nil
-	}
-
-	swift := &v1alpha1.Swift{}
-	swift.ObjectMeta = manager.Spec.Services.Swift.ObjectMeta
-	manager.Spec.Services.Swift.Spec.ServiceConfiguration.SwiftProxyConfiguration.KeystoneSecretName = manager.Spec.KeystoneSecretName
-	swift.ObjectMeta.Namespace = manager.Namespace
-	_, err := controllerutil.CreateOrUpdate(context.Background(), r.client, swift, func() error {
-		swift.Spec = manager.Spec.Services.Swift.Spec
-		swift.SetDefaultValues()
-		swift.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, swift.Spec.CommonConfiguration)
-		if swift.Spec.CommonConfiguration.Replicas == nil {
-			swift.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, swift, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &swift.Name
-	status.Active = &swift.Status.Active
-	manager.Status.Swift = status
-	return err
-}
-
-func (r *ReconcileManager) processMemcached(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.Memcached == nil {
-		if manager.Status.Memcached != nil {
-			oldMemcached := &v1alpha1.Memcached{}
-			oldMemcached.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.Memcached.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldMemcached)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.Memcached = nil
-		}
-		return nil
-	}
-
-	memcached := &v1alpha1.Memcached{}
-	memcached.ObjectMeta = manager.Spec.Services.Memcached.ObjectMeta
-	memcached.ObjectMeta.Namespace = manager.Namespace
-	_, err := controllerutil.CreateOrUpdate(context.Background(), r.client, memcached, func() error {
-		memcached.Spec = manager.Spec.Services.Memcached.Spec
-		memcached.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, memcached.Spec.CommonConfiguration)
-		if memcached.Spec.CommonConfiguration.Replicas == nil {
-			memcached.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, memcached, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &memcached.Name
-	status.Active = &memcached.Status.Active
-	manager.Status.Memcached = status
-	return err
 }
 
 func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager) error {
