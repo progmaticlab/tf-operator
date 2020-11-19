@@ -32,11 +32,6 @@ type Services struct {
 	Zookeepers       []*Zookeeper          `json:"zookeepers,omitempty"`
 	Rabbitmq         *Rabbitmq             `json:"rabbitmq,omitempty"`
 	ProvisionManager *ProvisionManager     `json:"provisionManager,omitempty"`
-	Command          *Command              `json:"command,omitempty"`
-	Postgres         *Postgres             `json:"postgres,omitempty"`
-	Keystone         *Keystone             `json:"keystone,omitempty"`
-	Swift            *Swift                `json:"swift,omitempty"`
-	Memcached        *Memcached            `json:"memcached,omitempty"`
 	Contrailmonitor  *Contrailmonitor      `json:"contrailmonitor,omitempty"`
 	ContrailCNIs     []*ContrailCNI        `json:"contrailCNIs,omitempty"`
 }
