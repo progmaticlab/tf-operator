@@ -200,26 +200,6 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	if err = r.processPostgres(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err = r.processCommand(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err = r.processKeystone(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err = r.processSwift(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err = r.processMemcached(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	if err = r.processContrailmonitor(instance); err != nil {
 		return reconcile.Result{}, err
 	}
