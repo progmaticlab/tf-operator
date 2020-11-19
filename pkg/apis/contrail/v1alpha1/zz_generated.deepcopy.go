@@ -2485,31 +2485,6 @@ func (in *Services) DeepCopyInto(out *Services) {
 		*out = new(ProvisionManager)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Command != nil {
-		in, out := &in.Command, &out.Command
-		*out = new(Command)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Postgres != nil {
-		in, out := &in.Postgres, &out.Postgres
-		*out = new(Postgres)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Keystone != nil {
-		in, out := &in.Keystone, &out.Keystone
-		*out = new(Keystone)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Swift != nil {
-		in, out := &in.Swift, &out.Swift
-		*out = new(Swift)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Memcached != nil {
-		in, out := &in.Memcached, &out.Memcached
-		*out = new(Memcached)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Contrailmonitor != nil {
 		in, out := &in.Contrailmonitor, &out.Contrailmonitor
 		*out = new(Contrailmonitor)
