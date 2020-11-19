@@ -134,16 +134,6 @@ func (r *ReconcileContrailmonitor) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	psql, err := r.getPostgres(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if err = r.kubernetes.Owner(instance).EnsureOwns(psql); err != nil {
-		return reconcile.Result{}, err
-	}
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	serIns := &contrailv1alpha1.Contrailstatusmonitor{ObjectMeta: metav1.ObjectMeta{Name: psql.Name, Namespace: "contrail"}}
 	var datasql string
 	if psql.Status.Active {
@@ -175,27 +165,6 @@ func (r *ReconcileContrailmonitor) Reconcile(request reconcile.Request) (reconci
 	_, err = controllerutil.CreateOrUpdate(context.Background(), r.client, serInsmemcached, func() error {
 		serInsmemcached.Status = datamemcached
 		return controllerutil.SetControllerReference(instance, serInsmemcached, r.scheme)
-	})
-	if err != nil {
-		return reconcile.Result{}, nil
-	}
-
-	var dataValue string
-	keystone, err := r.getKeystone(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	serInskey := &contrailv1alpha1.Contrailstatusmonitor{ObjectMeta: metav1.ObjectMeta{Name: keystone.Name, Namespace: "contrail"}}
-
-	if keystone.Status.Active {
-		dataValue = "Active"
-	} else {
-		dataValue = "NotActive"
-	}
-	_, err = controllerutil.CreateOrUpdate(context.Background(), r.client, serInskey, func() error {
-		serInskey.Status = dataValue
-		return controllerutil.SetControllerReference(instance, serInskey, r.scheme)
 	})
 	if err != nil {
 		return reconcile.Result{}, nil
