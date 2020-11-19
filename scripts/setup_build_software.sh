@@ -12,9 +12,9 @@ export PATH=\$PATH:/usr/local/go/bin
 EOF
 source ~/.bash_profile
 
-curl -LO https://github.com/operator-framework/operator-sdk/releases/download/v0.13.0/operator-sdk-v0.13.0-x86_64-linux-gnu
-chmod u+x ./operator-sdk-v0.13.0-x86_64-linux-gnu
-sudo mv ./operator-sdk-v0.13.0-x86_64-linux-gnu /usr/local/bin/operator-sdk
+curl -LO https://github.com/operator-framework/operator-sdk/releases/download/v0.13.0/operator-sdk-v0.17.2-x86_64-linux-gnu
+chmod u+x ./operator-sdk-v0.17.2-x86_64-linux-gnu
+sudo mv ./operator-sdk-v0.17.2-x86_64-linux-gnu /usr/local/bin/operator-sdk
 
 # docker setup
 sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
