@@ -2,9 +2,9 @@ bases:
 - ../../base/operator
 
 images:
-- name: contrail-operator
+- name: tf-operator
   newTag: latest
-  newName: localhost:5000/contrail-operator
-- name: crdsloader
+  newName: localhost:5000/tf-operator
+- name: tf-crdsloader
   newTag: latest
   newName: localhost:5000/crdsloader

@@ -174,17 +174,17 @@ roleRef:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: contrail-operator
+  name: tf-operator
   namespace: contrail
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: contrail-operator
+      name: tf-operator
   template:
     metadata:
       labels:
-        name: contrail-operator
+        name: tf-operator
     spec:
       serviceAccountName: contrail-operator
       hostNetwork: true
@@ -194,13 +194,12 @@ spec:
           effect: "NoSchedule"
       initContainers:
       - name: init
-        image: crdsloader:latest
+        image: tf-crdsloader
         imagePullPolicy: Always
-
       containers:
-        - name: contrail-operator
+        - name: tf-operator
           # Replace this with the built image name
-          image: contrail-operator:latest
+          image: tf-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

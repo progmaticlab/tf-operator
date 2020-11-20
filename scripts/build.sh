@@ -5,5 +5,5 @@ docker push localhost:5000/tf-operator:latest
 
 # build CRDS container
 
-docker build --tag localhost:5000/crdsloader:latest deploy/crds
-docker push localhost:5000/crdsloader:latest
+docker build --tag localhost:5000/tf-crdsloader:latest deploy/crds
+docker push localhost:5000/tf-crdsloader:latest
