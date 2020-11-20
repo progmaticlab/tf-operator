@@ -7,4 +7,4 @@ images:
   newName: localhost:5000/tf-operator
 - name: tf-crdsloader
   newTag: latest
-  newName: localhost:5000/crdsloader
+  newName: localhost:5000/tf-crdsloader
