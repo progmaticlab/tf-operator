@@ -42,6 +42,10 @@ spec:
             image: contrail-analytics-api:latest
           - name: api
             image: contrail-controller-config-api:latest
+            command:
+            - "/bin/bash"
+            - "-c"
+            - "tail -f /dev/null"
           - name: collector
             image: contrail-analytics-collector:latest
           - name: devicemanager
