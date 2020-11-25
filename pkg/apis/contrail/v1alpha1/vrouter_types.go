@@ -50,9 +50,9 @@ type VrouterStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Ports  ConfigStatusPorts       `json:"ports,omitempty"`
 	Nodes  map[string]string       `json:"nodes,omitempty"`
-	Agents map[string]*AgentStatus `json:"agents,omitempty"`
 	Active *bool                   `json:"active,omitempty"`
-}
+	Agents map[string]*AgentStatus `json:"agents,omitempty"`
+}	
 
 type AgentStatus struct {
 	Status          AgentServiceStatus `json:"status,omitempty"`
@@ -73,18 +73,9 @@ const (
 // +k8s:openapi-gen=true
 type VrouterSpec struct {
 	CommonConfiguration  PodConfiguration      `json:"commonConfiguration,omitempty"`
-	// ServiceConfiguration VrouterServiceConfiguration `json:"serviceConfiguration"`
-	ServiceConfiguration VrouterConfiguration  `json: "serviceConfiguration"`
+	ServiceConfiguration VrouterConfiguration  `json:"serviceConfiguration"`
 }
 
-// VrouterServiceConfiguration defines all vRouter service configuration
-// +k8s:openapi-gen=true
-/*
-type VrouterServiceConfiguration struct {
-	VrouterConfiguration      `json:",inline"`
-	VrouterNodesConfiguration `json:",inline"`
-}
-*/
 // VrouterConfiguration is the Spec for the vrouter API.
 // +k8s:openapi-gen=true
 type VrouterConfiguration struct {
@@ -619,7 +610,7 @@ func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList) map[string
 /*
 func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration, controlNodesInformation *ControlClusterConfiguration, configNodesInformation *ConfigClusterConfiguration) string {
 */
-func createVrouterConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration) string {
 	physicalInterface := vrouterPod.Annotations["physicalInterface"]
 	gateway := vrouterPod.Annotations["gateway"]
 	if vrouterConfig.PhysicalInterface != "" {
@@ -667,7 +658,7 @@ func createVrouterConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfi
 	return vrouterConfigBuffer.String()
 }
 
-func createVrouterNodemanagerConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+func createVrouterNodemanagerConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration) string {
 	var vrouterNodemanagerConfigBuffer bytes.Buffer
 	configtemplates.VrouterNodemanagerConfig.Execute(&vrouterNodemanagerConfigBuffer, struct {
 		ListenAddress       string
@@ -685,7 +676,7 @@ func createVrouterNodemanagerConfigForPod(vrouterPod *core1.Pod, vrouterConfig V
 	return vrouterNodemanagerConfigBuffer.String()
 }
 
-func createVrouterProvisionConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+func createVrouterProvisionConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration) string {
 	var vrouterProvisionConfigBuffer bytes.Buffer
 	configtemplates.VrouterProvisionConfig.Execute(&vrouterProvisionConfigBuffer, struct {
 		ListenAddress string
@@ -700,7 +691,7 @@ func createVrouterProvisionConfigForPod(vrouterPod *core1.Pod, vrouterConfig Vro
 	return vrouterProvisionConfigBuffer.String()
 }
 
-func createVrouterDeProvisionConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+func createVrouterDeProvisionConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration) string {
 	var vrouterDeProvisionConfigBuffer bytes.Buffer
 	configtemplates.VrouterDeProvisionConfig.Execute(&vrouterDeProvisionConfigBuffer, struct {
 		User          string
@@ -790,7 +781,7 @@ func (c *Vrouter) GetConfigNodes(clnt client.Client) string {
 
 // GetParamsEnv
 func (c *Vrouter) GetParamsEnv(clnt client.Client) string {
-	vrouterConfig := c.Spec.ServiceConfiguration.VrouterConfiguration
+	vrouterConfig := c.Spec.ServiceConfiguration
 	clusterParams := ClusterParams{ConfigNodes: c.GetConfigNodes(clnt), ControlNodes: c.GetConfigNodes(clnt)}
 
 	var vrouterManifestParamsEnv bytes.Buffer

@@ -675,7 +675,7 @@ func (r *ReconcileManager) processVRouters(manager *v1alpha1.Manager, replicas i
 		vRouter.ObjectMeta = vRouterService.ObjectMeta
 		vRouter.ObjectMeta.Namespace = manager.Namespace
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, vRouter, func() error {
-			vRouter.Spec.ServiceConfiguration.VrouterConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
+			vRouter.Spec.ServiceConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
 			vRouter.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, vRouterService.Spec.CommonConfiguration)
 			/*
 			if err := fillVrouterConfiguration(vRouter, vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client); err != nil {
@@ -841,7 +841,7 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
 	return nil
 }
-
+/*
 func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {
 	controlInstance := v1alpha1.Control{}
 	configInstance := v1alpha1.Config{}
@@ -864,3 +864,4 @@ func fillVrouterConfiguration(vrouter *v1alpha1.Vrouter, controlName string, man
 	(&vrouter.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
 	return nil
 }
+*/

@@ -6,6 +6,8 @@ require (
 	github.com/Azure/go-autorest/autorest v0.9.3 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.8.1 // indirect
 	github.com/Juniper/contrail-go-api v1.1.1-0.20200414151206-7bb4264f1da4
+	github.com/Masterminds/sprig v2.15.0+incompatible
+	github.com/aokoli/goutils v1.1.0 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -18,7 +20,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kylelemons/godebug v1.1.0
-	github.com/Masterminds/sprig v2.15.0+incompatible
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
