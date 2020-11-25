@@ -666,18 +666,22 @@ func (r *ReconcileManager) processVRouters(manager *v1alpha1.Manager, replicas i
 
 	var vRouterServiceStatus []*v1alpha1.ServiceStatus
 	for _, vRouterService := range manager.Spec.Services.Vrouters {
+		/*
 		if !vrouterDependenciesReady(vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client) {
 			continue
 		}
+		*/
 		vRouter := &v1alpha1.Vrouter{}
 		vRouter.ObjectMeta = vRouterService.ObjectMeta
 		vRouter.ObjectMeta.Namespace = manager.Namespace
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, vRouter, func() error {
 			vRouter.Spec.ServiceConfiguration.VrouterConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
 			vRouter.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, vRouterService.Spec.CommonConfiguration)
+			/*
 			if err := fillVrouterConfiguration(vRouter, vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client); err != nil {
 				return err
 			}
+			 */
 			if vRouter.Spec.CommonConfiguration.Replicas == nil {
 				vRouter.Spec.CommonConfiguration.Replicas = &replicas
 			}

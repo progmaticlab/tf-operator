@@ -1,10 +1,16 @@
 package v1alpha1
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
+	"io"
 	"sort"
 	"strconv"
+	"strings"
 
 	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
@@ -42,40 +48,174 @@ type VrouterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Ports  ConfigStatusPorts `json:"ports,omitempty"`
-	Nodes  map[string]string `json:"nodes,omitempty"`
-	Active *bool             `json:"active,omitempty"`
+	Ports  ConfigStatusPorts       `json:"ports,omitempty"`
+	Nodes  map[string]string       `json:"nodes,omitempty"`
+	Agents map[string]*AgentStatus `json:"agents,omitempty"`
+	Active *bool                   `json:"active,omitempty"`
 }
+
+type AgentStatus struct {
+	Status          AgentServiceStatus `json:"status,omitempty"`
+	ControlNodes    string             `json:"controlNodes,omitempty"`
+	ConfigNodes     string             `json:"configNodes,omitempty"`
+	EncryptedParams string             `json:"encryptedParams,omitempty"`
+}
+
+type AgentServiceStatus string
+
+const (
+	Starting AgentServiceStatus = "Starting"
+	Ready    AgentServiceStatus = "Ready"
+	Updating AgentServiceStatus = "Updating"
+)
 
 // VrouterSpec is the Spec for the vrouter API.
 // +k8s:openapi-gen=true
 type VrouterSpec struct {
-	CommonConfiguration  PodConfiguration            `json:"commonConfiguration,omitempty"`
-	ServiceConfiguration VrouterServiceConfiguration `json:"serviceConfiguration"`
+	CommonConfiguration  PodConfiguration      `json:"commonConfiguration,omitempty"`
+	// ServiceConfiguration VrouterServiceConfiguration `json:"serviceConfiguration"`
+	ServiceConfiguration VrouterConfiguration  `json: "serviceConfiguration"`
 }
 
 // VrouterServiceConfiguration defines all vRouter service configuration
 // +k8s:openapi-gen=true
+/*
 type VrouterServiceConfiguration struct {
 	VrouterConfiguration      `json:",inline"`
 	VrouterNodesConfiguration `json:",inline"`
 }
-
+*/
 // VrouterConfiguration is the Spec for the vrouter API.
 // +k8s:openapi-gen=true
 type VrouterConfiguration struct {
-	Containers          []*Container      `json:"containers,omitempty"`
-	Gateway             string            `json:"gateway,omitempty"`
-	PhysicalInterface   string            `json:"physicalInterface,omitempty"`
-	MetaDataSecret      string            `json:"metaDataSecret,omitempty"`
-	NodeManager         *bool             `json:"nodeManager,omitempty"`
-	Distribution        *Distribution     `json:"distribution,omitempty"`
-	ServiceAccount      string            `json:"serviceAccount,omitempty"`
-	ClusterRole         string            `json:"clusterRole,omitempty"`
-	ClusterRoleBinding  string            `json:"clusterRoleBinding,omitempty"`
-	VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
-	ContrailStatusImage string            `json:"contrailStatusImage,omitempty"`
-	EnvVariablesConfig  map[string]string `json:"envVariablesConfig,omitempty"`
+	Containers         []*Container  `json:"containers,omitempty"`
+	Gateway            string        `json:"gateway,omitempty"`
+	PhysicalInterface  string        `json:"physicalInterface,omitempty"`
+	MetaDataSecret     string        `json:"metaDataSecret,omitempty"`
+	NodeManager        *bool         `json:"nodeManager,omitempty"`
+	Distribution       *Distribution `json:"distribution,omitempty"`
+	ServiceAccount     string        `json:"serviceAccount,omitempty"`
+	ClusterRole        string        `json:"clusterRole,omitempty"`
+	ClusterRoleBinding string        `json:"clusterRoleBinding,omitempty"`
+	// What is it doing?
+	// VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
+	// What is it doing?
+	ContrailStatusImage string `json:"contrailStatusImage,omitempty"`
+	// What is it doing?
+	EnvVariablesConfig map[string]string `json:"envVariablesConfig,omitempty"`
+
+	// New params for vrouter configuration
+	CloudOrchestrator string `json:"cloudOrchestrator,omitempty"`
+	HypervisorType    string `json:"hypervisorType,omitempty"`
+
+	// Collector
+	StatsCollectorDestinationPath string `json:"statsCollectorDestinationPath,omitempty"`
+	CollectorPort                 string `json:"collectorPort,omitempty"`
+
+	// Config
+	ConfigApiPort             string `json:"configApiPort,omitempty"`
+	ConfigApiServerCaCertfile string `json:"configApiServerCaCertfile,omitempty"`
+	ConfigApiSslEnable        *bool  `json:"configApiSslEnable,omitempty"`
+
+	// DNS
+	DnsServerPort string `json:"dnsServerPort,omitempty"`
+
+	// Host
+	DpdkUioDriver         string `json:"dpdkUioDriver,omitempty"`
+	SriovPhysicalInterace string `json:"sriovPhysicalInterface,omitempty"`
+	SriovPhysicalNetwork  string `json:"sriovPhysicalNetwork,omitempty"`
+	SriovVf               string `json:"sriovVf,omitempty"`
+
+	// Introspect
+	IntrospectListenAll *bool `json:"introspectListenAll,omitempty"`
+	IntrospectSslEnable *bool `json:"introspectSslEnable,omitempty"`
+
+	// Keystone authentication
+	KeystoneAuthAdminPort         string `json:"keystoneAuthAdminPort,omitempty"`
+	KeystoneAuthCaCertfile        string `json:"keystoneAuthCaCertfile,omitempty"`
+	KeystoneAuthCertfile          string `json:"keystoneAuthCertfile,omitempty"`
+	KeystoneAuthHost              string `json:"keystoneAuthHost,omitempty"`
+	KeystoneAuthInsecure          *bool  `json:"keystoneAuthInsecure,omitempty"`
+	KeystoneAuthKeyfile           string `json:"keystoneAuthKeyfile,omitempty"`
+	KeystoneAuthProjectDomainName string `json:"keystoneAuthProjectDomainName,omitempty"`
+	KeystoneAuthProto             string `json:"keystoneAuthProto,omitempty"`
+	KeystoneAuthRegionName        string `json:"keystoneAuthRegionName,omitempty"`
+	KeystoneAuthUrlTokens         string `json:"keystoneAuthUrlTokens,omitempty"`
+	KeystoneAuthUrlVersion        string `json:"keystoneAuthUrlVersion,omitempty"`
+	KeystoneAuthUserDomainName    string `json:"keystoneAuthUserDomainName,omitempty"`
+	KeystoneAuthAdminPassword     string `json:"keystoneAuthAdminPassword,omitempty"`
+
+	// Kubernetes
+	K8sToken                string `json:"k8sToken,omitempty"`
+	K8sTokenFile            string `json:"k8sTokenFile,omitempty"`
+	KubernetesApiPort       string `json:"kubernetesApiPort,omitempty"`
+	KubernetesApiSecurePort string `json:"kubernetesApiSecurePort,omitempty"`
+	KubernetesPodSubnets    string `json:"kubernetesPodSubnets,omitempty"`
+
+	// Logging
+	LogDir   string `json:"logDir,omitempty"`
+	LogLevel string `json:"logLevel,omitempty"`
+	LogLocal string `json:"logLocal,omitempty"`
+
+	// Metadata
+	MetadataProxySecret   string `json:"metadataProxySecret,omitempty"`
+	MetadataSslCaCertfile string `json:"metadataSslCaCertfile,omitempty"`
+	MetadataSslCertfile   string `json:"metadataSslCertfile,omitempty"`
+	MetadataSslCertType   string `json:"metadataSslCertType,omitempty"`
+	MetadataSslEnable     string `json:"metadataSslEnable,omitempty"`
+	MetadataSslKeyfile    string `json:"metadataSslKeyfile,omitempty"`
+
+	// Openstack
+	BarbicanTenantName string `json:"barbicanTenantName,omitempty"`
+	BarbicanPassword   string `json:"barbicanPassword,omitempty"`
+	BarbicanUser       string `json:"barbicanUser,omitempty"`
+
+	// Sandesh
+	SandeshCaCertfile string `json:"sandeshCaCertfile,omitempty"`
+	SandeshCertfile   string `json:"sandeshCertfile,omitempty"`
+	SandeshKeyfile    string `json:"sandeshKeyfile,omitempty"`
+	SandeshSslEnable  *bool  `json:"sandeshSslEnable,omitempty"`
+
+	// Server SSL
+	ServerCaCertfile string `json:"serverCaCertfile,omitempy"`
+	ServerCertfile   string `json:"serverCertfile,omitempty"`
+	ServerKeyfile    string `json:"serverKeyfile,omitempty"`
+	SslEnable        *bool  `json:"sslEnable,omitempty"`
+	SslInsecure      *bool  `json:"sslInsecure,omitempty"`
+
+	// TSN
+	TsnAgentMode string `json:"tsnAgentMode,omitempty"`
+
+	// vRouter
+	AgentMode                       string `json:"agentMode,omitempty"`
+	FabricSnatHashTableSize         string `json:"fabricSntHashTableSize,omitempty"`
+	PriorityBandwidth               string `json:"priorityBandwidth,omitempty"`
+	PriorityId                      string `json:"priorityId,omitempty"`
+	PriorityScheduling              string `json:"priorityScheduling,omitempty"`
+	PriorityTagging                 *bool  `json:"priorityTagging,omitempty"`
+	QosDefHwQueue                   *bool  `json:"qosDefHwQueue,omitempty"`
+	QosLogicalQueues                string `json:"qosLogicalQueues,omitempty"`
+	QosQueueId                      string `json:"qosQueueId,omitempty"`
+	RequiredKernelVrouterEncryption string `json:"requiredKernelVrouterEncryption,omitempty"`
+	SampleDestination               string `json:"sampleDestination,omitempty"`
+	SloDestination                  string `json:"sloDestination,omitempty"`
+	VrouterCryptInterface           string `json:"vrouterCryptInterface,omitempty"`
+	VrouterDecryptInterface         string `json:"vrouterDecryptInterface,omitempty"`
+	VrouterDecyptKey                string `json:"vrouterDecryptKey,omitempty"`
+	VrouterEncryption               *bool  `json:"vrouterEncryption,omitempty"`
+	VrouterGateway                  string `json:"vrouterGateway,omitempty"`
+
+	// XMPP
+	Subclaster           string `json:"subclaster,omitempty"`
+	XmppServerCaCertfile string `json:"xmppServerCaCertfile,omitempty"`
+	XmppServerCertfile   string `json:"xmppServerCertfile,omitempty"`
+	XmppServerKeyfile    string `json:"xmppServerKeyfile,omitempty"`
+	XmppServerPort       string `json:"xmppServerPort,omitempty"`
+	XmppSslEnable        *bool  `json:"xmmpSslEnable,omitempty"`
+
+	// HugePages
+	HugePages2mb string `json:"hugePages2mb,omitempty"`
+	HugePages1mb string `json:"hugePages1mb,omitempty"`
 }
 
 // VrouterNodesConfiguration is the static configuration for vrouter.
@@ -345,18 +485,22 @@ func (c *Vrouter) PodsCertSubjects(podList *corev1.PodList) []certificates.Certi
 func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
 	client client.Client) error {
-
+	/*
 	configNodesInformation := c.Spec.ServiceConfiguration.ConfigNodesConfiguration
 	configNodesInformation.FillWithDefaultValues()
 	controlNodesInformation := c.Spec.ServiceConfiguration.ControlNodesConfiguration
 	controlNodesInformation.FillWithDefaultValues()
+	*/
 
 	instanceConfigMapName := request.Name + "-" + "vrouter" + "-configmap"
 	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: instanceConfigMapName, Namespace: request.Namespace}, configMapInstanceDynamicConfig); err != nil {
 		return err
 	}
+	/*
 	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList, controlNodesInformation, configNodesInformation)
+	*/
+	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList)
 	if err := client.Update(context.TODO(), configMapInstanceDynamicConfig); err != nil {
 		return err
 	}
@@ -413,7 +557,13 @@ func (c *Vrouter) ConfigurationParameters() VrouterConfiguration {
 		vrouterConfiguration.NodeManager = &nodeManager
 	}
 
-	vrouterConfiguration.VrouterEncryption = c.Spec.ServiceConfiguration.VrouterEncryption
+	if c.Spec.ServiceConfiguration.VrouterEncryption != nil {
+		vrouterConfiguration.VrouterEncryption = c.Spec.ServiceConfiguration.VrouterEncryption
+	} else {
+		vrouterEncryption := false
+		vrouterConfiguration.VrouterEncryption = &vrouterEncryption
+	}
+
 	vrouterConfiguration.PhysicalInterface = physicalInterface
 	vrouterConfiguration.Gateway = gateway
 	vrouterConfiguration.MetaDataSecret = metaDataSecret
@@ -426,7 +576,9 @@ func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 	vrouterConfig := c.ConfigurationParameters()
 	envVariables := make(map[string]string)
 	envVariables["CLOUD_ORCHESTRATOR"] = "kubernetes"
-	envVariables["VROUTER_ENCRYPTION"] = strconv.FormatBool(vrouterConfig.VrouterEncryption)
+	if vrouterConfig.VrouterEncryption != nil {
+		envVariables["VROUTER_ENCRYPTION"] = strconv.FormatBool(*vrouterConfig.VrouterEncryption)
+	}
 	// If PhysicalInterface is set, environment variable from the config map will
 	// override the value from the annotations.
 	if vrouterConfig.PhysicalInterface != "" {
@@ -439,23 +591,35 @@ func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 	}
 	return envVariables
 }
-
+/*
 func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 	controlNodesInformation *ControlClusterConfiguration,
 	configNodesInformation *ConfigClusterConfiguration) map[string]string {
+*/
+func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList) map[string]string {
 	vrouterConfig := c.ConfigurationParameters()
 	sort.SliceStable(podList.Items, func(i, j int) bool { return podList.Items[i].Status.PodIP < podList.Items[j].Status.PodIP })
 	data := map[string]string{}
 	for _, vrouterPod := range podList.Items {
+		/*
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
+		 */
+		data["vrouter."        + vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig)
+		data["nodemanager."    + vrouterPod.Status.PodIP] = createVrouterNodemanagerConfigForPod(&vrouterPod, vrouterConfig)
+		data["provision.sh."   + vrouterPod.Status.PodIP] = createVrouterProvisionConfigForPod(&vrouterPod, vrouterConfig)
+		data["deprovision.py." + vrouterPod.Status.PodIP] = createVrouterDeProvisionConfigForPod(&vrouterPod, vrouterConfig)
+
+		var contrailCNIBuffer bytes.Buffer
+		configtemplates.ContrailCNIConfig.Execute(&contrailCNIBuffer, struct {}{})
+		data["10-contrail.conf"] = contrailCNIBuffer.String()
 	}
 	return data
 }
 
+/*
 func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration, controlNodesInformation *ControlClusterConfiguration, configNodesInformation *ConfigClusterConfiguration) string {
-	hostname := vrouterPod.Annotations["hostname"]
-	physicalInterfaceMac := vrouterPod.Annotations["physicalInterfaceMac"]
-	prefixLength := vrouterPod.Annotations["prefixLength"]
+*/
+func createVrouterConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
 	physicalInterface := vrouterPod.Annotations["physicalInterface"]
 	gateway := vrouterPod.Annotations["gateway"]
 	if vrouterConfig.PhysicalInterface != "" {
@@ -464,12 +628,14 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 	if vrouterConfig.Gateway != "" {
 		gateway = vrouterConfig.Gateway
 	}
+	/*
 	controlXMPPEndpointList := configtemplates.EndpointList(controlNodesInformation.ControlServerIPList, controlNodesInformation.XMPPPort)
 	controlXMPPEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(controlXMPPEndpointList, " ")
 	controlDNSEndpointList := configtemplates.EndpointList(controlNodesInformation.ControlServerIPList, controlNodesInformation.DNSPort)
 	controlDNSEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(controlDNSEndpointList, " ")
 	configCollectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
 	configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
+	*/
 	var vrouterConfigBuffer bytes.Buffer
 	configtemplates.VRouterConfig.Execute(&vrouterConfigBuffer, struct {
 		Hostname             string
@@ -484,17 +650,442 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		MetaDataSecret       string
 		CAFilePath           string
 	}{
-		Hostname:             hostname,
+		Hostname:             vrouterPod.Annotations["hostname"],
 		ListenAddress:        vrouterPod.Status.PodIP,
+		/*
 		ControlServerList:    controlXMPPEndpointListSpaceSeparated,
 		DNSServerList:        controlDNSEndpointListSpaceSeparated,
 		CollectorServerList:  configCollectorEndpointListSpaceSeparated,
-		PrefixLength:         prefixLength,
+		*/
+		PrefixLength:         vrouterPod.Annotations["prefixLength"],
 		PhysicalInterface:    physicalInterface,
-		PhysicalInterfaceMac: physicalInterfaceMac,
+		PhysicalInterfaceMac: vrouterPod.Annotations["physicalInterfaceMac"],
 		Gateway:              gateway,
 		MetaDataSecret:       vrouterConfig.MetaDataSecret,
 		CAFilePath:           certificates.SignerCAFilepath,
 	})
 	return vrouterConfigBuffer.String()
+}
+
+func createVrouterNodemanagerConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+	var vrouterNodemanagerConfigBuffer bytes.Buffer
+	configtemplates.VrouterNodemanagerConfig.Execute(&vrouterNodemanagerConfigBuffer, struct {
+		ListenAddress       string
+		Hostname            string
+		CollectorServerList string
+		CassandraPort       string
+		CassandraJmxPort    string
+		CAFilePath          string
+	}{
+		ListenAddress:       vrouterPod.Status.PodIP,
+		Hostname:            vrouterPod.Annotations["hostname"],
+		CAFilePath:          certificates.SignerCAFilepath,
+	})
+
+	return vrouterNodemanagerConfigBuffer.String()
+}
+
+func createVrouterProvisionConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+	var vrouterProvisionConfigBuffer bytes.Buffer
+	configtemplates.VrouterProvisionConfig.Execute(&vrouterProvisionConfigBuffer, struct {
+		ListenAddress string
+		APIServerList string
+		APIServerPort string
+		Hostname      string
+	}{
+		ListenAddress: vrouterPod.Status.PodIP,
+		Hostname:      vrouterPod.Annotations["hostname"],
+	})
+
+	return vrouterProvisionConfigBuffer.String()
+}
+
+func createVrouterDeProvisionConfigForPod(vrouterPod *core1.Pod, vrouterConfig VrouterConfiguration) string {
+	var vrouterDeProvisionConfigBuffer bytes.Buffer
+	configtemplates.VrouterDeProvisionConfig.Execute(&vrouterDeProvisionConfigBuffer, struct {
+		User          string
+		Password      string
+		Tenant        string
+		APIServerList string
+		APIServerPort string
+		Hostname      string
+	}{
+		User:          KeystoneAuthAdminUser,
+		Password:      KeystoneAuthAdminPassword,
+		Tenant:        KeystoneAuthAdminTenant,
+		Hostname:      vrouterPod.Annotations["hostname"],
+	})
+
+	return vrouterDeProvisionConfigBuffer.String()
+}
+
+// GetNodeDSPod
+func (c *Vrouter) GetNodeDSPod(nodeName string, daemonset *appsv1.DaemonSet, clnt client.Client) *corev1.Pod {
+	allPods := &corev1.PodList{}
+	// var pod corev1.Pod
+	_ = clnt.List(context.Background(), allPods)
+	for _, pod := range allPods.Items {
+		//
+		// Why it was written here?
+		//
+		// if(pod.ObjectMeta.OwnerReferences != nil && len(pod.ObjectMeta.OwnerReferences) > 0) {
+		// }
+		if pod.ObjectMeta.OwnerReferences != nil &&
+			len(pod.ObjectMeta.OwnerReferences) > 0 &&
+			pod.ObjectMeta.OwnerReferences[0].Name == daemonset.Name &&
+			pod.Spec.NodeName == nodeName {
+			return &pod
+		}
+	}
+	return nil
+}
+
+// GetAgentNodes
+func (c *Vrouter) GetAgentNodes(daemonset *appsv1.DaemonSet, clnt client.Client) *corev1.NodeList {
+
+	// TODO get nodes based on node selector
+	// for ns_key, ns_value := range daemonset.Spec.Template.Spec.NodeSelector {
+	//   log.Info(fmt.Sprintf("Node selector = '%v' : '%v'",ns_key,ns_value))
+	// }
+
+	// Get Nodes for check agent Status
+	// Using a typed object.
+	nodeList := &corev1.NodeList{}
+	_ = clnt.List(context.Background(), nodeList)
+
+	return nodeList
+}
+
+// GetNodesByLabels
+func (c *Vrouter) GetNodesByLabels(clnt client.Client, labels client.MatchingLabels) (string, error) {
+	pods := &corev1.PodList{}
+	err := clnt.List(context.Background(), pods, client.MatchingFields{"status.phase": "Running"}, labels)
+	if err != nil {
+		return "", err
+	}
+	arrIps := []string{}
+	for _, pod := range pods.Items {
+		arrIps = append(arrIps, pod.Status.PodIP)
+	}
+	ips := strings.Join(arrIps[:], " ")
+	return ips, nil
+}
+
+type ClusterParams struct {
+	ConfigNodes  string
+	ControlNodes string
+}
+
+// GetControlNodes
+func (c *Vrouter) GetControlNodes(clnt client.Client) string {
+	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"app": "control"})
+	return ips
+}
+
+// GetConfigNodes
+func (c *Vrouter) GetConfigNodes(clnt client.Client) string {
+	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"app": "config"})
+	return ips
+}
+
+// GetParamsEnv
+func (c *Vrouter) GetParamsEnv(clnt client.Client) string {
+	vrouterConfig := c.Spec.ServiceConfiguration.VrouterConfiguration
+	clusterParams := ClusterParams{ConfigNodes: c.GetConfigNodes(clnt), ControlNodes: c.GetConfigNodes(clnt)}
+
+	var vrouterManifestParamsEnv bytes.Buffer
+	configtemplates.VRouterAgentParams.Execute(&vrouterManifestParamsEnv, struct {
+		ServiceConfig VrouterConfiguration
+		ClusterParams ClusterParams
+	}{
+		ServiceConfig: vrouterConfig,
+		ClusterParams: clusterParams,
+	})
+	return vrouterManifestParamsEnv.String()
+}
+
+// SetParamsToAgents use `params.env` file from GetParamsEnv and throw it to all agents
+func (c *Vrouter) SetParamsToAgents(request reconcile.Request, clnt client.Client) error {
+	agentConfigName := types.NamespacedName{Name: request.Name + "-vrouter-agent-config", Namespace: request.Namespace}
+
+	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
+	if err := clnt.Get(context.Background(), agentConfigName, configMapInstanceDynamicConfig); err != nil {
+		return err
+	}
+
+	data := configMapInstanceDynamicConfig.Data
+	if data == nil {
+		data = make(map[string]string)
+	}
+	data["params.env"] = c.GetParamsEnv(clnt)
+
+	configMapInstanceDynamicConfig.Data = data
+	if err := clnt.Update(context.Background(), configMapInstanceDynamicConfig); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// EncryptString
+func EncryptString(str string) string {
+	h := sha1.New()
+	io.WriteString(h, str)
+	key := hex.EncodeToString(h.Sum(nil))
+
+	return string(key)
+}
+
+// SetParams
+func (agentStatus *AgentStatus) SetParams(params string) {
+	agentStatus.EncryptedParams = EncryptString(params)
+}
+
+// SaveClusterStatus
+func (c *Vrouter) SaveClusterStatus(nodeName string, clnt client.Client) error {
+	c.Status.Agents[nodeName].ControlNodes = c.GetControlNodes(clnt)
+	c.Status.Agents[nodeName].ConfigNodes = c.GetConfigNodes(clnt)
+	return nil
+}
+
+// GetAgentContainerStatus
+func (c *Vrouter) GetAgentContainerStatus(pod *corev1.Pod, clnt client.Client) (*corev1.ContainerStatus, error) {
+	containerStatuses := pod.Status.ContainerStatuses
+	// Iterate over all pod's containers
+	var agentContainerStatus corev1.ContainerStatus
+	for _, containerStatus := range containerStatuses {
+		if containerStatus.Name == "vrouteragent" {
+			agentContainerStatus = containerStatus
+		}
+	}
+	// Check if container was found in pod
+	if &agentContainerStatus == nil {
+		//log.Info("ERROR: Container vrouteragent not found in vrouteragent pod")
+		return nil, fmt.Errorf("ERROR: Container vrouteragent not found for pod %v", pod)
+	}
+
+	return &agentContainerStatus, nil
+}
+
+// IsAgentRunning
+func (c *Vrouter) IsAgentRunning(pod *corev1.Pod) bool {
+	_, _, err := ExecToPodThroughAPI([]string{"/usr/bin/test", "-f", "/var/run/vrouter-agent.pid"},
+		"vrouteragent",
+		pod.ObjectMeta.Name,
+		pod.ObjectMeta.Namespace,
+		nil,
+	)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (c *Vrouter) GetParameters(hostParams *map[string]string, pod *corev1.Pod, recalc bool) error {
+	if recalc {
+		_, _, err := ExecToPodThroughAPI([]string{"/usr/bin/bash", "-c", "source /actions.sh; source /common.sh; source /agent-functions.sh; prepare_agent_config_vars"},
+			"vrouteragent",
+			pod.ObjectMeta.Name,
+			pod.ObjectMeta.Namespace,
+			nil)
+		if err != nil {
+			//log.Info("INFO: Parameters not ready")
+			return err
+		}
+	}
+	stdio, _, err := ExecToPodThroughAPI([]string{"/usr/bin/bash", "-c", "source /actions.sh; get_parameters"},
+		"vrouteragent",
+		pod.ObjectMeta.Name,
+		pod.ObjectMeta.Namespace,
+		nil)
+	if err != nil {
+		//log.Info("INFO: Parameters not ready")
+		return err
+	}
+	// log.Info(fmt.Sprintf("INFO: Parameters ready %v",stdio))
+	scanner := bufio.NewScanner(strings.NewReader(stdio))
+	for scanner.Scan() {
+		keyValue := strings.SplitAfterN(scanner.Text(), "=", 2)
+		key := strings.TrimSuffix(keyValue[0], "=")
+		value := removeQuotes(keyValue[1])
+		(*hostParams)[key] = value
+	}
+	return nil
+}
+
+func removeQuotes(str string) string {
+	if len(str) > 0 && str[0] == '"' {
+		str = str[1:]
+	}
+	if len(str) > 0 && str[len(str)-1] == '"' {
+		str = str[:len(str)-1]
+	}
+	return str
+}
+
+func (c *Vrouter) CreateVrouterAgentConfig(objMeta metav1.ObjectMeta, hostVars *map[string]string, client client.Client) error {
+	instanceConfigMapName := objMeta.Name + "-vrouter-agent-config"
+	// Get current vrouter configmap
+	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
+	err := client.Get(context.Background(),
+		types.NamespacedName{Name: instanceConfigMapName, Namespace: objMeta.Namespace},
+		configMapInstanceDynamicConfig)
+	if err != nil {
+		return err
+	}
+	data := configMapInstanceDynamicConfig.Data
+	var vrouterAgentConfigBuffer bytes.Buffer
+	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, *hostVars)
+	data["contrail-vrouter-agent.conf"] = vrouterAgentConfigBuffer.String()
+	var vrouterLbaasAuthConfigBuffer bytes.Buffer
+	configtemplates.VRouterLbaasAuthConfig.Execute(&vrouterLbaasAuthConfigBuffer, *hostVars)
+	data["contrail-lbaas.auth.conf"] = vrouterLbaasAuthConfigBuffer.String()
+	var vrouterVncApiLibIniBuffer bytes.Buffer
+	configtemplates.VRouterVncApiLibIni.Execute(&vrouterVncApiLibIniBuffer, *hostVars)
+	data["vnc_api_lib.ini"] = vrouterVncApiLibIniBuffer.String()
+
+	// Save config data
+	configMapInstanceDynamicConfig.Data = data
+	err = client.Update(context.Background(), configMapInstanceDynamicConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// IsClusterChanged
+func (c *Vrouter) IsClusterChanged(nodeName string, clnt client.Client) bool {
+	if c.Status.Agents[nodeName].ControlNodes != c.GetControlNodes(clnt) ||
+		c.Status.Agents[nodeName].ConfigNodes != c.GetConfigNodes(clnt) {
+		return true
+	}
+	return false
+}
+
+// UpdateAgent
+func (c *Vrouter) UpdateAgent(nodeName string, pod *corev1.Pod, clnt client.Client, reconsFlag *bool) error {
+	eq, err := c.isParamsEnvEqual(clnt, pod)
+	if err != nil || !eq {
+		*reconsFlag = true
+		return err
+	}
+
+	hostVars := make(map[string]string)
+	if err := c.GetParameters(&hostVars, pod, true); err != nil {
+		*reconsFlag = true
+		return err
+	}
+
+	if err := c.CreateVrouterAgentConfig(c.ObjectMeta, &hostVars, clnt); err != nil {
+		*reconsFlag = true
+		return err
+	}
+
+	eq, err = c.IsAgentConfigsAvailable(clnt, pod)
+	if err != nil || !eq {
+		*reconsFlag = true
+		return err
+	}
+
+	if err := c.SaveClusterStatus(nodeName, clnt); err != nil {
+		*reconsFlag = true
+		return err
+	}
+
+	c.Status.Agents[nodeName].EncryptedParams = EncryptString(c.GetParamsEnv(clnt))
+
+	// Send SIGHUP то container process to reload config file
+	if err = c.ReloadAgentConfigs(pod); err != nil {
+		*reconsFlag = true
+		return err
+	}
+
+	c.Status.Agents[nodeName].Status = "Ready"
+
+	return nil
+}
+
+// IsAgentConfigsAvailable
+func (c *Vrouter) IsAgentConfigsAvailable(clnt client.Client, pod *corev1.Pod) (bool, error) {
+	instanceConfigMapName := c.ObjectMeta.Name + "-vrouter-agent-config"
+	// Get current vrouter configmap
+	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
+	err := clnt.Get(context.Background(),
+		types.NamespacedName{Name: instanceConfigMapName, Namespace: c.ObjectMeta.Namespace},
+		configMapInstanceDynamicConfig)
+	if err != nil {
+		return false, err
+	}
+	data := configMapInstanceDynamicConfig.Data
+	configsToCheck := []string{
+		"contrail-vrouter-agent.conf",
+		"contrail-lbaas.auth.conf",
+		"vnc_api_lib.ini",
+	}
+
+	for _, confName := range configsToCheck {
+		eq, err := isConfigEq(&data, confName, pod)
+		if err != nil {
+			return false, err
+		}
+		if !eq {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func isConfigEq(data *map[string]string, confName string, pod *corev1.Pod) (bool, error) {
+	path := "/etc/contrail/" + confName
+	stdout, _, err := ExecToPodThroughAPI([]string{"/usr/bin/sha1sum", path},
+		"vrouteragent",
+		pod.ObjectMeta.Name,
+		pod.ObjectMeta.Namespace,
+		nil,
+	)
+	if err != nil {
+		return false, err
+	}
+	shakey := strings.Split(stdout, " ")[0]
+	h := sha1.New()
+	io.WriteString(h, (*data)[confName])
+	shakey2 := hex.EncodeToString(h.Sum(nil))
+	if shakey == shakey2 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+// isParamsEnvEqual
+func (c *Vrouter) isParamsEnvEqual(clnt client.Client, pod *corev1.Pod) (bool, error) {
+	stdout, _, err := ExecToPodThroughAPI([]string{"/usr/bin/sha1sum", "/etc/contrail/params.env"},
+		"vrouteragent",
+		pod.ObjectMeta.Name,
+		pod.ObjectMeta.Namespace,
+		nil,
+	)
+	if err != nil {
+		return false, err
+	}
+	shakey := strings.Split(stdout, " ")[0]
+	h := sha1.New()
+	io.WriteString(h, c.GetParamsEnv(clnt))
+	key := hex.EncodeToString(h.Sum(nil))
+	if string(key) == shakey {
+		return true, nil
+	}
+	return false, nil
+}
+
+// ReloadAgentConfigs
+func (c *Vrouter) ReloadAgentConfigs(pod *corev1.Pod) error {
+	_, _, err := ExecToPodThroughAPI([]string{"/usr/bin/bash", "-c", "source /contrail-functions.sh; reload_config"},
+		"vrouteragent",
+		pod.ObjectMeta.Name,
+		pod.ObjectMeta.Namespace,
+		nil,
+	)
+	return err
 }
