@@ -52,7 +52,7 @@ func (c CertificateSubject) generateCertificateTemplate() (x509.Certificate, *rs
 			Organization:       []string{"Juniper Networks"},
 			OrganizationalUnit: []string{"Contrail"},
 		},
-		DNSNames:    []string{c.hostname},
+		DNSNames:    []string{c.hostname,c.hostname + ".cluster.local"},
 		IPAddresses: ips,
 		NotBefore:   notBefore,
 		NotAfter:    notAfter,
