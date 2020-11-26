@@ -3,6 +3,8 @@ package config
 import (
 	"context"
 	"reflect"
+	"plugin"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -181,6 +183,24 @@ type ReconcileConfig struct {
 	Kubernetes *k8s.Kubernetes
 }
 
+
+
+
+func runPlugin(){
+	p, err := plugin.Open("/plugins/tf-operator-module-sample.so")
+	if err != nil {
+		log.Info(fmt.Sprintf("DDDD Error when plugin load %v",err))
+		return
+	}
+	f, err := p.Lookup("F")
+	if err != nil {
+		log.Info(fmt.Sprintf("DDDD Error when lookup func %v",err))
+		return
+	}
+	log.Info(fmt.Sprintf("DDDD number from plugin %v ",f.(func(int)string)(43)))
+}
+
+
 // Reconcile reconciles Config.
 func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
@@ -190,6 +210,8 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	cassandraInstance := &v1alpha1.Cassandra{}
 	zookeeperInstance := &v1alpha1.Zookeeper{}
 	rabbitmqInstance := &v1alpha1.Rabbitmq{}
+
+	runPlugin()
 
 	if err := r.Client.Get(context.TODO(), request.NamespacedName, config); err != nil && errors.IsNotFound(err) {
 		return reconcile.Result{}, nil
