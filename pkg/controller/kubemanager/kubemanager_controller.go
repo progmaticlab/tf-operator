@@ -394,9 +394,9 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 	}
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "kubemanager" {
-			//command := []string{"bash", "-c",
-			//	"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini;/usr/bin/python /usr/bin/contrail-kube-manager -c /etc/contrailconfigmaps/kubemanager.${POD_IP}"}
-			command := []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
+			command := []string{"bash", "-c",
+				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini;/usr/bin/python /usr/bin/contrail-kube-manager -c /etc/contrailconfigmaps/kubemanager.${POD_IP}"}
+			// command := []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command

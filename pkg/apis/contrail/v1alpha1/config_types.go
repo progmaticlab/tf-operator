@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -709,9 +708,7 @@ func (c *Config) PodIPListAndIPMapFromInstance(request reconcile.Request, reconc
 //PodsCertSubjects gets list of Config pods certificate subjets which can be passed to the certificate API
 func (c *Config) PodsCertSubjects(podList *corev1.PodList) []certificates.CertificateSubject {
 	var altIPs PodAlternativeIPs
-	subj := PodsCertSubjects(podList, c.Spec.CommonConfiguration.HostNetwork, altIPs)
-	log.Info(fmt.Sprintf("DDDD Config subjects = %v " , subj))
-	return subj
+	return PodsCertSubjects(podList, c.Spec.CommonConfiguration.HostNetwork, altIPs)
 }
 
 func (c *Config) SetPodsToReady(podIPList *corev1.PodList, client client.Client) error {
