@@ -83,9 +83,6 @@ spec:
           control_role: master
         name: control1
       spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
         serviceConfiguration:
           cassandraInstance: cassandra1
           containers:
@@ -159,33 +156,6 @@ spec:
           contrail_cluster: cluster1
         name: vroutermaster
       spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
-        serviceConfiguration:
-          cassandraInstance: cassandra1
-          containers:
-          - name: init
-            image: python:alpine
-          - name: nodeinit
-            image: contrail-node-init:latest
-          - name: vrouteragent
-            image: contrail-vrouter-agent:latest
-          - name: vroutercni
-            image: contrail-kubernetes-cni-init:latest
-          - name: vrouterkernelbuildinit
-            image: contrail-vrouter-kernel-build-init:latest
-          - name: vrouterkernelinit
-            image: contrail-vrouter-kernel-init:latest
-          controlInstance: control1
-    - metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: vrouternodes
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.opencontrail.org: vrouter
         serviceConfiguration:
           cassandraInstance: cassandra1
           containers:
