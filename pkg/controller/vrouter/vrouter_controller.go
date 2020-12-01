@@ -3,6 +3,7 @@ package vrouter
 import (
 	"context"
 	"time"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -673,6 +674,13 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	if err = instance.SetInstanceActive(r.Client, instance.Status.Active, daemonSet, request, instance); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	isControllerActive, err := instance.IsActiveOnControllers(r.Client)
+	if err != nil {
+		reqLogger.Info("DDDD: Error")
+	} else {
+		reqLogger.Info(fmt.Sprintf("DDDD: isControllerActive=%v", isControllerActive))
 	}
 
 	return reconcile.Result{}, nil

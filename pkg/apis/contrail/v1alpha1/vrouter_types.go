@@ -48,10 +48,11 @@ type VrouterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Ports  ConfigStatusPorts       `json:"ports,omitempty"`
-	Nodes  map[string]string       `json:"nodes,omitempty"`
-	Active *bool                   `json:"active,omitempty"`
-	Agents map[string]*AgentStatus `json:"agents,omitempty"`
+	Ports                ConfigStatusPorts       `json:"ports,omitempty"`
+	Nodes                map[string]string       `json:"nodes,omitempty"`
+	Active               *bool                   `json:"active,omitempty"`
+	ActiveOnControllers  *bool                   `json:"activeOnControllers,omitempty"`
+	Agents               map[string]*AgentStatus `json:"agents,omitempty"`
 }	
 
 type AgentStatus struct {
@@ -1079,4 +1080,24 @@ func (c *Vrouter) ReloadAgentConfigs(pod *corev1.Pod) error {
 		nil,
 	)
 	return err
+}
+
+func (c *Vrouter) IsActiveOnControllers(clnt client.Client) (bool, error) {
+	if c.Status.Agents == nil {
+		return false, nil
+	}
+
+	controllerNodes := &corev1.NodeList{}
+	labels := client.MatchingLabels{"node-role.kubernetes.io/master": ""}
+	if err := clnt.List(context.Background(), controllerNodes, labels); err != nil {
+		return false, err
+	}
+	
+	for _, node := range controllerNodes.Items {
+		agentStatus, ok := c.Status.Agents[node.Name]
+		if !ok || agentStatus.Status != "Ready" {
+			return false, nil
+		}
+	}
+	return true, nil
 }
