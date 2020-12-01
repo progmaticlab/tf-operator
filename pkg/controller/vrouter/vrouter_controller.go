@@ -671,13 +671,14 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		active := false
 		instance.Status.Active = &active
 	}
-	if err = instance.SetInstanceActive(r.Client, instance.Status.Active, daemonSet, request, instance); err != nil {
-		return reconcile.Result{}, err
-	}
 
 	isControllerActive, err := instance.IsActiveOnControllers(r.Client)
-	instance.Status.ActiveOnControllers = &isControllerActive
-	if err != nil {
+        instance.Status.ActiveOnControllers = &isControllerActive
+        if err != nil {
+                return reconcile.Result{}, err
+        }
+
+	if err = instance.SetInstanceActive(r.Client, instance.Status.Active, daemonSet, request, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
