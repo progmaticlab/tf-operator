@@ -18,7 +18,10 @@ import (
 
 	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var log = logf.Log.WithName("controller_config")
 
 // +kubebuilder:validation:Enum=noauth;keystone
 type AuthenticationMode string
