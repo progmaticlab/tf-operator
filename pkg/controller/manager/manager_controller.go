@@ -296,6 +296,10 @@ func (r *ReconcileManager) processZookeepers(manager *v1alpha1.Manager, replicas
 		}
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
+	}
+
 	var zookeeperServiceStatus []*v1alpha1.ServiceStatus
 	for _, zookeeperService := range manager.Spec.Services.Zookeepers {
 		zookeeper := &v1alpha1.Zookeeper{}
@@ -346,6 +350,10 @@ func (r *ReconcileManager) processCassandras(manager *v1alpha1.Manager, replicas
 			}
 		}
 	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
 
 	var cassandraStatusList []*v1alpha1.ServiceStatus
 	for _, cassandraService := range manager.Spec.Services.Cassandras {
@@ -399,6 +407,10 @@ func (r *ReconcileManager) processWebui(manager *v1alpha1.Manager, replicas int3
 		return nil
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	webui := &v1alpha1.Webui{}
 	webui.ObjectMeta = manager.Spec.Services.Webui.ObjectMeta
 	webui.ObjectMeta.Namespace = manager.Namespace
@@ -438,6 +450,10 @@ func (r *ReconcileManager) processProvisionManager(manager *v1alpha1.Manager, re
 		return nil
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	pm := &v1alpha1.ProvisionManager{}
 	pm.ObjectMeta = manager.Spec.Services.ProvisionManager.ObjectMeta
 	pm.ObjectMeta.Namespace = manager.Namespace
@@ -476,6 +492,10 @@ func (r *ReconcileManager) processConfig(manager *v1alpha1.Manager, replicas int
 		}
 		return nil
 	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
 
 	config := &v1alpha1.Config{}
 	config.ObjectMeta = manager.Spec.Services.Config.ObjectMeta
@@ -522,6 +542,10 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 			}
 		}
 	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
 
 	var kubemanagerServiceStatus []*v1alpha1.ServiceStatus
 	for _, kubemanagerService := range manager.Spec.Services.Kubemanagers {
@@ -580,6 +604,10 @@ func (r *ReconcileManager) processControls(manager *v1alpha1.Manager, replicas i
 		}
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	var controlServiceStatus []*v1alpha1.ServiceStatus
 	for _, controlService := range manager.Spec.Services.Controls {
 		control := &v1alpha1.Control{}
@@ -625,6 +653,11 @@ func (r *ReconcileManager) processRabbitMQ(manager *v1alpha1.Manager, replicas i
 		}
 		return nil
 	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	rabbitMQ := &v1alpha1.Rabbitmq{}
 	rabbitMQ.ObjectMeta = manager.Spec.Services.Rabbitmq.ObjectMeta
 	rabbitMQ.ObjectMeta.Namespace = manager.Namespace
@@ -729,6 +762,10 @@ func (r *ReconcileManager) processContrailCNIs(manager *v1alpha1.Manager) error 
 		}
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	var ContrailCNIServiceStatus []*v1alpha1.ServiceStatus
 	for _, ContrailCNIService := range manager.Spec.Services.ContrailCNIs {
 		ContrailCNI := &v1alpha1.ContrailCNI{}
@@ -774,6 +811,10 @@ func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager
 }
 
 func (r *ReconcileManager) processContrailmonitor(manager *v1alpha1.Manager) error {
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+                return nil
+        }
+
 	if manager.Spec.Services.Contrailmonitor == nil {
 		return nil
 	}
