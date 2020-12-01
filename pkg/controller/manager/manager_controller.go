@@ -146,8 +146,8 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 	
-	isVrouterActiveOnControllers := instance.isVrouterActiveOnControllers(r.Client)
-	reqLogger.Info(fmt.Sprintf("DDDD: isVrouterActive %v", isVrouterActive))
+	isVrouterActiveOnControllers := instance.IsVrouterActiveOnControllers(r.client)
+	reqLogger.Info(fmt.Sprintf("DDDD: isVrouterActive %v", isVrouterActiveOnControllers))
 
 	if err := r.processCSRSignerCaConfigMap(instance); err != nil {
 		return reconcile.Result{}, err
