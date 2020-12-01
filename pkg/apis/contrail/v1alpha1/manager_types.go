@@ -305,7 +305,7 @@ func (m* Manager) IsVrouterActiveOnControllers(clnt client.Client) bool {
 		return false
 	}
 	
-	if *vrouter.Status.ActiveOnControllers {
+	if vrouter.Status.ActiveOnControllers != nil && *vrouter.Status.ActiveOnControllers {
 		return true
 	} else {
 		return false
