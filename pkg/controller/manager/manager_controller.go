@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -144,6 +145,9 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 		}
 	}
+	
+	isVrouterActiveOnControllers := instance.isVrouterActiveOnControllers(r.Client)
+	reqLogger.Info(fmt.Sprintf("DDDD: isVrouterActive %v", isVrouterActive))
 
 	if err := r.processCSRSignerCaConfigMap(instance); err != nil {
 		return reconcile.Result{}, err
