@@ -617,7 +617,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	
 		createCertSymlinkCmd = []string{"/usr/bin/bash",
 				"-c",
-				"[[ -f /etc/certificates/server-key"+ pod.Status.PodIP +".pem ]] && [[ ! -f /server-key.pem ]] && ln -s /etc/certificates/server-key"+ pod.Status.PodIP +".pem /server-key.pem"}
+				"[[ -f /etc/certificates/server-key-"+ pod.Status.PodIP +".pem ]] && [[ ! -f /server-key.pem ]] && ln -s /etc/certificates/server-key-"+ pod.Status.PodIP +".pem /server-key.pem"}
 		v1alpha1.ExecToPodThroughAPI(createCertSymlinkCmd,
 				"vrouteragent",
 				pod.ObjectMeta.Name,

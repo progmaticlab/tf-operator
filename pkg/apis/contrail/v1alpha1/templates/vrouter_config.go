@@ -191,7 +191,7 @@ tsn_servers = {{ .TSN_NODES | replace "," " " }}
 [SANDESH]
 {{ if isEnabled .INTROSPECT_SSL_ENABLE }}
 introspect_ssl_enable={{ .INTROSPECT_SSL_ENABLE }}
-introspect_ssl_insecure="True" #{{ .INTROSPECT_SSL_INSECURE }}
+introspect_ssl_insecure=True
 sandesh_ssl_enable={{ .SANDESH_SSL_ENABLE }}
 sandesh_keyfile={{ .SANDESH_KEYFILE }}
 sandesh_certfile={{ .SANDESH_CERTFILE }}
