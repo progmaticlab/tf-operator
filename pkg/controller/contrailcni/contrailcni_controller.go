@@ -107,7 +107,7 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 	if !instance.GetDeletionTimestamp().IsZero() {
 		return reconcile.Result{}, nil
 	}
-
+/*
 	if instance.Spec.ServiceConfiguration.ControlInstance != "" {
 		controlInstance := v1alpha1.Control{}
 		configInstance := v1alpha1.Config{}
@@ -121,7 +121,7 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 			return reconcile.Result{}, nil
 		}
 	}
-
+*/
 	contrailCNIConfigName := request.Name + "-" + instanceType + "-configuration"
 	if err := r.configMap(contrailCNIConfigName, instanceType, instance).ensureContrailCNIConfigExists(r.ClusterInfo); err != nil {
 		return reconcile.Result{}, err

@@ -52,8 +52,8 @@ set -o allexport
 
 # Config
 #CONFIG_API_PORT="{{ .ServiceConfig.ConfigApiPort }}"
-#CONFIG_API_SERVER_CA_CERTFILE="{{ .ServiceConfig.ConfigApiServerCaCertfile }}"
-#CONFIG_API_SSL_ENABLE="{{ bool2string .ServiceConfig.ConfigApiSslEnable }}"
+CONFIG_API_SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt" #"{{ .ServiceConfig.ConfigApiServerCaCertfile }}"
+CONFIG_API_SSL_ENABLE="True"                                            #"{{ bool2string .ServiceConfig.ConfigApiSslEnable }}"
 
 # DNS
 #DNS_SERVER_PORT="{{ .ServiceConfig.DnsServerPort }}"
@@ -66,7 +66,7 @@ set -o allexport
 
 # Introspect
 #INTROSPECT_LISTEN_ALL="{{ bool2string .ServiceConfig.IntrospectListenAll }}"
-#INTROSPECT_SSL_ENABLE="{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
+INTROSPECT_SSL_ENABLE="True"  #"{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
 
 # Keystone authentication
 #KEYSTONE_AUTH_ADMIN_PORT="{{ .ServiceConfig.KeystoneAuthAdminPort }}"
@@ -109,16 +109,16 @@ set -o allexport
 #BARBICAN_USER="{{ .ServiceConfig.BarbicanUser }}"
 
 # Sandesh
-#SANDESH_CA_CERTFILE="{{ .ServiceConfig.SandeshCaCertfile }}"
-#SANDESH_CERTFILE="{{ .ServiceConfig.SandeshCertfile }}"
-#SANDESH_KEYFILE="{{ .ServiceConfig.SandeshKeyfile }}"
-#SANDESH_SSL_ENABLE="{{ bool2string .ServiceConfig.SandeshSslEnable }}"
+SANDESH_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt"    #"{{ .ServiceConfig.SandeshCaCertfile }}"
+SANDESH_CERTFILE="/server.crt"    #"{{ .ServiceConfig.SandeshCertfile }}"
+SANDESH_KEYFILE="/server-key.pem" #"{{ .ServiceConfig.SandeshKeyfile }}"
+SANDESH_SSL_ENABLE="True"                          #"{{ bool2string .ServiceConfig.SandeshSslEnable }}"
 
 # Server SSL
-#SERVER_CA_CERTFILE="{{ .ServiceConfig.ServerCaCertfile }}"
-#SERVER_CERTFILE="{{ .ServiceConfig.ServerCertfile }}"
-#SERVER_KEYFILE="{{ .ServiceConfig.ServerKeyfile }}"
-#SSL_ENABLE="{{ bool2string .ServiceConfig.SslEnable }}"
+SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt" #"{{ .ServiceConfig.ServerCaCertfile }}"
+SERVER_CERTFILE="/server.crt"               #"{{ .ServiceConfig.ServerCertfile }}"
+SERVER_KEYFILE="/server-key.pem"            #"{{ .ServiceConfig.ServerKeyfile }}"
+SSL_ENABLE="True"   #"{{ bool2string .ServiceConfig.SslEnable }}"
 #SSL_INSECURE="{{ bool2string .ServiceConfig.SslInsecure }}"
 
 # TSN
@@ -145,11 +145,11 @@ set -o allexport
 
 # XMPP
 #SUBCLUSTER="{{ .ServiceConfig.Subclaster }}"
-#XMPP_SERVER_CA_CERTFILE="{{ .ServiceConfig.XmppServerCaCertfile }}"
-#XMPP_SERVER_CERTFILE="{{ .ServiceConfig.XmppServerCertfile }}"
-#XMPP_SERVER_KEYFILE="{{ .ServiceConfig.XmppServerKeyfile }}"
+XMPP_SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt"     #"{{ .ServiceConfig.XmppServerCaCertfile }}"
+XMPP_SERVER_CERTFILE="/server.crt"     #"{{ .ServiceConfig.XmppServerCertfile }}"
+XMPP_SERVER_KEYFILE="/server-key.pem"  #"{{ .ServiceConfig.XmppServerKeyfile }}"
 #XMPP_SERVER_PORT="{{ .ServiceConfig.XmppServerPort }}"
-#XMPP_SSL_ENABLE="{{ bool2string .ServiceConfig.XmppSslEnable }}"
+XMPP_SSL_ENABLE="True"                                                #"{{ bool2string .ServiceConfig.XmppSslEnable }}"
 
 # HugePages
 #HUGE_PAGES_2MB="{{ .ServiceConfig.HugePages2mb }}"
@@ -191,7 +191,7 @@ tsn_servers = {{ .TSN_NODES | replace "," " " }}
 [SANDESH]
 {{ if isEnabled .INTROSPECT_SSL_ENABLE }}
 introspect_ssl_enable={{ .INTROSPECT_SSL_ENABLE }}
-introspect_ssl_insecure={{ .INTROSPECT_SSL_INSECURE }}
+introspect_ssl_insecure="True" #{{ .INTROSPECT_SSL_INSECURE }}
 sandesh_ssl_enable={{ .SANDESH_SSL_ENABLE }}
 sandesh_keyfile={{ .SANDESH_KEYFILE }}
 sandesh_certfile={{ .SANDESH_CERTFILE }}

@@ -761,11 +761,11 @@ func (r *ReconcileManager) processContrailCNIs(manager *v1alpha1.Manager) error 
 			}
 		}
 	}
-
+/*
 	if !manager.IsVrouterActiveOnControllers(r.client) {
                 return nil
         }
-
+*/
 	var ContrailCNIServiceStatus []*v1alpha1.ServiceStatus
 	for _, ContrailCNIService := range manager.Spec.Services.ContrailCNIs {
 		ContrailCNI := &v1alpha1.ContrailCNI{}
