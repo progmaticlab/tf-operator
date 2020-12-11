@@ -915,7 +915,7 @@ func removeQuotes(str string) string {
 	return str
 }
 
-func (c *Vrouter) CreateVrouterAgentConfig(objMeta metav1.ObjectMeta, hostVars *map[string]string, client client.Client) error {
+func (c *Vrouter) CreateVrouterAgentConfig(pod *corev1.Pod, objMeta metav1.ObjectMeta, hostVars *map[string]string, client client.Client) error {
 	instanceConfigMapName := objMeta.Name + "-vrouter-agent-config"
 	// Get current vrouter configmap
 	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
@@ -925,9 +925,16 @@ func (c *Vrouter) CreateVrouterAgentConfig(objMeta metav1.ObjectMeta, hostVars *
 	if err != nil {
 		return err
 	}
+
+	newMap := make(map[string]string)
+	for key, val := range *hostVars {
+		newMap[key] = val
+	}
+	newMap["Hostname"] = pod.Annotations["hostname"]
+
 	data := configMapInstanceDynamicConfig.Data
 	var vrouterAgentConfigBuffer bytes.Buffer
-	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, *hostVars)
+	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, newMap)
 	data["contrail-vrouter-agent.conf"] = vrouterAgentConfigBuffer.String()
 	var vrouterLbaasAuthConfigBuffer bytes.Buffer
 	configtemplates.VRouterLbaasAuthConfig.Execute(&vrouterLbaasAuthConfigBuffer, *hostVars)
@@ -969,7 +976,7 @@ func (c *Vrouter) UpdateAgent(nodeName string, pod *corev1.Pod, clnt client.Clie
 		return err
 	}
 
-	if err := c.CreateVrouterAgentConfig(c.ObjectMeta, &hostVars, clnt); err != nil {
+	if err := c.CreateVrouterAgentConfig(pod, c.ObjectMeta, &hostVars, clnt); err != nil {
 		*reconsFlag = true
 		return err
 	}

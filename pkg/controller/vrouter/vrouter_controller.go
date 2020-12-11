@@ -353,7 +353,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
-			command := []string{"bash", "-c",`source /etc/contrail/params.env;
+			command := []string{"bash", "-c",`mkdir -p /var/log/contrail/vrouter-agent;
+				source /etc/contrail/params.env;
 				source /actions.sh;
 				prepare_agent;
 				start_agent;
@@ -652,7 +653,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		if instance.Status.Agents[node.Name].Status != "Updating" {
-			if err := instance.CreateVrouterAgentConfig(instance.ObjectMeta, &hostVars, r.Client); err != nil {
+			if err := instance.CreateVrouterAgentConfig(pod, instance.ObjectMeta, &hostVars, r.Client); err != nil {
 				reconcileAgain = true
 				continue
 			}

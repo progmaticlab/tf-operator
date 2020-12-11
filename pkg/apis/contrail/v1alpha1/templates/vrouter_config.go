@@ -167,8 +167,8 @@ collectors={{ .COLLECTOR_SERVERS }}
 log_file={{ .CONTAINER_LOG_DIR }}/contrail-vrouter-agent.log
 log_level={{ .LOG_LEVEL }}
 log_local={{ .LOG_LOCAL }}
-hostname={{ .AGENT_NAME }}
-agent_name={{ .AGENT_NAME }}
+hostname={{ .Hostname }}
+agent_name={{ .Hostname }}
 xmpp_dns_auth_enable={{ .XMPP_SSL_ENABLE }}
 xmpp_auth_enable={{ .XMPP_SSL_ENABLE }}
 {{ if isEnabled .XMPP_SSL_ENABLE }}
