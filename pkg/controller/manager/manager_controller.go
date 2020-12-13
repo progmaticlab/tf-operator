@@ -145,7 +145,7 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 		}
 	}
-	
+
 	isVrouterActiveOnControllers := instance.IsVrouterActiveOnControllers(r.client)
 	reqLogger.Info(fmt.Sprintf("DDDD: isVrouterActive %v", isVrouterActiveOnControllers))
 
@@ -352,8 +352,8 @@ func (r *ReconcileManager) processCassandras(manager *v1alpha1.Manager, replicas
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	var cassandraStatusList []*v1alpha1.ServiceStatus
 	for _, cassandraService := range manager.Spec.Services.Cassandras {
@@ -408,8 +408,8 @@ func (r *ReconcileManager) processWebui(manager *v1alpha1.Manager, replicas int3
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	webui := &v1alpha1.Webui{}
 	webui.ObjectMeta = manager.Spec.Services.Webui.ObjectMeta
@@ -451,8 +451,8 @@ func (r *ReconcileManager) processProvisionManager(manager *v1alpha1.Manager, re
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	pm := &v1alpha1.ProvisionManager{}
 	pm.ObjectMeta = manager.Spec.Services.ProvisionManager.ObjectMeta
@@ -494,8 +494,8 @@ func (r *ReconcileManager) processConfig(manager *v1alpha1.Manager, replicas int
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	config := &v1alpha1.Config{}
 	config.ObjectMeta = manager.Spec.Services.Config.ObjectMeta
@@ -544,8 +544,8 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	var kubemanagerServiceStatus []*v1alpha1.ServiceStatus
 	for _, kubemanagerService := range manager.Spec.Services.Kubemanagers {
@@ -605,8 +605,8 @@ func (r *ReconcileManager) processControls(manager *v1alpha1.Manager, replicas i
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	var controlServiceStatus []*v1alpha1.ServiceStatus
 	for _, controlService := range manager.Spec.Services.Controls {
@@ -655,8 +655,8 @@ func (r *ReconcileManager) processRabbitMQ(manager *v1alpha1.Manager, replicas i
 	}
 
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	rabbitMQ := &v1alpha1.Rabbitmq{}
 	rabbitMQ.ObjectMeta = manager.Spec.Services.Rabbitmq.ObjectMeta
@@ -703,22 +703,14 @@ func (r *ReconcileManager) processVRouters(manager *v1alpha1.Manager, replicas i
 
 	var vRouterServiceStatus []*v1alpha1.ServiceStatus
 	for _, vRouterService := range manager.Spec.Services.Vrouters {
-		/*
-		if !vrouterDependenciesReady(vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client) {
-			continue
-		}
-		*/
+
 		vRouter := &v1alpha1.Vrouter{}
 		vRouter.ObjectMeta = vRouterService.ObjectMeta
 		vRouter.ObjectMeta.Namespace = manager.Namespace
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, vRouter, func() error {
 			vRouter.Spec.ServiceConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
 			vRouter.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, vRouterService.Spec.CommonConfiguration)
-			/*
-			if err := fillVrouterConfiguration(vRouter, vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client); err != nil {
-				return err
-			}
-			 */
+
 			if vRouter.Spec.CommonConfiguration.Replicas == nil {
 				vRouter.Spec.CommonConfiguration.Replicas = &replicas
 			}
@@ -761,11 +753,7 @@ func (r *ReconcileManager) processContrailCNIs(manager *v1alpha1.Manager) error 
 			}
 		}
 	}
-/*
-	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
-*/
+
 	var ContrailCNIServiceStatus []*v1alpha1.ServiceStatus
 	for _, ContrailCNIService := range manager.Spec.Services.ContrailCNIs {
 		ContrailCNI := &v1alpha1.ContrailCNI{}
@@ -812,8 +800,8 @@ func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager
 
 func (r *ReconcileManager) processContrailmonitor(manager *v1alpha1.Manager) error {
 	if !manager.IsVrouterActiveOnControllers(r.client) {
-                return nil
-        }
+		return nil
+	}
 
 	if manager.Spec.Services.Contrailmonitor == nil {
 		return nil
@@ -886,27 +874,3 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
 	return nil
 }
-/*
-func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {
-	controlInstance := v1alpha1.Control{}
-	configInstance := v1alpha1.Config{}
-	configInstanceActive := configInstance.IsActive(managerMeta.Name, managerMeta.Namespace, client)
-	controlInstanceActive := controlInstance.IsActive(controlName, managerMeta.Namespace, client)
-
-	return configInstanceActive && controlInstanceActive
-}
-
-func fillVrouterConfiguration(vrouter *v1alpha1.Vrouter, controlName string, managerMeta v1.ObjectMeta, client client.Client) error {
-	controlConfig, err := v1alpha1.NewControlClusterConfiguration(controlName, "", managerMeta.Namespace, client)
-	if err != nil {
-		return err
-	}
-	(&vrouter.Spec.ServiceConfiguration).ControlNodesConfiguration = &controlConfig
-	configConfig, err := v1alpha1.NewConfigClusterConfiguration(managerMeta.Name, managerMeta.Namespace, client)
-	if err != nil {
-		return err
-	}
-	(&vrouter.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
-	return nil
-}
-*/

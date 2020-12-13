@@ -341,55 +341,6 @@ kubernetes_token={{ .K8S_TOKEN }}
 kubernetes_api_server={{ default .KUBERNETES_API_SERVER .DEFAULT_LOCAL_IP }}
 kubernetes_api_port={{ default "8080" .KUBERNETES_API_PORT }}
 kubernetes_api_secure_port={{ default "6443" .KUBERNETES_API_SECURE_PORT }}`))
-/*
-// VRouterConfig is the template of the Kubemanager service configuration.
-var VRouterConfig = template.Must(template.New("").Parse(`[CONTROL-NODE]
-servers={{ .ControlServerList }}
-[DEFAULT]
-http_server_ip=0.0.0.0
-collectors={{ .CollectorServerList }}
-log_file=/var/log/contrail/contrail-vrouter-agent.log
-log_level=SYS_NOTICE
-log_local=1
-hostname={{ .Hostname }}
-agent_name={{ .Hostname }}
-xmpp_dns_auth_enable=True
-xmpp_auth_enable=True
-xmpp_server_cert=/etc/certificates/server-{{ .ListenAddress }}.crt
-xmpp_server_key=/etc/certificates/server-key-{{ .ListenAddress }}.pem
-xmpp_ca_cert={{ .CAFilePath }}
-physical_interface_mac = {{ .PhysicalInterfaceMac }}
-tsn_servers = []
-[SANDESH]
-introspect_ssl_enable=True
-introspect_ssl_insecure=True
-sandesh_ssl_enable=True
-sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
-sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
-sandesh_ca_cert={{ .CAFilePath }}
-[NETWORKS]
-control_network_ip={{ .ListenAddress }}
-[DNS]
-servers={{ .DNSServerList }}
-[METADATA]
-metadata_proxy_secret={{ .MetaDataSecret }}
-[VIRTUAL-HOST-INTERFACE]
-name=vhost0
-ip={{ .ListenAddress }}/{{ .PrefixLength }}
-physical_interface={{ .PhysicalInterface }}
-compute_node_address={{ .ListenAddress }}
-gateway={{ .Gateway }}
-[SERVICE-INSTANCE]
-netns_command=/usr/bin/opencontrail-vrouter-netns
-docker_command=/usr/bin/opencontrail-vrouter-docker
-[HYPERVISOR]
-type = kvm
-[FLOWS]
-fabric_snat_hash_table_size = 4096
-[SESSION]
-slo_destination = collector
-sample_destination = collector`))
-*/
 
 var VRouterConfig = template.Must(template.New("").Parse(`[CONTROL-NODE]
 servers={{ .ListenAddress }}:5269
@@ -434,27 +385,6 @@ fabric_snat_hash_table_size = 4096
 slo_destination = collector
 sample_destination = collector`))
 
-/*
-//VrouterNodemanagerConfig is the template of the Vrouter Nodemanager service configuration
-var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
-http_server_ip=0.0.0.0
-log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
-log_level=SYS_NOTICE
-log_local=1
-hostip={{ .ListenAddress }}
-db_port={{ .CassandraPort }}
-db_jmx_port={{ .CassandraJmxPort }}
-db_use_ssl=False
-[COLLECTOR]
-server_list={{ .CollectorServerList }}
-[SANDESH]
-introspect_ssl_enable=True
-introspect_ssl_insecure=True
-sandesh_ssl_enable=True
-sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
-sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
-sandesh_ca_cert={{ .CAFilePath }}`))
-*/
 //VrouterNodemanagerConfig is the template of the Vrouter Nodemanager service configuration
 var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0

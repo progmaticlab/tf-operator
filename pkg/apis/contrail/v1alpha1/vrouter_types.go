@@ -48,12 +48,12 @@ type VrouterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Ports                ConfigStatusPorts       `json:"ports,omitempty"`
-	Nodes                map[string]string       `json:"nodes,omitempty"`
-	Active               *bool                   `json:"active,omitempty"`
-	ActiveOnControllers  *bool                   `json:"activeOnControllers,omitempty"`
-	Agents               map[string]*AgentStatus `json:"agents,omitempty"`
-}	
+	Ports               ConfigStatusPorts       `json:"ports,omitempty"`
+	Nodes               map[string]string       `json:"nodes,omitempty"`
+	Active              *bool                   `json:"active,omitempty"`
+	ActiveOnControllers *bool                   `json:"activeOnControllers,omitempty"`
+	Agents              map[string]*AgentStatus `json:"agents,omitempty"`
+}
 
 type AgentStatus struct {
 	Status          AgentServiceStatus `json:"status,omitempty"`
@@ -73,8 +73,8 @@ const (
 // VrouterSpec is the Spec for the vrouter API.
 // +k8s:openapi-gen=true
 type VrouterSpec struct {
-	CommonConfiguration  PodConfiguration      `json:"commonConfiguration,omitempty"`
-	ServiceConfiguration VrouterConfiguration  `json:"serviceConfiguration"`
+	CommonConfiguration  PodConfiguration     `json:"commonConfiguration,omitempty"`
+	ServiceConfiguration VrouterConfiguration `json:"serviceConfiguration"`
 }
 
 // VrouterConfiguration is the Spec for the vrouter API.
@@ -477,21 +477,12 @@ func (c *Vrouter) PodsCertSubjects(podList *corev1.PodList) []certificates.Certi
 func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
 	client client.Client) error {
-	/*
-	configNodesInformation := c.Spec.ServiceConfiguration.ConfigNodesConfiguration
-	configNodesInformation.FillWithDefaultValues()
-	controlNodesInformation := c.Spec.ServiceConfiguration.ControlNodesConfiguration
-	controlNodesInformation.FillWithDefaultValues()
-	*/
-
 	instanceConfigMapName := request.Name + "-" + "vrouter" + "-configmap"
 	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: instanceConfigMapName, Namespace: request.Namespace}, configMapInstanceDynamicConfig); err != nil {
 		return err
 	}
-	/*
-	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList, controlNodesInformation, configNodesInformation)
-	*/
+
 	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList)
 	if err := client.Update(context.TODO(), configMapInstanceDynamicConfig); err != nil {
 		return err
@@ -583,34 +574,24 @@ func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 	}
 	return envVariables
 }
-/*
-func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
-	controlNodesInformation *ControlClusterConfiguration,
-	configNodesInformation *ConfigClusterConfiguration) map[string]string {
-*/
+
 func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList) map[string]string {
 	vrouterConfig := c.ConfigurationParameters()
 	sort.SliceStable(podList.Items, func(i, j int) bool { return podList.Items[i].Status.PodIP < podList.Items[j].Status.PodIP })
 	data := map[string]string{}
 	for _, vrouterPod := range podList.Items {
-		/*
-		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
-		 */
-		data["vrouter."        + vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig)
-		data["nodemanager."    + vrouterPod.Status.PodIP] = createVrouterNodemanagerConfigForPod(&vrouterPod, vrouterConfig)
-		data["provision.sh."   + vrouterPod.Status.PodIP] = createVrouterProvisionConfigForPod(&vrouterPod, vrouterConfig)
-		data["deprovision.py." + vrouterPod.Status.PodIP] = createVrouterDeProvisionConfigForPod(&vrouterPod, vrouterConfig)
+		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig)
+		data["nodemanager."+vrouterPod.Status.PodIP] = createVrouterNodemanagerConfigForPod(&vrouterPod, vrouterConfig)
+		data["provision.sh."+vrouterPod.Status.PodIP] = createVrouterProvisionConfigForPod(&vrouterPod, vrouterConfig)
+		data["deprovision.py."+vrouterPod.Status.PodIP] = createVrouterDeProvisionConfigForPod(&vrouterPod, vrouterConfig)
 
 		var contrailCNIBuffer bytes.Buffer
-		configtemplates.ContrailCNIConfig.Execute(&contrailCNIBuffer, struct {}{})
+		configtemplates.ContrailCNIConfig.Execute(&contrailCNIBuffer, struct{}{})
 		data["10-contrail.conf"] = contrailCNIBuffer.String()
 	}
 	return data
 }
 
-/*
-func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration, controlNodesInformation *ControlClusterConfiguration, configNodesInformation *ConfigClusterConfiguration) string {
-*/
 func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConfiguration) string {
 	physicalInterface := vrouterPod.Annotations["physicalInterface"]
 	gateway := vrouterPod.Annotations["gateway"]
@@ -620,14 +601,7 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 	if vrouterConfig.Gateway != "" {
 		gateway = vrouterConfig.Gateway
 	}
-	/*
-	controlXMPPEndpointList := configtemplates.EndpointList(controlNodesInformation.ControlServerIPList, controlNodesInformation.XMPPPort)
-	controlXMPPEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(controlXMPPEndpointList, " ")
-	controlDNSEndpointList := configtemplates.EndpointList(controlNodesInformation.ControlServerIPList, controlNodesInformation.DNSPort)
-	controlDNSEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(controlDNSEndpointList, " ")
-	configCollectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
-	configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
-	*/
+
 	var vrouterConfigBuffer bytes.Buffer
 	configtemplates.VRouterConfig.Execute(&vrouterConfigBuffer, struct {
 		Hostname             string
@@ -644,11 +618,6 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 	}{
 		Hostname:             vrouterPod.Annotations["hostname"],
 		ListenAddress:        vrouterPod.Status.PodIP,
-		/*
-		ControlServerList:    controlXMPPEndpointListSpaceSeparated,
-		DNSServerList:        controlDNSEndpointListSpaceSeparated,
-		CollectorServerList:  configCollectorEndpointListSpaceSeparated,
-		*/
 		PrefixLength:         vrouterPod.Annotations["prefixLength"],
 		PhysicalInterface:    physicalInterface,
 		PhysicalInterfaceMac: vrouterPod.Annotations["physicalInterfaceMac"],
@@ -669,9 +638,9 @@ func createVrouterNodemanagerConfigForPod(vrouterPod *corev1.Pod, vrouterConfig 
 		CassandraJmxPort    string
 		CAFilePath          string
 	}{
-		ListenAddress:       vrouterPod.Status.PodIP,
-		Hostname:            vrouterPod.Annotations["hostname"],
-		CAFilePath:          certificates.SignerCAFilepath,
+		ListenAddress: vrouterPod.Status.PodIP,
+		Hostname:      vrouterPod.Annotations["hostname"],
+		CAFilePath:    certificates.SignerCAFilepath,
 	})
 
 	return vrouterNodemanagerConfigBuffer.String()
@@ -702,10 +671,10 @@ func createVrouterDeProvisionConfigForPod(vrouterPod *corev1.Pod, vrouterConfig 
 		APIServerPort string
 		Hostname      string
 	}{
-		User:          KeystoneAuthAdminUser,
-		Password:      KeystoneAuthAdminPassword,
-		Tenant:        KeystoneAuthAdminTenant,
-		Hostname:      vrouterPod.Annotations["hostname"],
+		User:     KeystoneAuthAdminUser,
+		Password: KeystoneAuthAdminPassword,
+		Tenant:   KeystoneAuthAdminTenant,
+		Hostname: vrouterPod.Annotations["hostname"],
 	})
 
 	return vrouterDeProvisionConfigBuffer.String()
@@ -717,11 +686,7 @@ func (c *Vrouter) GetNodeDSPod(nodeName string, daemonset *appsv1.DaemonSet, cln
 	// var pod corev1.Pod
 	_ = clnt.List(context.Background(), allPods)
 	for _, pod := range allPods.Items {
-		//
-		// Why it was written here?
-		//
-		// if(pod.ObjectMeta.OwnerReferences != nil && len(pod.ObjectMeta.OwnerReferences) > 0) {
-		// }
+
 		if pod.ObjectMeta.OwnerReferences != nil &&
 			len(pod.ObjectMeta.OwnerReferences) > 0 &&
 			pod.ObjectMeta.OwnerReferences[0].Name == daemonset.Name &&
@@ -881,7 +846,6 @@ func (c *Vrouter) GetParameters(hostParams *map[string]string, pod *corev1.Pod, 
 			pod.ObjectMeta.Namespace,
 			nil)
 		if err != nil {
-			//log.Info("INFO: Parameters not ready")
 			return err
 		}
 	}
@@ -891,10 +855,9 @@ func (c *Vrouter) GetParameters(hostParams *map[string]string, pod *corev1.Pod, 
 		pod.ObjectMeta.Namespace,
 		nil)
 	if err != nil {
-		//log.Info("INFO: Parameters not ready")
 		return err
 	}
-	// log.Info(fmt.Sprintf("INFO: Parameters ready %v",stdio))
+
 	scanner := bufio.NewScanner(strings.NewReader(stdio))
 	for scanner.Scan() {
 		keyValue := strings.SplitAfterN(scanner.Text(), "=", 2)
@@ -1099,7 +1062,7 @@ func (c *Vrouter) IsActiveOnControllers(clnt client.Client) (bool, error) {
 	if err := clnt.List(context.Background(), controllerNodes, labels); err != nil {
 		return false, err
 	}
-	
+
 	for _, node := range controllerNodes.Items {
 		agentStatus, ok := c.Status.Agents[node.Name]
 		if !ok || agentStatus.Status != "Ready" {
