@@ -557,23 +557,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			continue
 		}
 		
-		createCertSymlinkCmd := []string{"/usr/bin/bash",
-				"-c",
-				"[[ -f /etc/certificates/server-"+ pod.Status.PodIP +".crt ]] && [[ ! -f /server.crt ]] && ln -s /etc/certificates/server-"+ pod.Status.PodIP +".crt /server.crt"}
-		v1alpha1.ExecToPodThroughAPI(createCertSymlinkCmd,
-				"vrouteragent",
-				pod.ObjectMeta.Name,
-				pod.ObjectMeta.Namespace,
-				nil); 
-	
-		createCertSymlinkCmd = []string{"/usr/bin/bash",
-				"-c",
-				"[[ -f /etc/certificates/server-key-"+ pod.Status.PodIP +".pem ]] && [[ ! -f /server-key.pem ]] && ln -s /etc/certificates/server-key-"+ pod.Status.PodIP +".pem /server-key.pem"}
-		v1alpha1.ExecToPodThroughAPI(createCertSymlinkCmd,
-				"vrouteragent",
-				pod.ObjectMeta.Name,
-				pod.ObjectMeta.Namespace,
-				nil);
+		vrouterPod := &v1alpha1.VrouterPod{pod}
+		vrouterPod.CreateSymlinkToCertificates()
 
 		if _, ok := instance.Status.Agents[node.Name]; !ok {
 			agentStatus := &v1alpha1.AgentStatus{
@@ -586,18 +571,18 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 		}
 
-		agentContainerStatus, err := instance.GetAgentContainerStatus(pod, r.Client)
+		agentContainerStatus, err := vrouterPod.GetAgentContainerStatus()
 		if err != nil || agentContainerStatus.State.Running == nil {
 			resetStatus(instance, node.Name)
 			continue
 		}
 
-		if pod.Status.Phase != "Running" || !instance.IsAgentRunning(pod) {
+		if pod.Status.Phase != "Running" || !vrouterPod.IsAgentRunning() {
 			resetStatus(instance, node.Name)
 		}
 
 		hostVars := make(map[string]string)
-		if err := instance.GetParameters(&hostVars, pod, false); err != nil {
+		if err := vrouterPod.GetAgentParameters(&hostVars); err != nil {
 			reconcileAgain = true
 			continue
 		}
@@ -610,7 +595,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		if instance.Status.Agents[node.Name].Status == "Starting" {
-			if instance.IsAgentRunning(pod) {
+			if vrouterPod.IsAgentRunning() {
 				instance.Status.Agents[node.Name].Status = "Ready"
 			} else {
 				reconcileAgain = true
