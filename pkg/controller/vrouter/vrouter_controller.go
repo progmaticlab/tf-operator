@@ -470,57 +470,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 			}
 		}
-		if container.Name == "vroutercni" {
-			// vroutercni container command is based on the entrypoint.sh script in the contrail-kubernetes-cni-init container
-			command := []string{"sh", "-c",
-				"mkdir -p /host/etc_cni/net.d && " +
-					"mkdir -p /var/lib/contrail/ports/vm && " +
-					"cp -f /usr/bin/contrail-k8s-cni /host/opt_cni_bin && " +
-					"chmod 0755 /host/opt_cni_bin/contrail-k8s-cni && " +
-					"cp -f /etc/contrailconfigmaps/10-contrail.conf /host/etc_cni/net.d/10-contrail.conf && " +
-					"tar -C /host/opt_cni_bin -xzf /opt/cni-v0.3.0.tgz"}
-			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer == nil {
-				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
-			}
-			if instanceContainer.Command == nil {
-				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = command
-			} else {
-				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command
-			}
-			volumeMountList := []corev1.VolumeMount{}
-			if len((&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts) > 0 {
-				volumeMountList = (&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts
-			}
-			volumeMount := corev1.VolumeMount{
-				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			//
-			// Is it a useful thing?
-			//
-			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-agent-volume",
-				MountPath: "/etc/contrail",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			//
-			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-secret-certificates",
-				MountPath: "/etc/certificates",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList
-			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
-			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).EnvFrom = []corev1.EnvFromSource{{
-				ConfigMapRef: &corev1.ConfigMapEnvSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
-					},
-				},
-			}}
-		}
+
 		if container.Name == "multusconfig" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
