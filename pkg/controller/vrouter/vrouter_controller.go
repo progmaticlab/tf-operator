@@ -354,7 +354,10 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",`mkdir -p /var/log/contrail/vrouter-agent;
-				source /etc/contrail/params.env;
+				ln -sf /etc/agentconfigmaps/contrail-vrouter-agent.conf.${POD_IP} /etc/contrail/contrail-vrouter-agent.conf;
+				ln -sf /etc/agentconfigmaps/contrail-lbaas.auth.conf.${POD_IP} /etc/contrail/contrail-lbaas.auth.conf;
+				ln -sf /etc/agentconfigmaps/vnc_api_lib.ini.${POD_IP} /etc/contrail/vnc_api_lib.ini;
+				source /etc/agentconfigmaps/params.env;
 				source /actions.sh;
 				prepare_agent;
 				start_agent;
@@ -384,7 +387,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
 				Name:      request.Name + "-agent-volume",
-				MountPath: "/etc/contrail",
+				MountPath: v1alpha1.VrouterAgentConfigMountPath,
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
@@ -588,7 +591,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		if instance.Status.Agents[node.Name].Status != "Updating" {
-			if err := instance.CreateVrouterAgentConfig(pod, instance.ObjectMeta, &hostVars, r.Client); err != nil {
+			if err := instance.UpdateAgentConfigMapForPod(vrouterPod, &hostVars, r.Client); err != nil {
 				reconcileAgain = true
 				continue
 			}
