@@ -923,6 +923,50 @@ func removeQuotes(str string) string {
 	return str
 }
 
+// UpdateAgentConfigMapForPod recalculates all files `/etc/contrailconfigmaps/config_name-{ip_addr}.conf`
+func (vrouter *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
+	hostVars *map[string]string,
+	client client.Client,
+) error {
+	configMapName := vrouter.ObjectMeta.Name + "-vrouter-comfigmap"
+	vrouterPodIP := vrouterPod.Pod.Status.PodIP
+
+	configMap := &corev1.ConfigMap{}
+	err := client.Get(context.Background(),
+		types.NamespacedName{Name: configMapName, Namespace: vrouter.ObjectMeta.Namespace},
+		configMap,
+	)
+	if err != nil {
+		return err
+	}
+
+	newMap := make(map[string]string)
+	for key, val := range *hostVars {
+		newMap[key] = val
+	}
+	newMap["Hostname"] = vrouterPod.Pod.Annotations["hostname"]
+
+	data := configMap.Data
+	var vrouterAgentConfigBuffer bytes.Buffer
+	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, newMap)
+	data["contrail-vrouter-agent-"+vrouterPodIP+".conf"] = vrouterAgentConfigBuffer.String()
+	var vrouterLbaasAuthConfigBuffer bytes.Buffer
+	configtemplates.VRouterLbaasAuthConfig.Execute(&vrouterLbaasAuthConfigBuffer, *hostVars)
+	data["contrail-lbaas.auth-"+vrouterPodIP+".conf"] = vrouterLbaasAuthConfigBuffer.String()
+	var vrouterVncApiLibIniBuffer bytes.Buffer
+	configtemplates.VRouterVncApiLibIni.Execute(&vrouterVncApiLibIniBuffer, *hostVars)
+	data["vnc_api_lib-"+vrouterPodIP+".ini"] = vrouterVncApiLibIniBuffer.String()
+
+	// Save config data
+	configMap.Data = data
+	err = client.Update(context.Background(), configMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Vrouter) CreateVrouterAgentConfig(pod *corev1.Pod, objMeta metav1.ObjectMeta, hostVars *map[string]string, client client.Client) error {
 	instanceConfigMapName := objMeta.Name + "-vrouter-agent-config"
 	// Get current vrouter configmap
@@ -986,6 +1030,11 @@ func (c *Vrouter) UpdateAgent(nodeName string, pod *corev1.Pod, clnt client.Clie
 
 	hostVars := make(map[string]string)
 	if err := vrouterPod.GetAgentParameters(&hostVars); err != nil {
+		*reconsFlag = true
+		return err
+	}
+
+	if err := c.UpdateAgentConfigMapForPod(vrouterPod, &hostVars, clnt); err != nil {
 		*reconsFlag = true
 		return err
 	}
