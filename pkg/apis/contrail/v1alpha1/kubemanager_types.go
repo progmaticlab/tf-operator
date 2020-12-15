@@ -187,6 +187,11 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 	}
 
 	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig = %v",kubemanagerConfig))
+	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig.KubernetesAPISSLPort = %v",kubemanagerConfig.KubernetesAPISSLPort))
+	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig.KubernetesAPIServer = %v",kubemanagerConfig.KubernetesAPIServer))
+	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig.KubernetesClusterName = %v",kubemanagerConfig.KubernetesClusterName))
+	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig.PodSubnets = %v",kubemanagerConfig.PodSubnets))
+	log.Info(fmt.Sprintf("DDDDD kubemanagerConfig.ServiceSubnets = %v",kubemanagerConfig.ServiceSubnets))
 
 	sort.SliceStable(podList.Items, func(i, j int) bool { return podList.Items[i].Status.PodIP < podList.Items[j].Status.PodIP })
 	var data = map[string]string{}
