@@ -390,7 +390,7 @@ func (c *Vrouter) AddVolumesToIntendedDS(ds *appsv1.DaemonSet, volumeConfigMapMa
 	ds.Spec.Template.Spec.Volumes = volumeList
 }
 
-// CreateDS creates the STS.
+// CreateDS creates the daemonset.
 func (c *Vrouter) CreateDS(ds *appsv1.DaemonSet,
 	commonConfiguration *PodConfiguration,
 	instanceType string,
@@ -411,7 +411,7 @@ func (c *Vrouter) CreateDS(ds *appsv1.DaemonSet,
 	return nil
 }
 
-// UpdateDS updates the STS.
+// UpdateDS updates the daemonset.
 func (c *Vrouter) UpdateDS(ds *appsv1.DaemonSet,
 	commonConfiguration *PodConfiguration,
 	instanceType string,
@@ -480,20 +480,8 @@ func (c *Vrouter) PodsCertSubjects(podList *corev1.PodList) []certificates.Certi
 // InstanceConfiguration creates vRouter configMaps with rendered values
 func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
-	client client.Client) error {
-/*
-	instanceConfigMapName := request.Name + "-" + "vrouter" + "-configmap"
-	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: instanceConfigMapName, Namespace: request.Namespace}, configMapInstanceDynamicConfig); err != nil {
-		return err
-	}
-
-	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList)
-	if err := client.Update(context.TODO(), configMapInstanceDynamicConfig); err != nil {
-		return err
-	}
-*/
-
+	client client.Client,
+) error {
 	envVariablesConfigMapName := request.Name + "-" + "vrouter" + "-configmap-1"
 	envVariablesConfigMap := &corev1.ConfigMap{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: envVariablesConfigMapName, Namespace: request.Namespace}, envVariablesConfigMap); err != nil {
@@ -502,6 +490,7 @@ func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	envVariablesConfigMap.Data = c.getVrouterEnvironmentData()
 	return client.Update(context.TODO(), envVariablesConfigMap)
 }
+
 
 // SetPodsToReady sets Kubemanager PODs to ready.
 func (c *Vrouter) SetPodsToReady(podIPList *corev1.PodList, client client.Client) error {
@@ -815,13 +804,13 @@ func (c *Vrouter) SaveClusterStatus(nodeName string, clnt client.Client) error {
 }
 
 
-// VrouterPod
+// VrouterPod is a pod, created by vrouter.
 type VrouterPod struct {
 	Pod *corev1.Pod
 }
 
 
-// GetAgentContainerStatus
+// GetAgentContainerStatus gets the vrouteragent container status.
 func (vrouterPod *VrouterPod) GetAgentContainerStatus() (*corev1.ContainerStatus, error) {
 	containerStatuses := vrouterPod.Pod.Status.ContainerStatuses
 	// Iterate over all pod's containers
@@ -906,45 +895,6 @@ func (vrouterPod *VrouterPod) ReloadAgentConfigs() error {
 	return err
 }
 
-// CreateSymlinkToCertificates creates a static named symlink to certificate files
-func (vrouterPod *VrouterPod) CreateSymlinkToCertificates() error {
-	pod := vrouterPod.Pod
-	command := []string{"/usr/bin/bash",
-	"-c",
-	"[[ -f /etc/certificates/server-"+ pod.Status.PodIP +".crt ]] && [[ ! -f /server.crt ]] && ln -s /etc/certificates/server-"+ pod.Status.PodIP +".crt /server.crt"}
-	if _, _, err := vrouterPod.ExecToAgentContainer(command, nil); err != nil {
-		return err
-	}
-
-	command = []string{"/usr/bin/bash",
-	"-c",
-	"[[ -f /etc/certificates/server-key-"+ pod.Status.PodIP +".pem ]] && [[ ! -f /server-key.pem ]] && ln -s /etc/certificates/server-key-"+ pod.Status.PodIP +".pem /server-key.pem"}
-	_, _, err := vrouterPod.ExecToAgentContainer(command, nil)
-	return err
-}
-
-
-func (vrouterPod *VrouterPod) CreateSymlinkToAgentConfigs() error {
-	podIP := vrouterPod.Pod.Status.PodIP
-
-	filePath := VrouterAgentConfigMountPath + "/contrail-vrouter-agent.conf." + podIP
-	command := "[[ -f " + filePath + " ]] && ln -sf " + filePath + " /etc/contrail/contrail-vrouter-agent.conf"
-	if _, _, err := vrouterPod.ExecToAgentContainer([]string{"/usr/bin/bash", "-c", command}, nil); err != nil {
-		return err
-	}
-
-	filePath = VrouterAgentConfigMountPath + "/contrail-lbaas.auth.conf." + podIP
-	command = "[[ -f " + filePath + " ]] && ln -sf " + filePath + " /etc/contrail/contrail-lbaas.auth.conf"
-	if _, _, err := vrouterPod.ExecToAgentContainer([]string{"/usr/bin/bash", "-c", command}, nil); err != nil {
-		return err
-	}
-
-	filePath = VrouterAgentConfigMountPath + "/vnc_api_lib.ini." + podIP
-	command = "[[ -f " + filePath + " ]] && ln -sf " + filePath + " /etc/contrail/vnc_api_lib.ini"
-	_, _, err := vrouterPod.ExecToAgentContainer([]string{"/usr/bin/bash", "-c", command}, nil)
-	return err
-}
-
 
 func removeQuotes(str string) string {
 	if len(str) > 0 && str[0] == '"' {
@@ -996,46 +946,6 @@ func (c *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
 }
 
 
-/*
-func (c *Vrouter) CreateVrouterAgentConfig(pod *corev1.Pod, objMeta metav1.ObjectMeta, hostVars *map[string]string, client client.Client) error {
-	instanceConfigMapName := objMeta.Name + "-vrouter-agent-config"
-	// Get current vrouter configmap
-	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
-	err := client.Get(context.Background(),
-		types.NamespacedName{Name: instanceConfigMapName, Namespace: objMeta.Namespace},
-		configMapInstanceDynamicConfig)
-	if err != nil {
-		return err
-	}
-
-	newMap := make(map[string]string)
-	for key, val := range *hostVars {
-		newMap[key] = val
-	}
-	newMap["Hostname"] = pod.Annotations["hostname"]
-
-	data := configMapInstanceDynamicConfig.Data
-	var vrouterAgentConfigBuffer bytes.Buffer
-	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, newMap)
-	data["contrail-vrouter-agent.conf"] = vrouterAgentConfigBuffer.String()
-	var vrouterLbaasAuthConfigBuffer bytes.Buffer
-	configtemplates.VRouterLbaasAuthConfig.Execute(&vrouterLbaasAuthConfigBuffer, *hostVars)
-	data["contrail-lbaas.auth.conf"] = vrouterLbaasAuthConfigBuffer.String()
-	var vrouterVncApiLibIniBuffer bytes.Buffer
-	configtemplates.VRouterVncApiLibIni.Execute(&vrouterVncApiLibIniBuffer, *hostVars)
-	data["vnc_api_lib.ini"] = vrouterVncApiLibIniBuffer.String()
-
-	// Save config data
-	configMapInstanceDynamicConfig.Data = data
-	err = client.Update(context.Background(), configMapInstanceDynamicConfig)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-*/
-
 // IsClusterChanged
 func (c *Vrouter) IsClusterChanged(nodeName string, clnt client.Client) bool {
 	if c.Status.Agents[nodeName].ControlNodes != c.GetControlNodes(clnt) ||
@@ -1046,8 +956,7 @@ func (c *Vrouter) IsClusterChanged(nodeName string, clnt client.Client) bool {
 }
 
 // UpdateAgent
-func (c *Vrouter) UpdateAgent(nodeName string, pod *corev1.Pod, clnt client.Client, reconsFlag *bool) error {
-	vrouterPod := &VrouterPod{pod}
+func (c *Vrouter) UpdateAgent(nodeName string, vrouterPod *VrouterPod, clnt client.Client, reconsFlag *bool) error {
 	eq, err := c.isParamsEnvEqual(clnt, vrouterPod)
 	if err != nil || !eq {
 		*reconsFlag = true
@@ -1075,19 +984,6 @@ func (c *Vrouter) UpdateAgent(nodeName string, pod *corev1.Pod, clnt client.Clie
 		*reconsFlag = true
 		return err
 	}
-
-/*
-	if err := c.CreateVrouterAgentConfig(pod, c.ObjectMeta, &hostVars, clnt); err != nil {
-		*reconsFlag = true
-		return err
-	}
-
-	eq, err = c.IsAgentConfigsAvailable(clnt, pod)
-	if err != nil || !eq {
-		*reconsFlag = true
-		return err
-	}
-*/
 
 	if err := c.SaveClusterStatus(nodeName, clnt); err != nil {
 		*reconsFlag = true
@@ -1141,54 +1037,6 @@ func (vrouterPod *VrouterPod) IsAgentConfigAvaliable(vrouter *Vrouter, clnt clie
 	return true, nil
 }
 
-/*
-// IsAgentConfigsAvailable
-// incorrect
-func (c *Vrouter) IsAgentConfigsAvailable(clnt client.Client, pod *corev1.Pod) (bool, error) {
-	instanceConfigMapName := c.ObjectMeta.Name + "-vrouter-agent-config"
-	// Get current vrouter configmap
-	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
-	err := clnt.Get(context.Background(),
-		types.NamespacedName{Name: instanceConfigMapName, Namespace: c.ObjectMeta.Namespace},
-		configMapInstanceDynamicConfig)
-	if err != nil {
-		return false, err
-	}
-	data := configMapInstanceDynamicConfig.Data
-	configsToCheck := []string{
-		"contrail-vrouter-agent.conf",
-		"contrail-lbaas.auth.conf",
-		"vnc_api_lib.ini",
-	}
-
-	for _, confName := range configsToCheck {
-		vrouterPod := &VrouterPod{pod}
-		eq, err := isConfigEq(&data, confName, vrouterPod)
-		if err != nil {
-			return false, err
-		}
-		if !eq {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func isConfigEq(data *map[string]string, confName string, vrouterPod *VrouterPod) (bool, error) {
-	path := VrouterAgentConfigMountPath + "/" + confName
-	
-	shakey1, err := vrouterPod.GetEncryptedFileFromAgentContainer(path)
-	if err != nil {
-		return false, err
-	}
-
-	shakey2 := EncryptString((*data)[confName])
-	if shakey1 == shakey2 {
-		return true, nil
-	}
-	return false, nil
-}
-*/
 
 // isParamsEnvEqual
 func (c *Vrouter) isParamsEnvEqual(clnt client.Client, vrouterPod *VrouterPod) (bool, error) {

@@ -333,13 +333,11 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				Name:     clusterRoleName,
 			},
 		}
-		//
-		// Is it a useful thing?
-		//
+
 		if err = controllerutil.SetControllerReference(instance, clusterRoleBinding, r.Scheme); err != nil {
 			return reconcile.Result{}, err
 		}
-		//
+
 		if err = r.Client.Create(context.TODO(), clusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -354,6 +352,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",`mkdir -p /var/log/contrail/vrouter-agent;
+				ln -sf /etc/certificates/server-${POD_IP}.crt /server.crt;
+				ln -sf /etc/certificates/server-key-${POD_IP}.pem /server-key.pem;
 				ln -sf /etc/agentconfigmaps/contrail-vrouter-agent.conf.${POD_IP} /etc/contrail/contrail-vrouter-agent.conf;
 				ln -sf /etc/agentconfigmaps/contrail-lbaas.auth.conf.${POD_IP} /etc/contrail/contrail-lbaas.auth.conf;
 				ln -sf /etc/agentconfigmaps/vnc_api_lib.ini.${POD_IP} /etc/contrail/vnc_api_lib.ini;
@@ -488,9 +488,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				MountPath: "/etc/contrailconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
-			//
-			// What about mounting /etc/contrail?
-			//
+
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 		}
@@ -561,7 +559,6 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 		
 		vrouterPod := &v1alpha1.VrouterPod{pod}
-		vrouterPod.CreateSymlinkToCertificates()
 
 		if _, ok := instance.Status.Agents[node.Name]; !ok {
 			agentStatus := &v1alpha1.AgentStatus{
@@ -615,7 +612,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		if instance.Status.Agents[node.Name].Status == "Updating" {
-			instance.UpdateAgent(node.Name, pod, r.Client, &reconcileAgain)
+			instance.UpdateAgent(node.Name, vrouterPod, r.Client, &reconcileAgain)
 		}
 	}
 
