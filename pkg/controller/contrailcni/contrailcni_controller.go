@@ -26,19 +26,19 @@ var log = logf.Log.WithName("controller_contrailcni")
 
 // Add creates a new ContrailCNI Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager, clusterInfo v1alpha1.CNIClusterInfo) error {
-	return add(mgr, newReconciler(mgr, clusterInfo))
+func Add(mgr manager.Manager) error {
+	return add(mgr, newReconciler(mgr))
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, clusterInfo v1alpha1.CNIClusterInfo) reconcile.Reconciler {
+func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	kubernetes := k8s.New(mgr.GetClient(), mgr.GetScheme())
-	return NewReconciler(mgr.GetClient(), mgr.GetScheme(), kubernetes, clusterInfo)
+	return NewReconciler(mgr.GetClient(), mgr.GetScheme(), kubernetes)
 }
 
 // NewReconciler returns a new reconcile.Reconciler
-func NewReconciler(client client.Client, scheme *runtime.Scheme, kubernetes *k8s.Kubernetes, clusterInfo v1alpha1.CNIClusterInfo) reconcile.Reconciler {
-	return &ReconcileContrailCNI{Client: client, Scheme: scheme, kubernetes: kubernetes, ClusterInfo: clusterInfo}
+func NewReconciler(client client.Client, scheme *runtime.Scheme, kubernetes *k8s.Kubernetes) reconcile.Reconciler {
+	return &ReconcileContrailCNI{Client: client, Scheme: scheme, kubernetes: kubernetes}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -85,7 +85,6 @@ type ReconcileContrailCNI struct {
 	Client      client.Client
 	Scheme      *runtime.Scheme
 	kubernetes  *k8s.Kubernetes
-	ClusterInfo v1alpha1.CNIClusterInfo
 }
 
 // Reconcile reads that state of the cluster for a ContrailCNI object and makes changes based on the state read
@@ -127,10 +126,7 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	cniDirs := CniDirs{
-		BinariesDirectory: r.ClusterInfo.CNIBinariesDirectory(),
-		DeploymentType:    r.ClusterInfo.DeploymentType(),
-	}
+	cniDirs := instance.Spec.ServiceConfiguration.BinariesDirectory
 
 	var nodesListOptions client.MatchingLabels = instance.Spec.CommonConfiguration.NodeSelector
 	var nodes corev1.NodeList

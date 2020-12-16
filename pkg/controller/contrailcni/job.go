@@ -7,7 +7,7 @@ import (
 )
 
 // GetJob is a method that returns k8s Job object filled with containers configuration contrail CNI plugin
-func GetJob(requestName, instanceType string, replicas *int32) *batch.Job {
+func GetJob(cniDirs string,requestName, instanceType string, replicas *int32) *batch.Job {
 	var trueVal = true
 	var TTLseconds int32 = 3
 
@@ -95,7 +95,7 @@ func GetJob(requestName, instanceType string, replicas *int32) *batch.Job {
 			Name: "cni-bin",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: cniDir.BinariesDirectory,
+					Path: cniDirs,
 				},
 			},
 		},
