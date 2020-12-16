@@ -97,11 +97,9 @@ func main() {
 	}
 
 	var kubemanagerClusterInfo v1alpha1.KubemanagerClusterInfo
-	var cniClusterInfo v1alpha1.CNIClusterInfo
 
 	config := k8s.ClusterConfig{Client: clientset.CoreV1()}
 	kubemanagerClusterInfo = config
-	cniClusterInfo = config
 
 
 	// Setup all Controllers.
@@ -115,7 +113,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := contrailcni.Add(mgr, cniClusterInfo); err != nil {
+	if err := contrailcni.Add(mgr); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
