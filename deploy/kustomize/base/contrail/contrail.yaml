@@ -261,6 +261,7 @@ spec:
           nodeSelector:
             node-role.opencontrail.org: vrouter
         serviceConfiguration:
+          useKubeadmConfig: true
           controlInstance: control1
           containers:
             - name: vroutercni
