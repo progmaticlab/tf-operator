@@ -2,7 +2,7 @@
 
 # this script install golang and contrail operator and add go bit path to your PATH
 
-sudo yum install -y wget
+sudo yum install -y wget gcc
 # golang setup
 wget https://dl.google.com/go/go1.14.2.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.14.2.linux-amd64.tar.gz
