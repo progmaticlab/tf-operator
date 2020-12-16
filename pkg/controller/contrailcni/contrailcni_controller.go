@@ -122,8 +122,9 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	clusterName := instance.Spec.ServiceConfiguration.KubernetesClusterName
-	if instance.Spec.ServiceConfiguration.UseKubeadmConfig {
-		clusterName, err := k8s.KubernetesClusterName()
+	if *instance.Spec.ServiceConfiguration.UseKubeadmConfig {
+		config := k8s.ClusterConfig{Client: clientset.CoreV1()}
+		clusterName, err := config.KubernetesClusterName()
 		if err != nil {
 			return err
 		}
