@@ -128,7 +128,7 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 			return reconcile.Result{},err
 		}
 		config := k8s.ClusterConfig{Client: clientset.CoreV1()}
-		clusterName, err := config.KubernetesClusterName()
+		clusterName, err = config.KubernetesClusterName()
 		if err != nil {
 			return reconcile.Result{},err
 		}
