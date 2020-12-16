@@ -112,16 +112,6 @@ func (c ClusterConfig) ServiceSubnets() (string, error) {
 	return serviceSubnets, nil
 }
 
-// CNIBinariesDirectory returns directory containing CNI binaries specific for k8s cluster
-func (c ClusterConfig) CNIBinariesDirectory() string {
-	return "/opt/cni/bin"
-}
-
-// DeploymentType returns deployment type
-func (c ClusterConfig) DeploymentType() string {
-	return "k8s"
-}
-
 type configMap struct {
 	ControlPlaneEndpoint string     `yaml:"controlPlaneEndpoint"`
 	ClusterName          string     `yaml:"clusterName"`

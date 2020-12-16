@@ -6,14 +6,8 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CniDirs is a struct with data deciding which directories to cover with cni configuration
-type CniDirs struct {
-	BinariesDirectory string
-	DeploymentType    string
-}
-
 // GetJob is a method that returns k8s Job object filled with containers configuration contrail CNI plugin
-func GetJob(cniDir CniDirs, requestName, instanceType string, replicas *int32) *batch.Job {
+func GetJob(requestName, instanceType string, replicas *int32) *batch.Job {
 	var trueVal = true
 	var TTLseconds int32 = 3
 
@@ -62,13 +56,6 @@ func GetJob(cniDir CniDirs, requestName, instanceType string, replicas *int32) *
 			},
 		},
 		ImagePullPolicy: "Always",
-	}
-
-	if cniDir.DeploymentType == "openshift" {
-		cniContainer.Command[len(cniContainer.Command)-1] += " && mkdir -p /etc/kubernetes/cni/net.d && " +
-			"cp -f /etc/contrailconfigmaps/10-contrail.conf /etc/kubernetes/cni/net.d/10-contrail.conf && " +
-			"mkdir -p /var/run/multus/cni/net.d && " +
-			"cp -f /etc/contrailconfigmaps/10-contrail.conf /var/run/multus/cni/net.d/80-openshift-network.conf"
 	}
 
 	var podVolumes = []core.Volume{

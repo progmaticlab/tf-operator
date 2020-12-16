@@ -41,6 +41,7 @@ type ContrailCNIConfiguration struct {
 	ControlInstance string       `json:"controlInstance,omitempty"`
 	CniMetaPlugin   string       `json:"cniMetaPlugin,omitempty"`
 	VrouterIP       string       `json:"vrouterIP,omitempty"`
+	BinariesDirectory string     `json:"binariesDirectory,omitempty"`
 	VrouterPort     *int32       `json:"vrouterPort,omitempty"`
 	PollTimeout     *int32       `json:"pollTimeout,omitempty"`
 	PollRetries     *int32       `json:"pollRetries,omitempty"`
@@ -157,10 +158,4 @@ func (c *ContrailCNI) SetInstanceActive(client client.Client, activeStatus *bool
 
 	*activeStatus = active
 	return client.Status().Update(context.TODO(), c)
-}
-
-type CNIClusterInfo interface {
-	KubernetesClusterName() (string, error)
-	CNIBinariesDirectory() string
-	DeploymentType() string
 }
