@@ -156,6 +156,9 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 		if instanceContainer != nil {
 			(&job.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		if instanceContainer.Command != nil {
+			(&job.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+		}
 	}
 
 	if err := instance.PrepareJob(job, instance, request, r.Scheme, r.Client); err != nil {
