@@ -123,7 +123,7 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	contrailCNIConfigName := request.Name + "-" + instanceType + "-configuration"
-	if err := r.configMap(contrailCNIConfigName, instanceType, instance).ensureContrailCNIConfigExists(r.ClusterInfo); err != nil {
+	if err := r.configMap(contrailCNIConfigName, instanceType, instance).ensureContrailCNIConfigExists(instance.Spec.ServiceConfiguration.KubernetesClusterName); err != nil {
 		return reconcile.Result{}, err
 	}
 

@@ -18,13 +18,8 @@ func (r *ReconcileContrailCNI) configMap(
 	}
 }
 
-func (c *configMaps) ensureContrailCNIConfigExists(clusterInfo contrail.CNIClusterInfo) error {
+func (c *configMaps) ensureContrailCNIConfigExists(clusterName string) error {
 	ccni := &contrailCNIConf{}
-
-	clusterName, err := clusterInfo.KubernetesClusterName()
-	if err != nil {
-		return err
-	}
 	ccni.KubernetesClusterName = clusterName
 	ccni.CniMetaPlugin = configStringWithDefault(c.ccniSpec.ServiceConfiguration.CniMetaPlugin, contrail.DefaultCniMetaPlugin)
 	ccni.VrouterIP = configStringWithDefault(c.ccniSpec.ServiceConfiguration.VrouterIP, contrail.DefaultVrouterIP)
