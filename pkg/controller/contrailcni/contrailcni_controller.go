@@ -121,12 +121,23 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 		}
 	}
 
+	clusterName := instance.Spec.ServiceConfiguration.KubernetesClusterName
+	if instance.Spec.ServiceConfiguration.UseKubeadmConfig {
+		clusterName, err := k8s.KubernetesClusterName()
+		if err != nil {
+			return err
+		}
+	}
+
 	contrailCNIConfigName := request.Name + "-" + instanceType + "-configuration"
-	if err := r.configMap(contrailCNIConfigName, instanceType, instance).ensureContrailCNIConfigExists(instance.Spec.ServiceConfiguration.KubernetesClusterName); err != nil {
+	if err := r.configMap(contrailCNIConfigName, instanceType, instance).ensureContrailCNIConfigExists(clusterName); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	cniDirs := instance.Spec.ServiceConfiguration.BinariesDirectory
+	if cniDirs == "" {
+		cniDirs = "/opt/cni/bin"
+	}
 
 	var nodesListOptions client.MatchingLabels = instance.Spec.CommonConfiguration.NodeSelector
 	var nodes corev1.NodeList
