@@ -245,6 +245,7 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          useKubeadmConfig: true
           controlInstance: control1
           containers:
             - name: vroutercni
