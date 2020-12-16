@@ -42,6 +42,8 @@ type ContrailCNIConfiguration struct {
 	CniMetaPlugin   string       `json:"cniMetaPlugin,omitempty"`
 	VrouterIP       string       `json:"vrouterIP,omitempty"`
 	BinariesDirectory string     `json:"binariesDirectory,omitempty"`
+	KubernetesClusterName string       `json:"kubernetesClusterName,omitempty"`
+	UseKubeadmConfig      *bool        `json:"useKubeadmConfig,omitempty"`
 	VrouterPort     *int32       `json:"vrouterPort,omitempty"`
 	PollTimeout     *int32       `json:"pollTimeout,omitempty"`
 	PollRetries     *int32       `json:"pollRetries,omitempty"`
