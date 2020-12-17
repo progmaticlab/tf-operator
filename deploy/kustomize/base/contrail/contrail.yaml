@@ -211,24 +211,6 @@ spec:
           contrail_cluster: cluster1
         name: cnimasternodes
       spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
-        serviceConfiguration:
-          controlInstance: control1
-          containers:
-            - name: vroutercni
-              image: contrail-kubernetes-cni-init:latest
-            - name: multusconfig
-              image: busybox:1.31
-    - metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: cniworkernodes
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.opencontrail.org: vrouter
         serviceConfiguration:
           controlInstance: control1
           containers:
