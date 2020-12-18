@@ -522,6 +522,8 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 
 	var kubemanagerServiceStatus []*v1alpha1.ServiceStatus
 	for _, kubemanagerService := range manager.Spec.Services.Kubemanagers {
+		kmbConfig,_ = yaml.Marshal(kubemanagerService.Spec.ServiceConfiguration.KubemanagerConfiguration)
+		log.Info(fmt.Sprintf("MMMM KubemanagerConfiguration %v",kmbConfig))
 		if !kubemanagerDependenciesReady(kubemanagerService.Spec.ServiceConfiguration.CassandraInstance, kubemanagerService.Spec.ServiceConfiguration.ZookeeperInstance, manager.ObjectMeta, r.client) {
 			continue
 		}
