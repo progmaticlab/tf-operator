@@ -526,10 +526,16 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 			continue
 		}
 		kubemanager := &v1alpha1.Kubemanager{}
+		strSpec,_ := yaml.Marshal(kubemanager)
+		log.Info(fmt.Sprintf("MMMMM kubemanager config STEP1 %v ",string(strSpec)))
 		kubemanager.ObjectMeta = kubemanagerService.ObjectMeta
 		kubemanager.ObjectMeta.Namespace = manager.Namespace
+		strSpec,_ = yaml.Marshal(kubemanager)
+		log.Info(fmt.Sprintf("MMMMM kubemanager config STEP2 %v ",string(strSpec)))
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, kubemanager, func() error {
 			kubemanager.Spec.ServiceConfiguration.KubemanagerConfiguration = kubemanagerService.Spec.ServiceConfiguration.KubemanagerConfiguration
+			strSpec,_ = yaml.Marshal(kubemanager)
+			log.Info(fmt.Sprintf("MMMMM kubemanager config STEP3 %v ",string(strSpec)))
 			if err := fillKubemanagerConfiguration(kubemanager, kubemanagerService.Spec.ServiceConfiguration.CassandraInstance, kubemanagerService.Spec.ServiceConfiguration.ZookeeperInstance, manager.ObjectMeta, r.client); err != nil {
 				return err
 			}
@@ -816,8 +822,6 @@ func kubemanagerDependenciesReady(cassandraName, zookeeperName string, managerMe
 }
 
 func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraName, zookeeperName string, managerMeta v1.ObjectMeta, client client.Client) error {
-        strSpec,_ := yaml.Marshal(kubemanager.Spec.ServiceConfiguration) 
-	log.Info(fmt.Sprintf("MMMMM kubemanager config BEFORE %v ",string(strSpec)))
         cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
 	if err != nil {
 		return err
@@ -838,10 +842,7 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 		return err
 	}
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
-	
-        strSpec,_ = yaml.Marshal(kubemanager.Spec.ServiceConfiguration)
-        log.Info(fmt.Sprintf("MMMMM kubemanager config AFTER %v ",string(strSpec)))
-        return nil
+    return nil
 }
 
 func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {
