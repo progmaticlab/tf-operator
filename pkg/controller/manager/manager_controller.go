@@ -2,7 +2,8 @@ package manager
 
 import (
 	"context"
-
+        "fmt"
+        "github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -815,7 +816,9 @@ func kubemanagerDependenciesReady(cassandraName, zookeeperName string, managerMe
 }
 
 func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraName, zookeeperName string, managerMeta v1.ObjectMeta, client client.Client) error {
-	cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
+        strSpec,_ := yaml.Marshal(kubemanager.Spec.ServiceConfiguration) 
+	log.Info(fmt.Sprintf("MMMMM kubemanager config BEFORE %v ",strSpec))
+        cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
 	if err != nil {
 		return err
 	}
@@ -835,7 +838,10 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 		return err
 	}
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
-	return nil
+	
+        strSpec,_ = yaml.Marshal(kubemanager.Spec.ServiceConfiguration)
+        log.Info(fmt.Sprintf("MMMMM kubemanager config AFTER %v ",strSpec))
+        return nil
 }
 
 func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {
