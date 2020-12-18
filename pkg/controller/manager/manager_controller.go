@@ -817,7 +817,7 @@ func kubemanagerDependenciesReady(cassandraName, zookeeperName string, managerMe
 
 func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraName, zookeeperName string, managerMeta v1.ObjectMeta, client client.Client) error {
         strSpec,_ := yaml.Marshal(kubemanager.Spec.ServiceConfiguration) 
-	log.Info(fmt.Sprintf("MMMMM kubemanager config BEFORE %v ",strSpec))
+	log.Info(fmt.Sprintf("MMMMM kubemanager config BEFORE %v ",string(strSpec)))
         cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
 	if err != nil {
 		return err
@@ -840,7 +840,7 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
 	
         strSpec,_ = yaml.Marshal(kubemanager.Spec.ServiceConfiguration)
-        log.Info(fmt.Sprintf("MMMMM kubemanager config AFTER %v ",strSpec))
+        log.Info(fmt.Sprintf("MMMMM kubemanager config AFTER %v ",string(strSpec)))
         return nil
 }
 
