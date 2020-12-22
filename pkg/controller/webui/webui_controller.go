@@ -197,8 +197,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 	instance := &v1alpha1.Webui{}
 	configInstance := v1alpha1.Config{}
 
-	log.Info("DDDD Step 01")
-
 	if err := r.Client.Get(context.TODO(), request.NamespacedName, instance); err != nil && errors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	}
@@ -206,8 +204,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 	if !instance.GetDeletionTimestamp().IsZero() {
 		return reconcile.Result{}, nil
 	}
-
-	log.Info("DDDD Step 02")
 
 	webuiService := r.Kubernetes.Service(request.Name+"-"+instanceType, corev1.ServiceTypeClusterIP, map[int32]string{int32(v1alpha1.WebuiHttpsListenPort): ""}, instanceType, instance)
 	if err := webuiService.EnsureExists(); err != nil {
@@ -219,21 +215,15 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, nil
 	}
 
-	log.Info("DDDD Step 03")
-
 	configMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-configmap", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	log.Info("DDDD Step 04")
-
 	secretCertificates, err := instance.CreateSecret(request.Name+"-secret-certificates", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
-	log.Info("DDDD Step 05")
 
 	statefulSet := GetSTS()
 	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
@@ -246,8 +236,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		certificates.SignerCAConfigMapName: csrSignerCaVolumeName,
 	})
 
-	log.Info("DDDD Step 06")
-
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
 	var serviceAccountName string
@@ -256,8 +244,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 	} else {
 		serviceAccountName = "contrail-webui-service-account"
 	}
-
-	log.Info("DDDD Step 07")
 
 	var clusterRoleName string
 	if instance.Spec.ServiceConfiguration.ClusterRole != "" {
@@ -272,8 +258,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 	} else {
 		clusterRoleBindingName = "contrail-webui-cluster-role-binding"
 	}
-
-	log.Info("DDDD Step 08")
 
 	existingServiceAccount := &corev1.ServiceAccount{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: instance.Namespace}, existingServiceAccount)
@@ -296,8 +280,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			return reconcile.Result{}, err
 		}
 	}
-
-	log.Info("DDDD Step 09")
 
 	existingClusterRole := &rbacv1.ClusterRole{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleName}, existingClusterRole)
@@ -328,8 +310,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
-	log.Info("DDDD Step 10")
-
 	existingClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBindingName}, existingClusterRoleBinding)
 	if err != nil && errors.IsNotFound(err) {
@@ -357,8 +337,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			return reconcile.Result{}, err
 		}
 	}
-
-	log.Info("DDDD Step 11")
 
 	statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
@@ -470,9 +448,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
-
-	log.Info("DDDD Step 12")
-
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
@@ -487,9 +462,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			}},
 		},
 	}
-
-
-	log.Info("DDDD Step 13")
 
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -507,9 +479,6 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
-
-	log.Info("DDDD Step 14")
-
 	podIPList, podIPMap, err := instance.PodIPListAndIPMapFromInstance(instanceType, request, r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -519,22 +488,13 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			return reconcile.Result{}, err
 		}
 
-
-		log.Info("DDDD Step 15")
-
 		if err := r.ensureCertificatesExist(instance, podIPList, instanceType); err != nil {
 			return reconcile.Result{}, err
 		}
 
-
-		log.Info("DDDD Step 16")
-
 		if err = instance.SetPodsToReady(podIPList, r.Client); err != nil {
 			return reconcile.Result{}, err
 		}
-
-
-		log.Info("DDDD Step 17")
 
 		if err = instance.ManageNodeStatus(podIPMap, r.Client); err != nil {
 			return reconcile.Result{}, err

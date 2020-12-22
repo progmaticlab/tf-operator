@@ -522,22 +522,14 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 
 	var kubemanagerServiceStatus []*v1alpha1.ServiceStatus
 	for _, kubemanagerService := range manager.Spec.Services.Kubemanagers {
-		kmbConfig,_ = yaml.Marshal(kubemanagerService.Spec.ServiceConfiguration.KubemanagerConfiguration)
-		log.Info(fmt.Sprintf("MMMM KubemanagerConfiguration %v",kmbConfig))
 		if !kubemanagerDependenciesReady(kubemanagerService.Spec.ServiceConfiguration.CassandraInstance, kubemanagerService.Spec.ServiceConfiguration.ZookeeperInstance, manager.ObjectMeta, r.client) {
 			continue
 		}
 		kubemanager := &v1alpha1.Kubemanager{}
-		strSpec,_ := yaml.Marshal(kubemanager)
-		log.Info(fmt.Sprintf("MMMMM kubemanager config STEP1 %v ",string(strSpec)))
 		kubemanager.ObjectMeta = kubemanagerService.ObjectMeta
 		kubemanager.ObjectMeta.Namespace = manager.Namespace
-		strSpec,_ = yaml.Marshal(kubemanager)
-		log.Info(fmt.Sprintf("MMMMM kubemanager config STEP2 %v ",string(strSpec)))
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, kubemanager, func() error {
 			kubemanager.Spec.ServiceConfiguration.KubemanagerConfiguration = kubemanagerService.Spec.ServiceConfiguration.KubemanagerConfiguration
-			strSpec,_ = yaml.Marshal(kubemanager)
-			log.Info(fmt.Sprintf("MMMMM kubemanager config STEP3 %v ",string(strSpec)))
 			if err := fillKubemanagerConfiguration(kubemanager, kubemanagerService.Spec.ServiceConfiguration.CassandraInstance, kubemanagerService.Spec.ServiceConfiguration.ZookeeperInstance, manager.ObjectMeta, r.client); err != nil {
 				return err
 			}
