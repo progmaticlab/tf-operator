@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 WORKSPACE=${WORKSPACE:-$HOME/tf-operator}
 kubectl apply -k ${WORKSPACE}/deploy/kustomize/operator/latest/

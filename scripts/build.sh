@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 export  CGO_ENABLED=1
 operator-sdk build  localhost:5000/tf-operator:latest
 sudo docker push localhost:5000/tf-operator:latest

@@ -5,7 +5,7 @@
 # Install kubernetes prepared for tf  using kubespray
 ```bash
 git clone https://github.com/tungstenfabric/tf-devstack.git
-./tf-devstack/k8s-manifests/run.sh platform
+./tf-devstack/k8s_manifests/run.sh platform
 ```
 # Build tf-operator and CRDs container
 

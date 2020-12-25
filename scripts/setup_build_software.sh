@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # this script install golang and contrail operator and add go bit path to your PATH
 
