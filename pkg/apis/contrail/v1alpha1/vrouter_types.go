@@ -17,6 +17,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+var vrouter_log = logf.Log.WithName("controller_vrouter")
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -711,8 +714,9 @@ func (c *Vrouter) GetAgentNodes(daemonset *appsv1.DaemonSet, clnt client.Client)
 // GetNodesByLabels
 func (c *Vrouter) GetNodesByLabels(clnt client.Client, labels client.MatchingLabels) (string, error) {
 	pods := &corev1.PodList{}
-	err := clnt.List(context.Background(), pods, client.MatchingFields{"status.phase": "Running"}, labels)
+	err := clnt.List(context.Background(), pods, labels)
 	if err != nil {
+		vrouter_log.Info("!!! Error in GetNodesByLabel")
 		return "", err
 	}
 	arrIps := []string{}
@@ -720,6 +724,7 @@ func (c *Vrouter) GetNodesByLabels(clnt client.Client, labels client.MatchingLab
 		arrIps = append(arrIps, pod.Status.PodIP)
 	}
 	ips := strings.Join(arrIps[:], " ")
+	vrouter_log.Info("!!! GetNodesByLabel: " + ips)
 	return ips, nil
 }
 
@@ -730,13 +735,13 @@ type ClusterParams struct {
 
 // GetControlNodes
 func (c *Vrouter) GetControlNodes(clnt client.Client) string {
-	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"app": "control"})
+	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"contrail_manager": "control"})
 	return ips
 }
 
 // GetConfigNodes
 func (c *Vrouter) GetConfigNodes(clnt client.Client) string {
-	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"app": "config"})
+	ips, _ := c.GetNodesByLabels(clnt, client.MatchingLabels{"contrail_manager": "config"})
 	return ips
 }
 

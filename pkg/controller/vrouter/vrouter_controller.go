@@ -140,7 +140,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	serviceMap = map[string]string{"app": "control"}
+	serviceMap = map[string]string{"contrail_manager": "control"}
 	predPhaseChanges := utils.PodPhaseChanges(serviceMap)
 	if err = c.Watch(srcPod, podHandler, predPhaseChanges); err != nil {
 		return err

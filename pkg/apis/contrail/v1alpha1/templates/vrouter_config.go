@@ -38,9 +38,9 @@ func isEnabled(param string) bool {
 var VRouterAgentParams = template.Must(template.New("").Funcs(vrouterTemplateFuncs).Parse(`#!/bin/bash
 set -o allexport
 #TODO uncomment parameters to export after debug
-#CONTROL_NODES="{{ .ClusterParams.ControlNodes }}"
-#CONFIG_NODES="{{ .ClusterParams.ConfigNodes }}"
-#ANALYTICS_NODES="{{ .ClusterParams.ConfigNodes }}"
+CONTROL_NODES="{{ .ClusterParams.ControlNodes }}"
+CONFIG_NODES="{{ .ClusterParams.ConfigNodes }}"
+ANALYTICS_NODES="{{ .ClusterParams.ConfigNodes }}"
 
 # Cloud Orchestration
 #CLOUD_ORCHESTRATOR="{{ .ServiceConfig.CloudOrchestrator }}"
