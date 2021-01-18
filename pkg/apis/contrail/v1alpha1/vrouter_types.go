@@ -865,6 +865,19 @@ func (vrouterPod *VrouterPod) GetEncryptedFileFromAgentContainer (path string) (
 	return shakey, err
 }
 
+// IsFileInAgentConainerEqualTo
+func (vrouterPod *VrouterPod) IsFileInAgentContainerEqualTo(path string, content string) (bool, error) {
+	shakey1, err := vrouterPod.GetEncryptedFileFromAgentContainer(path)
+	if err != nil {
+		return false, err
+	}
+	shakey2 := EncryptString(content)
+
+	if shakey1 == shakey2 {
+		return true, nil
+	}
+	return false, nil
+}
 
 // RecalculateAgentParametrs recalculates parameters for agent from `/etc/contrail/params.env` to `/parametrs.sh`
 func (vrouterPod *VrouterPod) RecalculateAgentParameters () error {
@@ -911,7 +924,30 @@ func removeQuotes(str string) string {
 	return str
 }
 
-// UpdateAgentConfigMapForPod recalculates files `/etc/contrailconfigmaps/config_name.{$pod_ip}` in the agent configMap
+// GetAgentConfigsForPod returns correct values of `/etc/agentconfigmaps/config_name.{$pod_ip}` files
+func (c *Vrouter) GetAgentConfigsForPod (vrouterPod *VrouterPod, hostVars *map[string]string) (agentConfig, lbaasAuthConfig, vncApiLibIniConfig string) {
+	newMap := make(map[string]string)
+	for key, val := range *hostVars {
+		newMap[key] = val
+	}
+	newMap["Hostname"] = vrouterPod.Pod.Annotations["hostname"]	
+
+	var agentConfigBuffer bytes.Buffer
+	configtemplates.VRouterAgentConfig.Execute(&agentConfigBuffer, newMap)
+	agentConfig = agentConfigBuffer.String()
+
+	var lbaasAuthConfigBuffer bytes.Buffer
+	configtemplates.VRouterLbaasAuthConfig.Execute(&lbaasAuthConfigBuffer, *hostVars)
+	lbaasAuthConfig = lbaasAuthConfigBuffer.String()
+
+	var vncApiLibIniConfigBuffer bytes.Buffer
+	configtemplates.VRouterVncApiLibIni.Execute(&vncApiLibIniConfigBuffer, *hostVars)
+	vncApiLibIniConfig = vncApiLibIniConfigBuffer.String()
+
+	return
+}
+
+// UpdateAgentConfigMapForPod recalculates files `/etc/agentconfigmaps/config_name.{$pod_ip}` in the agent configMap
 func (c *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
 	hostVars *map[string]string,
 	client client.Client,
@@ -927,22 +963,12 @@ func (c *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
 		return err
 	}
 
-	newMap := make(map[string]string)
-	for key, val := range *hostVars {
-		newMap[key] = val
-	}
-	newMap["Hostname"] = vrouterPod.Pod.Annotations["hostname"]
-
+	agentConfig, lbaasAuthConfig, vncApiLibIniConfig := c.GetAgentConfigsForPod(vrouterPod, hostVars)
+	
 	data := configMap.Data
-	var vrouterAgentConfigBuffer bytes.Buffer
-	configtemplates.VRouterAgentConfig.Execute(&vrouterAgentConfigBuffer, newMap)
-	data["contrail-vrouter-agent.conf."+podIP] = vrouterAgentConfigBuffer.String()
-	var vrouterLbaasAuthConfigBuffer bytes.Buffer
-	configtemplates.VRouterLbaasAuthConfig.Execute(&vrouterLbaasAuthConfigBuffer, *hostVars)
-	data["contrail-lbaas.auth.conf."+podIP] = vrouterLbaasAuthConfigBuffer.String()
-	var vrouterVncApiLibIniBuffer bytes.Buffer
-	configtemplates.VRouterVncApiLibIni.Execute(&vrouterVncApiLibIniBuffer, *hostVars)
-	data["vnc_api_lib.ini."+podIP] = vrouterVncApiLibIniBuffer.String()
+	data["contrail-vrouter-agent.conf."+podIP] = agentConfig
+	data["contrail-lbaas.auth.conf."+podIP] = lbaasAuthConfig
+	data["vnc_api_lib.ini."+podIP] = vncApiLibIniConfig
 
 	// Save config data
 	configMap.Data = data
@@ -962,7 +988,7 @@ func (c *Vrouter) IsClusterChanged(nodeName string, clnt client.Client) bool {
 
 // UpdateAgent
 func (c *Vrouter) UpdateAgent(nodeName string, vrouterPod *VrouterPod, clnt client.Client, reconsFlag *bool) error {
-	eq, err := c.isParamsEnvEqual(clnt, vrouterPod)
+	eq, err := vrouterPod.IsFileInAgentContainerEqualTo(VrouterAgentConfigMountPath + "/params.env", c.GetParamsEnv(clnt))
 	if err != nil || !eq {
 		*reconsFlag = true
 		return err
@@ -984,7 +1010,7 @@ func (c *Vrouter) UpdateAgent(nodeName string, vrouterPod *VrouterPod, clnt clie
 		return err
 	}
 
-	eq, err = vrouterPod.IsAgentConfigAvaliable(c, clnt)
+	eq, err = vrouterPod.IsAgentConfigsAvaliable(c, &hostVars, clnt)
 	if err != nil || !eq {
 		*reconsFlag = true
 		return err
@@ -1008,37 +1034,30 @@ func (c *Vrouter) UpdateAgent(nodeName string, vrouterPod *VrouterPod, clnt clie
 	return nil
 }
 
-
-func (vrouterPod *VrouterPod) IsAgentConfigAvaliable(vrouter *Vrouter, clnt client.Client) (bool, error) {
-	configNamespacedName := types.NamespacedName{
-		Name: vrouter.ObjectMeta.Name + "-vrouter-agent-config",
-		Namespace: vrouter.ObjectMeta.Namespace,
-	}
-	config := &corev1.ConfigMap{}
-	if err := clnt.Get(context.Background(), configNamespacedName, config); err != nil {
-		return false, err
-	}
-
-	data := config.Data
-
+// IsAgentConfigsAvaliable
+func (vrouterPod *VrouterPod) IsAgentConfigsAvaliable(vrouter *Vrouter, hostVars *map[string]string, clnt client.Client) (bool, error) {
 	podIP := vrouterPod.Pod.Status.PodIP
-	filesToCheck := []string{
-		"contrail-vrouter-agent.conf." + podIP,
-		"contrail-lbaas.auth.conf." + podIP,
-		"vnc_api_lib.ini." + podIP,
-	}
-	for _, fileName := range filesToCheck {
-		filePath := VrouterAgentConfigMountPath + "/" + fileName
-		shakey1, err := vrouterPod.GetEncryptedFileFromAgentContainer(filePath)
-		if err != nil {
-			return false, err
-		}
 
-		shakey2 := EncryptString(data[fileName])
-		if shakey1 != shakey2 {
-			return false, nil
-		}
+	agentConfig, lbaasAuthConfig, vncApiLibIniConfig := vrouter.GetAgentConfigsForPod(vrouterPod, hostVars)
+	
+	path := VrouterAgentConfigMountPath + "/contrail-vrouter-agent.conf." + podIP
+	eq, err := vrouterPod.IsFileInAgentContainerEqualTo(path, agentConfig)
+	if err != nil || !eq {
+		return eq, err
 	}
+	
+	path = VrouterAgentConfigMountPath + "/contrail-lbaas.auth.conf." + podIP
+	eq, err = vrouterPod.IsFileInAgentContainerEqualTo(path, lbaasAuthConfig)
+	if err != nil || !eq {
+		return eq, err
+	}
+
+	path = VrouterAgentConfigMountPath + "/vnc_api_lib.ini." + podIP
+	eq, err = vrouterPod.IsFileInAgentContainerEqualTo(path, vncApiLibIniConfig)
+	if err != nil || !eq {
+		return eq, nil
+	}
+	
 	return true, nil
 }
 
