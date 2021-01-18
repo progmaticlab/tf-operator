@@ -714,17 +714,17 @@ func (c *Vrouter) GetAgentNodes(daemonset *appsv1.DaemonSet, clnt client.Client)
 // GetNodesByLabels
 func (c *Vrouter) GetNodesByLabels(clnt client.Client, labels client.MatchingLabels) (string, error) {
 	pods := &corev1.PodList{}
-	err := clnt.List(context.Background(), pods, labels)
-	if err != nil {
-		vrouter_log.Info("!!! Error in GetNodesByLabel")
+	if err := clnt.List(context.Background(), pods, labels); err != nil {
 		return "", err
 	}
+
 	arrIps := []string{}
 	for _, pod := range pods.Items {
 		arrIps = append(arrIps, pod.Status.PodIP)
 	}
-	ips := strings.Join(arrIps[:], " ")
-	vrouter_log.Info("!!! GetNodesByLabel: " + ips)
+	sort.Strings(arrIps)
+
+	ips := strings.Join(arrIps[:], ", ")
 	return ips, nil
 }
 
