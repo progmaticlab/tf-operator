@@ -631,8 +631,8 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-		}
 		*/
+		}
 	}
 	/*
 	if !configNodeMgr {
