@@ -230,6 +230,7 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
+	/*
 	if err = v1alpha1.CreateAccount("statusmonitor-kubemanager", request.Namespace, r.Client, r.Scheme, instance); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -249,6 +250,7 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 			}},
 		},
 	}
+	*/
 
 	csrSignerCaVolumeName := request.Name + "-csr-signer-ca"
 	instance.AddVolumesToIntendedSTS(statefulSet, map[string]string{
@@ -426,6 +428,7 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		/*
 		if container.Name == "statusmonitor" {
 			command := []string{"sh", "-c",
 				"/app/statusmonitor/contrail-statusmonitor-image.binary -config /etc/contrailconfigmaps/monitorconfig.${POD_IP}.yaml"}
@@ -458,6 +461,7 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		*/
 	}
 
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {

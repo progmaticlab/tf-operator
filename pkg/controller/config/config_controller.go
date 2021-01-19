@@ -247,6 +247,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	})
 	config.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
+	/*
 	configNodeMgr := true
 	analyticsNodeMgr := true
 	configNodemgrContainer := utils.GetContainerFromList("nodemanagerconfig", config.Spec.ServiceConfiguration.Containers)
@@ -277,6 +278,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 
 	statefulSet.Spec.Template.Spec.ServiceAccountName = "serviceaccount-statusmonitor-config"
+	*/
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
@@ -403,6 +405,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			// DNSMasq container requires those variables to be set
 			container.VolumeMounts = volumeMountList
 			container.Image = instanceContainer.Image
+		
 		case "servicemonitor":
 			command := []string{"bash", "-c",
 				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; /usr/bin/python /usr/bin/contrail-svc-monitor --conf_file /etc/contrailconfigmaps/servicemonitor.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf"}
@@ -429,6 +432,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
 		case "schematransformer":
 			command := []string{"bash", "-c",
 				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; /usr/bin/python /usr/bin/contrail-schema --conf_file /etc/contrailconfigmaps/schematransformer.${POD_IP}  --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf"}
@@ -548,7 +552,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		case "nodemanagerconfig":
-			if configNodeMgr {
+			//if configNodeMgr {
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
 					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanagerconfig.${POD_IP} > /etc/contrail/contrail-config-nodemgr.conf; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-config"}
@@ -567,9 +571,9 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			}
+			//}
 		case "nodemanageranalytics":
-			if analyticsNodeMgr {
+			//if analyticsNodeMgr {
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
 					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanageranalytics.${POD_IP} > /etc/contrail/contrail-analytics-nodemgr.conf;/usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-analytics"}
@@ -589,8 +593,14 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 
-			}
-		case "statusmonitor":
+			//}
+			case "provisionerconfig":
+				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+			case "provisioneranalytics":
+				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+		/*case "statusmonitor":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			command := []string{"sh", "-c",
 				"/app/statusmonitor/contrail-statusmonitor-image.binary -config /etc/contrailconfigmaps/monitorconfig.${POD_IP}.yaml"}
@@ -622,8 +632,9 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		*/
 	}
-
+	/*
 	if !configNodeMgr {
 		for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 			if container.Name == "nodemanagerconfig" {
@@ -639,7 +650,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			}
 		}
 	}
-
+	*/
 	// Configure InitContainers
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)

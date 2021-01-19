@@ -320,11 +320,13 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	daemonSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+	/*
 	nodemgr := true
 	nodemgrContainer := utils.GetContainerFromList("nodemanager", instance.Spec.ServiceConfiguration.Containers)
 	if nodemgrContainer == nil {
 		nodemgr = false
 	}
+	*/
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",
@@ -368,7 +370,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}}
 		}
 		if container.Name == "nodemanager" {
-			if nodemgr {
+			//if nodemgr {
 				command := []string{"bash", "-c",
 					"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
 				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -399,10 +401,15 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				volumeMountList = append(volumeMountList, volumeMount)
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			}
+			//}
+		}
+		if container.Name == "provisioner" {
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
 
+	/*
 	if !nodemgr {
 		for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 			if container.Name == "nodemanager" {
@@ -410,6 +417,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 		}
 	}
+	*/
 
 	ubuntu := v1alpha1.UBUNTU
 	for idx, container := range daemonSet.Spec.Template.Spec.InitContainers {

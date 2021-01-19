@@ -874,12 +874,12 @@ func (c *Config) ConfigurationParameters() ConfigConfiguration {
 	}
 	configConfiguration.CollectorIntrospectPort = &collectorIntrospectPort
 
-	if c.Spec.ServiceConfiguration.NodeManager != nil {
-		configConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	} else {
+	//if c.Spec.ServiceConfiguration.NodeManager != nil {
+	//	configConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
+	//} else {
 		nodeManager := true
 		configConfiguration.NodeManager = &nodeManager
-	}
+	//}
 
 	if c.Spec.ServiceConfiguration.RabbitmqUser != "" {
 		rabbitmqUser = c.Spec.ServiceConfiguration.RabbitmqUser

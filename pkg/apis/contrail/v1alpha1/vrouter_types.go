@@ -406,12 +406,12 @@ func (c *Vrouter) ConfigurationParameters() VrouterConfiguration {
 		metaDataSecret = MetadataProxySecret
 	}
 
-	if c.Spec.ServiceConfiguration.NodeManager != nil {
+	/*if c.Spec.ServiceConfiguration.NodeManager != nil {
 		vrouterConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	} else {
+	} else {*/
 		nodeManager := true
 		vrouterConfiguration.NodeManager = &nodeManager
-	}
+	/*}*/
 
 	vrouterConfiguration.VrouterEncryption = c.Spec.ServiceConfiguration.VrouterEncryption
 	vrouterConfiguration.PhysicalInterface = physicalInterface

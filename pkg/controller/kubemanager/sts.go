@@ -59,17 +59,6 @@ func GetSTS() *apps.StatefulSet {
 			},
 			ImagePullPolicy: "Always",
 		},
-		{
-			Name:  "statusmonitor",
-			Image: "docker.io/kaweue/contrail-statusmonitor:debug",
-			VolumeMounts: []core.VolumeMount{
-				kubemanagerLogsMount,
-			},
-			Env: []core.EnvVar{
-				podIPEnv,
-			},
-			ImagePullPolicy: "Always",
-		},
 	}
 
 	var podVolumes = []core.Volume{

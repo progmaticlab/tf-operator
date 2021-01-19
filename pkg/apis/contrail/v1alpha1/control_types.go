@@ -485,12 +485,12 @@ func (c *Control) ConfigurationParameters() ControlConfiguration {
 		dnsIntrospectPort = DnsIntrospectPort
 	}
 
-	if c.Spec.ServiceConfiguration.NodeManager != nil {
-		controlConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	} else {
+	//if c.Spec.ServiceConfiguration.NodeManager != nil {
+	//	controlConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
+	//} else {
 		nodeManager := true
 		controlConfiguration.NodeManager = &nodeManager
-	}
+	//}
 	controlConfiguration.BGPPort = &bgpPort
 	controlConfiguration.ASNNumber = &asnNumber
 	controlConfiguration.XMPPPort = &xmppPort

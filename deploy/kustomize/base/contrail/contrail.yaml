@@ -68,8 +68,14 @@ spec:
             image: contrail-controller-config-svcmonitor:latest
           - name: queryengine
             image: contrail-analytics-query-engine:latest
-          - name: statusmonitor
-            image: contrail-statusmonitor:latest
+          - name: nodemanageranalytics
+            image: contrail-nodemgr:latest
+          - name: nodemanagerconfig
+            image: contrail-nodemgr:latest
+          - name: provisioneranalytics
+            image: contrail-provisioner:latest
+          - name: provisionerconfig
+            image: contrail-provisioner:latest
           logLevel: SYS_DEBUG
           zookeeperInstance: zookeeper1
     controls:
@@ -93,8 +99,10 @@ spec:
             image: python:alpine
           - name: named
             image: contrail-controller-control-named:latest
-          - name: statusmonitor
-            image: contrail-statusmonitor:latest
+          - name: nodemanager
+            image: contrail-nodemgr:latest
+          - name: provisioner
+            image: contrail-provisioner:latest
     kubemanagers:
     - metadata:
         labels:
@@ -111,29 +119,11 @@ spec:
             image: python:alpine
           - name: kubemanager
             image: contrail-kubernetes-kube-manager:latest
-          - name: statusmonitor
-            image: contrail-statusmonitor:latest
           ipFabricForwarding: false
           ipFabricSnat: true
           kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
           useKubeadmConfig: true
           zookeeperInstance: zookeeper1
-    provisionManager:
-      metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: provmanager1
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
-          replicas: 1
-        serviceConfiguration:
-          containers:
-          - name: init
-            image: python:alpine
-          - name: provisioner
-            image: contrail-operator-provisioner:latest
     rabbitmq:
       metadata:
         labels:
@@ -173,6 +163,10 @@ spec:
             image: contrail-vrouter-kernel-build-init:latest
           - name: vrouterkernelinit
             image: contrail-vrouter-kernel-init:latest
+          - name: nodemanager
+            image: contrail-nodemgr:latest
+          - name: provisioner
+            image: contrail-provisioner:latest
           controlInstance: control1
     - metadata:
         labels:
@@ -197,6 +191,10 @@ spec:
             image: contrail-vrouter-kernel-build-init:latest
           - name: vrouterkernelinit
             image: contrail-vrouter-kernel-init:latest
+          - name: nodemanager
+            image: contrail-nodemgr:latest
+          - name: provisioner
+            image: contrail-provisioner:latest
           controlInstance: control1
     webui:
       metadata:

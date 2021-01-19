@@ -224,18 +224,22 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	})
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
+	/*
 	nodemgr := true
 	controlNodemgrContainer := utils.GetContainerFromList("nodemanager", instance.Spec.ServiceConfiguration.Containers)
 
 	if controlNodemgrContainer == nil {
 		nodemgr = false
 	}
-
+	*/
+	/*
 	if err = v1alpha1.CreateAccount("statusmonitor-control", request.Namespace, r.Client, r.Scheme, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	statefulSet.Spec.Template.Spec.ServiceAccountName = "serviceaccount-statusmonitor-control"
+	*/
+	
 	if instance.Spec.ServiceConfiguration.DataSubnet != "" {
 		if statefulSet.Spec.Template.ObjectMeta.Annotations == nil {
 			statefulSet.Spec.Template.ObjectMeta.Annotations = map[string]string{"dataSubnet": instance.Spec.ServiceConfiguration.DataSubnet}
@@ -291,6 +295,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		/*
 		if container.Name == "statusmonitor" {
 			command := []string{"sh", "-c",
 				"/app/statusmonitor/contrail-statusmonitor-image.binary -config /etc/contrailconfigmaps/monitorconfig.${POD_IP}.yaml"}
@@ -323,6 +328,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
+		*/
 		if container.Name == "named" {
 			command := []string{"bash", "-c",
 				"touch /var/log/contrail/contrail-named.log; chgrp contrail /var/log/contrail/contrail-named.log; chmod g+w /var/log/contrail/contrail-named.log; /usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}"}
@@ -391,7 +397,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "nodemanager" {
-			if nodemgr {
+			//if nodemgr {
 
 				command := []string{"bash", "-c",
 					"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-control"}
@@ -420,17 +426,21 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 				volumeMountList = append(volumeMountList, volumeMount)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			}
+			//}
+		}
+		if container.Name == "provisioner" {
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
 
-	if !nodemgr {
+	/*if !nodemgr {
 		for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 			if container.Name == "nodemanager" {
 				statefulSet.Spec.Template.Spec.Containers = utils.RemoveIndex(statefulSet.Spec.Template.Spec.Containers, idx)
 			}
 		}
-	}
+	}*/
 
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)

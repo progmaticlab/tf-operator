@@ -52,17 +52,6 @@ spec:
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs
-        - name: statusmonitor
-          image: docker.io/kaweue/contrail-statusmonitor:debug
-          env:
-            - name: POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-          imagePullPolicy: Always
-          volumeMounts:
-            - mountPath: /var/log/contrail
-              name: control-logs
         - name: dns
           image: docker.io/michaelhenkel/contrail-controller-control-dns:5.2.0-dev1
           env:
@@ -113,6 +102,25 @@ spec:
               exec:
                 command:
                   - python /etc/contrailconfigmaps/deprovision.sh.${POD_IP}
+          volumeMounts:
+            - mountPath: /var/log/contrail
+              name: control-logs
+            - mountPath: /var/crashes
+              name: crashes
+            - mountPath: /mnt
+              name: docker-unix-socket
+        - name: provisioner
+          image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
+          env:
+            - name: NODE_TYPE
+              value: control
+            - name: DOCKER_HOST
+              value: unix://mnt/docker.sock
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs

@@ -196,9 +196,13 @@ spec:
               name: docker-unix-socket
             - mountPath: /var/crashes
               name: crashes
-        - name: statusmonitor
-          image: docker.io/kaweue/contrail-statusmonitor:debug
+        - name: provisioneranalytics
+          image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
           env:
+            - name: DOCKER_HOST
+              value: unix://mnt/docker.sock
+            - name: NODE_TYPE
+              value: analytics
             - name: POD_IP
               valueFrom:
                 fieldRef:
@@ -207,6 +211,29 @@ spec:
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
+            - mountPath: /mnt
+              name: docker-unix-socket
+            - mountPath: /var/crashes
+              name: crashes
+        - name: provisionerconfig
+          image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
+          env:
+            - name: DOCKER_HOST
+              value: unix://mnt/docker.sock
+            - name: NODE_TYPE
+              value: config
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/log/contrail
+              name: config-logs
+            - mountPath: /mnt
+              name: docker-unix-socket
+            - mountPath: /var/crashes
+              name: crashes
       dnsPolicy: ClusterFirst
       hostNetwork: true
       nodeSelector:

@@ -95,3 +95,9 @@ images:
 - name: zookeeper
   newTag: "3.5.5"
   newName: docker.io/zookeeper
+- name: contrail-provisioner
+  newTag: latest
+  newName: tungstenfabric/contrail-provisioner
+- name: contrail-nodemgr
+  newTag: latest
+  newName: tungstenfabric/contrail-nodemgr

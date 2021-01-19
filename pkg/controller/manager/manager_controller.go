@@ -171,10 +171,12 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
+	/*
 	if err := r.processProvisionManager(instance, replicas); err != nil {
 		return reconcile.Result{}, err
 	}
-
+	*/
+	
 	if err := r.processConfig(instance, replicas, nodesHostAliases); err != nil {
 		return reconcile.Result{}, err
 	}

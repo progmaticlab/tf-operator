@@ -191,6 +191,32 @@ func GetDaemonset() *apps.DaemonSet {
 			},
 			ImagePullPolicy: "Always",
 		},
+		{
+			Name:  "provisioner",
+			Image: "docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1",
+			Env: []core.EnvVar{
+				podIPEnv,
+				core.EnvVar{
+					Name:  "DOCKER_HOST",
+					Value: "unix://mnt/docker.sock",
+				},
+				core.EnvVar{
+					Name:  "NODE_TYPE",
+					Value: "vrouter",
+				},
+			},
+			VolumeMounts: []core.VolumeMount{
+				core.VolumeMount{
+					Name:      "vrouter-logs",
+					MountPath: "/var/log/contrail",
+				},
+				core.VolumeMount{
+					Name:      "docker-unix-socket",
+					MountPath: "/mnt",
+				},
+			},
+			ImagePullPolicy: "Always",
+		},
 	}
 
 	var podVolumes = []core.Volume{
