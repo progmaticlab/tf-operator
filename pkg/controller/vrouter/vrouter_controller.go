@@ -371,8 +371,12 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 		if container.Name == "nodemanager" {
 			//if nodemgr {
+				//command := []string{"bash", "-c",
+				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
 				command := []string{"bash", "-c",
-					"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
+					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanager.${POD_IP} > /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
+				}
+				
 				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 				if instanceContainer.Command == nil {
 					(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command

@@ -569,6 +569,16 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 						MountPath: "/etc/contrailconfigmaps",
 					},
 				)
+				volumeMount := corev1.VolumeMount{
+					Name:      request.Name + "-secret-certificates",
+					MountPath: "/etc/certificates",
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
+				volumeMount = corev1.VolumeMount{
+					Name:      csrSignerCaVolumeName,
+					MountPath: certificates.SignerCAMountPath,
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 			//}
@@ -576,7 +586,8 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			//if analyticsNodeMgr {
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
-					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanageranalytics.${POD_IP} > /etc/contrail/contrail-analytics-nodemgr.conf;/usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-analytics"}
+					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanageranalytics.${POD_IP} > /etc/contrail/contrail-analytics-nodemgr.conf;/usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-analytics",
+				}
 
 				if instanceContainer.Command == nil {
 					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -590,6 +601,16 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 						MountPath: "/etc/contrailconfigmaps",
 					},
 				)
+				volumeMount := corev1.VolumeMount{
+					Name:      request.Name + "-secret-certificates",
+					MountPath: "/etc/certificates",
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
+				volumeMount = corev1.VolumeMount{
+					Name:      csrSignerCaVolumeName,
+					MountPath: certificates.SignerCAMountPath,
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 

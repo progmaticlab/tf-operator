@@ -399,9 +399,11 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 		if container.Name == "nodemanager" {
 			//if nodemgr {
 
+				//command := []string{"bash", "-c",
+				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-control"}
 				command := []string{"bash", "-c",
-					"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-control"}
-
+					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanager.${POD_IP} > /etc/contrail/contrail-control-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-control",
+				}
 				//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 				if instanceContainer.Command == nil {
@@ -417,6 +419,11 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 				volumeMount := corev1.VolumeMount{
 					Name:      request.Name + "-" + instanceType + "-volume",
 					MountPath: "/etc/contrailconfigmaps",
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
+				volumeMount = corev1.VolumeMount{
+					Name:      request.Name + "-secret-certificates",
+					MountPath: "/etc/certificates",
 				}
 				volumeMountList = append(volumeMountList, volumeMount)
 				volumeMount = corev1.VolumeMount{

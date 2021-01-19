@@ -448,6 +448,7 @@ func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 	data := map[string]string{}
 	for _, vrouterPod := range podList.Items {
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
+		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod)
 	}
 	return data
 }
@@ -497,4 +498,21 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		CAFilePath:           certificates.SignerCAFilepath,
 	})
 	return vrouterConfigBuffer.String()
+}
+
+func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
+	var nodeManagerConfigBuffer bytes.Buffer
+	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct{
+			ListenAddress       string
+			Hostname            string
+			CollectorServerList string
+			CassandraPort       string
+			CassandraJmxPort    string
+			CAFilePath          string
+		}{
+			ListenAddress: vrouterPod.Status.PodIP,
+			Hostname:      vrouterPod.Annotations["hostname"],
+			CAFilePath:    certificates.SignerCAFilepath,
+	})
+	return nodeManagerConfigBuffer.String()
 }

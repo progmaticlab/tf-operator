@@ -564,6 +564,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
+			LogLevel            string
 		}{
 			HostIP:              podList.Items[idx].Status.PodIP,
 			CollectorServerList: collectorServerList,
@@ -580,12 +581,14 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
+			LogLevel            string
 		}{
 			HostIP:              podList.Items[idx].Status.PodIP,
 			CollectorServerList: collectorServerList,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
 			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
 			CAFilePath:          certificates.SignerCAFilepath,
+			LogLevel:            "SYS_NOTICE",
 		})
 		data["nodemanageranalytics."+podList.Items[idx].Status.PodIP] = configNodemanageranalyticsConfigBuffer.String()
 	}
