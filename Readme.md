@@ -16,7 +16,7 @@ cd tf-operator
 ./scripts/build.sh
 ```
 
-# Run tf-operator and AIO Tingsten fabric cluster
+# Run tf-operator and AIO Tungsten fabric cluster
 ```bash
 ./scripts/run_operator.sh
 ```
