@@ -8,8 +8,6 @@ ENV OPERATOR=/usr/local/bin/contrail-operator \
 COPY build/_output/bin/tf-operator ${OPERATOR}
 ENV CGO_ENABLED=1
 
-COPY build/plugins /plugins
-
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 

@@ -9,7 +9,7 @@ servers={{ .ControlServerList }}
 http_server_ip=0.0.0.0
 collectors={{ .CollectorServerList }}
 log_file=/var/log/contrail/contrail-vrouter-agent.log
-log_level=SYS_NOTICE
+log_level={{ .LogLevel }}
 log_local=1
 hostname={{ .Hostname }}
 agent_name={{ .Hostname }}
@@ -54,12 +54,12 @@ sample_destination = collector`))
 var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0
 log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
-log_level=SYS_NOTICE
+log_level={{ .LogLevel }}
 log_local=1
 hostip={{ .ListenAddress }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
-db_use_ssl=False
+db_use_ssl=True
 [COLLECTOR]
 server_list={{ .CollectorServerList }}
 [SANDESH]

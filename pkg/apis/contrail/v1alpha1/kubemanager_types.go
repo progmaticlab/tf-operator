@@ -82,6 +82,7 @@ type KubemanagerConfiguration struct {
 	RabbitmqUser          string       `json:"rabbitmqUser,omitempty"`
 	RabbitmqPassword      string       `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost         string       `json:"rabbitmqVhost,omitempty"`
+	LogLevel              string       `json:"logLevel,omitempty"`
 }
 
 // KubemanagerNodesConfiguration is the configuration for third party dependencies
@@ -236,6 +237,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword      string
 			RabbitmqVhost         string
 			CAFilePath            string
+			LogLevel              string
 		}{
 			Token:                 token,
 			ListenAddress:         podList.Items[idx].Status.PodIP,
@@ -261,6 +263,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword:      rabbitmqSecretPassword,
 			RabbitmqVhost:         rabbitmqSecretVhost,
 			CAFilePath:            certificates.SignerCAFilepath,
+			LogLevel:              kubemanagerConfig.LogLevel,
 		})
 		data["kubemanager."+podList.Items[idx].Status.PodIP] = kubemanagerConfigBuffer.String()
 
@@ -381,6 +384,13 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	var ipFabricSnat bool
 	var hostNetworkService bool
 	var useKubeadmConfig bool
+	var logLevel string
+
+	if c.Spec.ServiceConfiguration.LogLevel != "" {
+		logLevel = c.Spec.ServiceConfiguration.LogLevel
+	} else {
+		logLevel = LogLevel
+	}
 
 	if c.Spec.ServiceConfiguration.CloudOrchestrator != "" {
 		cloudOrchestrator = c.Spec.ServiceConfiguration.CloudOrchestrator
@@ -466,6 +476,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration.HostNetworkService = &hostNetworkService
 	kubemanagerConfiguration.UseKubeadmConfig = &useKubeadmConfig
 	kubemanagerConfiguration.IPFabricSnat = &ipFabricSnat
+	kubemanagerConfiguration.LogLevel = logLevel
 
 	return kubemanagerConfiguration
 }

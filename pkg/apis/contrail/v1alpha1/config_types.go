@@ -475,6 +475,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			AAAMode                    AAAMode
 			CAFilePath                 string
 			AnalyticsApiIntrospectPort string
+			LogLevel                   string
 		}{
 			HostIP:                     podList.Items[idx].Status.PodIP,
 			ApiServerList:              apiServerSpaceSeparatedList,
@@ -490,6 +491,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			AAAMode:                    configConfig.AAAMode,
 			CAFilePath:                 certificates.SignerCAFilepath,
 			AnalyticsApiIntrospectPort: strconv.Itoa(*configConfig.AnalyticsApiIntrospectPort),
+			LogLevel:                   configConfig.LogLevel,
 		})
 		data["analyticsapi."+podList.Items[idx].Status.PodIP] = configAnalyticsapiConfigBuffer.String()
 		/*
@@ -546,6 +548,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			RedisServerList     string
 			CAFilePath          string
 			AnalyticsDataTTL    string
+			LogLevel            string
 		}{
 			Hostname:            hostname,
 			HostIP:              podList.Items[idx].Status.PodIP,
@@ -554,6 +557,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			RedisServerList:     redisServerSpaceSeparatedList,
 			CAFilePath:          certificates.SignerCAFilepath,
 			AnalyticsDataTTL:    strconv.Itoa(*configConfig.AnalyticsDataTTL),
+			LogLevel:            configConfig.LogLevel,
 		})
 		data["queryengine."+podList.Items[idx].Status.PodIP] = configQueryEngineConfigBuffer.String()
 
@@ -571,6 +575,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
 			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
 			CAFilePath:          certificates.SignerCAFilepath,
+			LogLevel:            configConfig.LogLevel,
 		})
 		data["nodemanagerconfig."+podList.Items[idx].Status.PodIP] = configNodemanagerconfigConfigBuffer.String()
 
@@ -588,7 +593,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
 			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
 			CAFilePath:          certificates.SignerCAFilepath,
-			LogLevel:            "SYS_NOTICE",
+			LogLevel:            configConfig.LogLevel,
 		})
 		data["nodemanageranalytics."+podList.Items[idx].Status.PodIP] = configNodemanageranalyticsConfigBuffer.String()
 
@@ -807,6 +812,7 @@ func (c *Config) ConfigurationParameters() ConfigConfiguration {
 	var rabbitmqPassword string
 	var rabbitmqVhost string
 	var logLevel string
+
 	if c.Spec.ServiceConfiguration.LogLevel != "" {
 		logLevel = c.Spec.ServiceConfiguration.LogLevel
 	} else {

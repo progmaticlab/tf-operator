@@ -76,6 +76,7 @@ type VrouterConfiguration struct {
 	VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
 	ContrailStatusImage string            `json:"contrailStatusImage,omitempty"`
 	EnvVariablesConfig  map[string]string `json:"envVariablesConfig,omitempty"`
+	CassandraInstance   string            `json:"cassandraInstance,omitempty"`
 }
 
 // VrouterNodesConfiguration is the static configuration for vrouter.
@@ -351,12 +352,18 @@ func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	controlNodesInformation := c.Spec.ServiceConfiguration.ControlNodesConfiguration
 	controlNodesInformation.FillWithDefaultValues()
 
+	cassandraNodesInformation, err := NewCassandraClusterConfiguration(c.Spec.ServiceConfiguration.CassandraInstance,
+		request.Namespace, client)
+	if err != nil {
+		return err
+	}
+
 	instanceConfigMapName := request.Name + "-" + "vrouter" + "-configmap"
 	configMapInstanceDynamicConfig := &corev1.ConfigMap{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: instanceConfigMapName, Namespace: request.Namespace}, configMapInstanceDynamicConfig); err != nil {
 		return err
 	}
-	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList, controlNodesInformation, configNodesInformation)
+	configMapInstanceDynamicConfig.Data = c.createVrouterDynamicConfig(podList, controlNodesInformation, configNodesInformation, &cassandraNodesInformation)
 	if err := client.Update(context.TODO(), configMapInstanceDynamicConfig); err != nil {
 		return err
 	}
@@ -442,13 +449,14 @@ func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 
 func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 	controlNodesInformation *ControlClusterConfiguration,
-	configNodesInformation *ConfigClusterConfiguration) map[string]string {
+	configNodesInformation *ConfigClusterConfiguration,
+	cassandraNodesInformation *CassandraClusterConfiguration) map[string]string {
 	vrouterConfig := c.ConfigurationParameters()
 	sort.SliceStable(podList.Items, func(i, j int) bool { return podList.Items[i].Status.PodIP < podList.Items[j].Status.PodIP })
 	data := map[string]string{}
 	for _, vrouterPod := range podList.Items {
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
-		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod)
+		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod, configNodesInformation, cassandraNodesInformation)
 		data["nodemanager.env."+vrouterPod.Status.PodIP] = createNodeManagerEnvForPod(&vrouterPod, controlNodesInformation, configNodesInformation)
 	}
 	return data
@@ -485,7 +493,8 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		Gateway              string
 		MetaDataSecret       string
 		CAFilePath           string
-	}{
+		LogLevel            string
+		}{
 		Hostname:             hostname,
 		ListenAddress:        vrouterPod.Status.PodIP,
 		ControlServerList:    controlXMPPEndpointListSpaceSeparated,
@@ -497,11 +506,15 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		Gateway:              gateway,
 		MetaDataSecret:       vrouterConfig.MetaDataSecret,
 		CAFilePath:           certificates.SignerCAFilepath,
+		// TODO: replace harcode
+		LogLevel:            "SYS_DEBUG",
 	})
 	return vrouterConfigBuffer.String()
 }
 
-func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
+func createNodeManagerConfigForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration, cassandraNodesInformation *CassandraClusterConfiguration) string {
+	configCollectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
+	configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
 	var nodeManagerConfigBuffer bytes.Buffer
 	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct{
 			ListenAddress       string
@@ -510,10 +523,16 @@ func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
+			LogLevel            string
 		}{
-			ListenAddress: vrouterPod.Status.PodIP,
-			Hostname:      vrouterPod.Annotations["hostname"],
-			CAFilePath:    certificates.SignerCAFilepath,
+			ListenAddress:       vrouterPod.Status.PodIP,
+			Hostname:            vrouterPod.Annotations["hostname"],
+			CollectorServerList: configCollectorEndpointListSpaceSeparated,
+			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
+			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
+			CAFilePath:          certificates.SignerCAFilepath,
+			// TODO: replace harcode
+			LogLevel:            "SYS_DEBUG",
 	})
 	return nodeManagerConfigBuffer.String()
 }

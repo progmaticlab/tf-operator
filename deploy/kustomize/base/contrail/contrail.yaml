@@ -103,6 +103,7 @@ spec:
             image: contrail-nodemgr:latest
           - name: provisioner
             image: contrail-provisioner:latest
+          logLevel: SYS_DEBUG
     kubemanagers:
     - metadata:
         labels:
@@ -124,6 +125,7 @@ spec:
           kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
           useKubeadmConfig: true
           zookeeperInstance: zookeeper1
+          logLevel: SYS_DEBUG
     rabbitmq:
       metadata:
         labels:
@@ -139,6 +141,7 @@ spec:
             image: python:alpine
           - name: rabbitmq
             image: rabbitmq:3.7
+          logLevel: SYS_DEBUG
     vrouters:
     - metadata:
         labels:
@@ -168,6 +171,7 @@ spec:
           - name: provisioner
             image: contrail-provisioner:latest
           controlInstance: control1
+          logLevel: SYS_DEBUG
     - metadata:
         labels:
           contrail_cluster: cluster1
@@ -196,6 +200,7 @@ spec:
           - name: provisioner
             image: contrail-provisioner:latest
           controlInstance: control1
+          logLevel: SYS_DEBUG
     webui:
       metadata:
         labels:
@@ -216,6 +221,7 @@ spec:
             image: contrail-controller-webui-job:latest
           - name: webuiweb
             image: contrail-controller-webui-web:latest
+          logLevel: SYS_DEBUG
     zookeepers:
     - metadata:
         labels:
@@ -233,6 +239,7 @@ spec:
               image: python:latest
             - name: zookeeper
               image: zookeeper:latest
+          logLevel: SYS_DEBUG
     contrailCNIs:
     - metadata:
         labels:

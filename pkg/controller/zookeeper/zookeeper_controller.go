@@ -346,7 +346,7 @@ func (r *ReconcileZookeeper) Reconcile(request reconcile.Request) (reconcile.Res
 				AccessModes: []corev1.PersistentVolumeAccessMode{
 					"ReadWriteOnce",
 				},
-				PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimPolicy("Delete"),
+				PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimPolicy("Retain"),
 				StorageClassName:              "local-storage",
 				NodeAffinity:                  &volumeNodeAffinity,
 				PersistentVolumeSource: corev1.PersistentVolumeSource{

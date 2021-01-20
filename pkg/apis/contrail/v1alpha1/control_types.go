@@ -60,7 +60,8 @@ type ControlConfiguration struct {
 	// discovered and used both in configuration for hostip directive and provision
 	// script.
 	// +kubebuilder:validation:Pattern=`^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/(3[0-2]|2[0-9]|1[0-9]|[0-9]))$`
-	DataSubnet string `json:"dataSubnet,omitempty"`
+	DataSubnet        string        `json:"dataSubnet,omitempty"`
+	LogLevel          string        `json:"logLevel,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -224,6 +225,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword    string
 			RabbitmqVhost       string
 			CAFilePath          string
+			LogLevel            string
 		}{
 			PodIP:               podIP,
 			Hostname:            hostname,
@@ -239,6 +241,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword:    rabbitmqSecretPassword,
 			RabbitmqVhost:       rabbitmqSecretVhost,
 			CAFilePath:          certificates.SignerCAFilepath,
+			LogLevel:            controlConfig.LogLevel,
 		})
 		data["control."+podIP] = controlControlConfigBuffer.String()
 
@@ -261,6 +264,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword    string
 			RabbitmqVhost       string
 			CAFilePath          string
+			LogLevel            string
 		}{
 			PodIP:               podIP,
 			Hostname:            hostname,
@@ -274,6 +278,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			RabbitmqPassword:    rabbitmqSecretPassword,
 			RabbitmqVhost:       rabbitmqSecretVhost,
 			CAFilePath:          certificates.SignerCAFilepath,
+			LogLevel:            controlConfig.LogLevel,
 		})
 		data["dns."+podIP] = controlDNSConfigBuffer.String()
 
@@ -284,12 +289,14 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
+			LogLevel            string
 		}{
 			PodIP:               podIP,
 			CollectorServerList: configCollectorEndpointListSpaceSeparated,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
 			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
 			CAFilePath:          certificates.SignerCAFilepath,
+			LogLevel:            controlConfig.LogLevel,
 		})
 		data["nodemanager."+podIP] = controlNodemanagerBuffer.String()
 
@@ -466,7 +473,14 @@ func (c *Control) ConfigurationParameters() ControlConfiguration {
 	var xmppPort int
 	var dnsPort int
 	var dnsIntrospectPort int
+	var logLevel string
 
+	if c.Spec.ServiceConfiguration.LogLevel != "" {
+		logLevel = c.Spec.ServiceConfiguration.LogLevel
+	} else {
+		logLevel = LogLevel
+	}
+	
 	if c.Spec.ServiceConfiguration.BGPPort != nil {
 		bgpPort = *c.Spec.ServiceConfiguration.BGPPort
 	} else {
@@ -508,6 +522,7 @@ func (c *Control) ConfigurationParameters() ControlConfiguration {
 	controlConfiguration.XMPPPort = &xmppPort
 	controlConfiguration.DNSPort = &dnsPort
 	controlConfiguration.DNSIntrospectPort = &dnsIntrospectPort
+	controlConfiguration.LogLevel = logLevel
 
 	return controlConfiguration
 }

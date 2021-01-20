@@ -261,7 +261,7 @@ rest_api_port=8081
 rest_api_ip=0.0.0.0
 aaa_mode={{ .AAAMode }}
 log_file=/var/log/contrail/contrail-analytics-api.log
-log_level=SYS_NOTICE
+log_level={{ .LogLevel }}
 log_local=1
 # Sandesh send rate limit can be used to throttle system logs transmitted per
 # second. System logs are dropped if the sending rate is exceeded
@@ -331,7 +331,7 @@ server=127.0.0.1
 password=
 [CONFIGDB]
 config_db_server_list={{ .CassandraServerList }}
-config_db_use_ssl=true
+config_db_use_ssl=True
 config_db_ca_certs={{ .CAFilePath }}
 rabbitmq_server_list={{ .RabbitmqServerList }}
 rabbitmq_vhost={{ .RabbitmqVhost }}
@@ -358,7 +358,7 @@ hostname={{ .Hostname }}
 http_server_ip=0.0.0.0
 http_server_port=8091
 log_file=/var/log/contrail/contrail-query-engine.log
-log_level=SYS_DEBUG
+log_level={{ .LogLevel }}
 log_local=1
 max_slice=100
 max_tasks=16
@@ -392,7 +392,7 @@ log_local=1
 hostip={{ .HostIP }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
-db_use_ssl=true
+db_use_ssl=True
 [COLLECTOR]
 server_list={{ .CollectorServerList }}
 [SANDESH]
@@ -412,7 +412,7 @@ log_local=1
 hostip={{ .HostIP }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
-db_use_ssl=true
+db_use_ssl=True
 [COLLECTOR]
 server_list={{ .CollectorServerList }}
 [SANDESH]
