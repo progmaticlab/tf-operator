@@ -408,7 +408,35 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			//}
 		}
 		if container.Name == "provisioner" {
+			command := []string {"bash", "-c",
+				"while true; do echo hello; sleep 10;done",
+			}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command == nil {
+				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMount := corev1.VolumeMount{
+				Name:      request.Name + "-" + instanceType + "-volume",
+				MountPath: "/etc/contrailconfigmaps",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}

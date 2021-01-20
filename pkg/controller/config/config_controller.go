@@ -615,12 +615,42 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 
 			//}
-			case "provisionerconfig":
+		case "provisionerconfig":
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
+				command := []string{"bash", "-c",
+					"while true; do echo hello; sleep 10;done"}
+				if instanceContainer.Command == nil {
+					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+				} else {
+					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+				}
+				volumeMountList := statefulSet.Spec.Template.Spec.Containers[idx].VolumeMounts
+				volumeMountList = append(volumeMountList,
+					corev1.VolumeMount{
+						Name:      request.Name + "-" + instanceType + "-volume",
+						MountPath: "/etc/contrailconfigmaps",
+					},
+				)
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			case "provisioneranalytics":
-				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+		case "provisioneranalytics":
+			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
+			command := []string{"bash", "-c",
+				"while true; do echo hello; sleep 10;done"}
+			if instanceContainer.Command == nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+			volumeMountList := statefulSet.Spec.Template.Spec.Containers[idx].VolumeMounts
+			volumeMountList = append(volumeMountList,
+				corev1.VolumeMount{
+					Name:      request.Name + "-" + instanceType + "-volume",
+					MountPath: "/etc/contrailconfigmaps",
+				},
+			)
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		/*case "statusmonitor":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			command := []string{"sh", "-c",
