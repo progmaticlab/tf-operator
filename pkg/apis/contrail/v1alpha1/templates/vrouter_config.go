@@ -69,3 +69,13 @@ sandesh_ssl_enable=True
 sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
+
+var VrouterNodeManagerEnv = template.Must(template.New("").Parse(`
+# Controller
+export CONTROLLER_NODES={{ .ControllerNodes }}
+# Server SSL
+export SSL_ENABLE=True
+export SERVER_CA_CERTFILE={{ .ServerCaCertfile }}
+export SERVER_CERTFILE=/etc/certificates/server-{{ .ListenAddress }}.crt
+export SERVER_KEYFILE=/etc/certificates/server-key-{{ .ListenAddress }}.pem
+`))
