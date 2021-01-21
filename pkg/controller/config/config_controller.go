@@ -555,7 +555,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			//if configNodeMgr {
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
-					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanagerconfig.${POD_IP} > /etc/contrail/contrail-config-nodemgr.conf; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-config"}
+					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-config"}
 
 				if instanceContainer.Command == nil {
 					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -586,7 +586,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			//if analyticsNodeMgr {
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
-					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanageranalytics.${POD_IP} > /etc/contrail/contrail-analytics-nodemgr.conf;/usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-analytics",
+					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-analytics",
 				}
 
 				if instanceContainer.Command == nil {
@@ -618,7 +618,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		case "provisionerconfig":
 				instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 				command := []string{"bash", "-c",
-					"while true; do echo hello; sleep 10;done"}
+					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/tail -f /dev/null"}
 				if instanceContainer.Command == nil {
 					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 				} else {
@@ -636,7 +636,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		case "provisioneranalytics":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			command := []string{"bash", "-c",
-				"while true; do echo hello; sleep 10;done"}
+				"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/tail -f /dev/null"}
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
