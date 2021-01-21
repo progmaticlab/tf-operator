@@ -3,7 +3,8 @@
 WORKSPACE=${WORKSPACE:-$HOME/tf-operator}
 
 # multinode setup with registry on one node
-if [[ $(echo "$CONTROLLER_NODES $AGENT_NODES" | wc -w ) > 1 ]] ; then
+count=$(echo "$CONTROLLER_NODES $AGENT_NODES" | tr " " "\n" | sort -u |  tr "\n" " " | awk -F ' ' '{print NF}' )
+if [[ $count > 1 ]] ; then
   registry_ip=$(hostname -i)
   sed -i "s/localhost/$registry_ip/g" ${WORKSPACE}/deploy/kustomize/operator/latest/*
   sed -i "s/localhost/$registry_ip/g" ${WORKSPACE}/deploy/kustomize/base/operator/*
