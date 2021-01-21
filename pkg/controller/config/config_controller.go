@@ -631,6 +631,16 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 						MountPath: "/etc/contrailconfigmaps",
 					},
 				)
+				volumeMount := corev1.VolumeMount{
+					Name:      request.Name + "-secret-certificates",
+					MountPath: "/etc/certificates",
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
+				volumeMount = corev1.VolumeMount{
+					Name:      csrSignerCaVolumeName,
+					MountPath: certificates.SignerCAMountPath,
+				}
+				volumeMountList = append(volumeMountList, volumeMount)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		case "provisioneranalytics":
@@ -649,6 +659,16 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 					MountPath: "/etc/contrailconfigmaps",
 				},
 			)
+			volumeMount := corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		/*case "statusmonitor":
