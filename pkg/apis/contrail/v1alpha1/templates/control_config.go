@@ -161,6 +161,16 @@ sandesh_keyfile=/etc/certificates/server-key-{{ .PodIP }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .PodIP }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
 
+var ControlNodeManagerEnv = template.Must(template.New("").Parse(`
+# Controller
+export CONTROLLER_NODES={{ .ControllerNodes }}
+# Server SSL
+export SSL_ENABLE=True
+export SERVER_CA_CERTFILE={{ .ServerCaCertfile }}
+export SERVER_CERTFILE=/etc/certificates/server-{{ .ListenAddress }}.crt
+export SERVER_KEYFILE=/etc/certificates/server-key-{{ .ListenAddress }}.pem
+`))
+
 // ControlProvisionConfig is the template of the Control provision script.
 var ControlProvisionConfig = template.Must(template.New("").Parse(`#!/bin/bash
 servers=$(echo {{ .APIServerList }} | tr ',' ' ')

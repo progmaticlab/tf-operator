@@ -402,7 +402,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 				//command := []string{"bash", "-c",
 				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-control"}
 				command := []string{"bash", "-c",
-					"sed \"s/hostip=.*/hostip=${POD_IP}/g\" /etc/contrailconfigmaps/nodemanager.${POD_IP} > /etc/contrail/contrail-control-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-control",
+					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-control",
 				}
 				//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -437,7 +437,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 		if container.Name == "provisioner" {
 			command := []string{"bash", "-c",
-				"while true; do echo hello; sleep 10;done",
+				"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/tail -f /dev/null",
 			}
 				
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
