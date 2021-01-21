@@ -449,6 +449,7 @@ func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 	for _, vrouterPod := range podList.Items {
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
 		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod)
+		data["nodemanager.env."+vrouterPod.Status.PodIP] = createNodeManagerEnvForPod(&vrouterPod, controlNodesInformation, configNodesInformation)
 	}
 	return data
 }
@@ -515,4 +516,24 @@ func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
 			CAFilePath:    certificates.SignerCAFilepath,
 	})
 	return nodeManagerConfigBuffer.String()
+}
+
+func createNodeManagerEnvForPod(vrouterPod *corev1.Pod,
+	controlNodesInformation *ControlClusterConfiguration,
+	configNodesInformation *ConfigClusterConfiguration,
+) string {
+	controlNodes := configtemplates.JoinListWithSeparator(controlNodesInformation.ControlServerIPList, ",")
+
+	var nodeManagerEnvBuffer bytes.Buffer
+	configtemplates.VrouterNodeManagerEnv.Execute(&nodeManagerEnvBuffer, struct{
+		ControllerNodes       string
+		ServerCaCertfile      string
+		ListenAddress         string
+	}{
+		ControllerNodes: controlNodes,
+		ServerCaCertfile: certificates.SignerCAFilepath,
+		ListenAddress: vrouterPod.Status.PodIP,
+	})
+
+	return nodeManagerEnvBuffer.String()
 }
