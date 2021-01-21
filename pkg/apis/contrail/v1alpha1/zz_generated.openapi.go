@@ -1558,6 +1558,12 @@ func schema_pkg_apis_contrail_v1alpha1_KubemanagerConfiguration(ref common.Refer
 							Format: "",
 						},
 					},
+					"publicFipPool": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"ipFabricForwarding": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},

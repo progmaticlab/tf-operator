@@ -1512,6 +1512,8 @@ spec:
                                 type: boolean
                               ipFabricSubnets:
                                 type: string
+                              publicFipPool:
+                                type: string
                               kubernetesAPIPort:
                                 type: integer
                               kubernetesAPISSLPort:

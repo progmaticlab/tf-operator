@@ -26,7 +26,7 @@ ip_fabric_forwarding={{ .IPFabricForwarding }}
 ip_fabric_snat={{ .IPFabricSnat }}
 host_network_service={{ .HostNetworkService }}
 [VNC]
-public_fip_pool={}
+public_fip_pool={{ .PublicFIPPool }}
 vnc_endpoint_ip={{ .APIServerList }}
 vnc_endpoint_port={{ .APIServerPort }}
 rabbit_server={{ .RabbitmqServerList }}

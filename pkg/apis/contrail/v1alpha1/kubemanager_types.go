@@ -82,6 +82,7 @@ type KubemanagerConfiguration struct {
 	RabbitmqUser          string       `json:"rabbitmqUser,omitempty"`
 	RabbitmqPassword      string       `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost         string       `json:"rabbitmqVhost,omitempty"`
+	PublicFIPPool         string       `json:"publicFipPool,omitempty"`
 }
 
 // KubemanagerNodesConfiguration is the configuration for third party dependencies
@@ -221,6 +222,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			KubernetesClusterName string
 			PodSubnet             string
 			IPFabricSubnet        string
+			PublicFIPPool         string
 			ServiceSubnet         string
 			IPFabricForwarding    string
 			IPFabricSnat          string
@@ -246,6 +248,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			KubernetesClusterName: kubemanagerConfig.KubernetesClusterName,
 			PodSubnet:             kubemanagerConfig.PodSubnets,
 			IPFabricSubnet:        kubemanagerConfig.IPFabricSubnets,
+			PublicFIPPool:         kubemanagerConfig.PublicFIPPool,
 			ServiceSubnet:         kubemanagerConfig.ServiceSubnets,
 			IPFabricForwarding:    strconv.FormatBool(*kubemanagerConfig.IPFabricForwarding),
 			IPFabricSnat:          strconv.FormatBool(*kubemanagerConfig.IPFabricSnat),
@@ -376,6 +379,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	var kubernetesClusterName string
 	var podSubnets string
 	var ipFabricSubnets string
+	var publicFipPool string
 	var serviceSubnets string
 	var ipFabricForwarding bool
 	var ipFabricSnat bool
@@ -424,6 +428,12 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 		ipFabricSubnets = KubernetesIpFabricSubnets
 	}
 
+	if c.Spec.ServiceConfiguration.PublicFIPPool != "{}" {
+		publicFipPool = c.Spec.ServiceConfiguration.PublicFIPPool
+	} else {
+		publicFipPool = KubernetesPublicFIPPool
+	}
+
 	if c.Spec.ServiceConfiguration.ServiceSubnets != "" {
 		serviceSubnets = c.Spec.ServiceConfiguration.ServiceSubnets
 	} else {
@@ -461,6 +471,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration.KubernetesClusterName = kubernetesClusterName
 	kubemanagerConfiguration.PodSubnets = podSubnets
 	kubemanagerConfiguration.IPFabricSubnets = ipFabricSubnets
+	kubemanagerConfiguration.PublicFIPPool = publicFipPool
 	kubemanagerConfiguration.ServiceSubnets = serviceSubnets
 	kubemanagerConfiguration.IPFabricForwarding = &ipFabricForwarding
 	kubemanagerConfiguration.HostNetworkService = &hostNetworkService

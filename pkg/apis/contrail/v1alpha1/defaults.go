@@ -250,4 +250,5 @@ const (
 	ToragentSslCertfile                         string = "/etc/contrail/ssl/certs/server.pem"
 	ToragentSslKeyfile                          string = "/etc/contrail/ssl/private/server-privkey.pem"
 	ToragentSslCacertfile                       string = "/etc/contrail/ssl/certs/ca-cert.pem"
+	KubernetesPublicFIPPool                     string = "{'project' : 'k8s-default', 'domain': 'default-domain', 'name': '__fip_pool_public__' , 'network' : '__public__'}"
 )
