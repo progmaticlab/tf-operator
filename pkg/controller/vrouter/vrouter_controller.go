@@ -26,6 +26,7 @@ import (
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
 	"github.com/Juniper/contrail-operator/pkg/controller/utils"
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 )
 
 var log = logf.Log.WithName("controller_vrouter")
@@ -320,13 +321,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	daemonSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-	/*
-	nodemgr := true
-	nodemgrContainer := utils.GetContainerFromList("nodemanager", instance.Spec.ServiceConfiguration.Containers)
-	if nodemgrContainer == nil {
-		nodemgr = false
-	}
-	*/
+
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",
@@ -408,48 +403,55 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			//}
 		}
 		if container.Name == "provisioner" {
-			command := []string {"bash", "-c",
-				"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/tail -f /dev/null",
-			}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer.Command == nil {
-				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
-			} else {
+			if instanceContainer.Command != nil {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
+			
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
 			}
-			volumeMount := corev1.VolumeMount{
-				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-secret-certificates",
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name: request.Name + "-secret-certificates",
 				MountPath: "/etc/certificates",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      csrSignerCaVolumeName,
+			})
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name: csrSignerCaVolumeName,
 				MountPath: certificates.SignerCAMountPath,
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
+			})
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			envList := []corev1.EnvVar{}
+			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
+				envList = (&daemonSet.Spec.Template.Spec.Containers[idx]).Env
+			}
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SSL_ENABLE",
+				Value: "True",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CA_CERTFILE",
+				Value: certificates.SignerCAFilepath,
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CERTFILE",
+				Value: "/etc/certificates/server-$(POD_IP).crt",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_KEYFILE",
+				Value: "/etc/certificates/server-key-$(POD_IP).pem",
+			})
+			controlNodeList := instance.Spec.ServiceConfiguration.ControlNodesConfiguration.ControlServerIPList
+			envList = append(envList, corev1.EnvVar{
+				Name:  "CONTROLLER_NODES",
+				Value: configtemplates.JoinListWithSeparator(controlNodeList, ","),
+			})
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Env = envList
+
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
-
-	/*
-	if !nodemgr {
-		for idx, container := range daemonSet.Spec.Template.Spec.Containers {
-			if container.Name == "nodemanager" {
-				daemonSet.Spec.Template.Spec.Containers = utils.RemoveIndex(daemonSet.Spec.Template.Spec.Containers, idx)
-			}
-		}
-	}
-	*/
 
 	ubuntu := v1alpha1.UBUNTU
 	for idx, container := range daemonSet.Spec.Template.Spec.InitContainers {
