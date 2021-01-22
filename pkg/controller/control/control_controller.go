@@ -225,8 +225,14 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	})
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
-
-	statefulSet.Spec.Template.Spec.ServiceAccountName = "serviceaccount-statusmonitor-control"
+	// var serviceAccountName string
+	// if instance.Spec.ServiceConfiguration.ServiceAccount != "" {
+	// 	serviceAccountName = instance.Spec.ServiceConfiguration.ServiceAccount
+	// } else {
+	// 	serviceAccountName = "contrail-control-service-account"
+	// }
+	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+	statefulSet.Spec.Template.Spec.ServiceAccountName = "contrail-control-service-account"
 	
 	if instance.Spec.ServiceConfiguration.DataSubnet != "" {
 		if statefulSet.Spec.Template.ObjectMeta.Annotations == nil {

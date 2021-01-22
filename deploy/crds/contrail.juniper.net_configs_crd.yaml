@@ -153,7 +153,7 @@ spec:
                   description: Time to live (TTL) for flow data in hours. Defaults
                     to 2 hours.
                   type: integer
-                analyticsMonitorIntrospectPort:
+                analyticsIntrospectPort:
                   type: integer
                 analyticsPort:
                   type: integer
@@ -172,7 +172,7 @@ spec:
                   type: string
                 cassandraInstance:
                   type: string
-                collectorMonitorIntrospectPort:
+                collectorIntrospectPort:
                   type: integer
                 collectorPort:
                   type: integer
@@ -193,10 +193,6 @@ spec:
                 deviceManagerIntrospectPort:
                   type: integer
                 fabricMgmtIP:
-                  type: string
-                keystoneInstance:
-                  type: string
-                keystoneSecretName:
                   type: string
                 logLevel:
                   type: string

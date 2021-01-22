@@ -31,8 +31,6 @@ type Services struct {
 	Cassandras       []*Cassandra          `json:"cassandras,omitempty"`
 	Zookeepers       []*Zookeeper          `json:"zookeepers,omitempty"`
 	Rabbitmq         *Rabbitmq             `json:"rabbitmq,omitempty"`
-	ProvisionManager *ProvisionManager     `json:"provisionManager,omitempty"`
-	Contrailmonitor  *Contrailmonitor      `json:"contrailmonitor,omitempty"`
 	ContrailCNIs     []*ContrailCNI        `json:"contrailCNIs,omitempty"`
 }
 
@@ -114,14 +112,12 @@ type ManagerStatus struct {
 	Cassandras       []*ServiceStatus `json:"cassandras,omitempty"`
 	Zookeepers       []*ServiceStatus `json:"zookeepers,omitempty"`
 	Rabbitmq         *ServiceStatus   `json:"rabbitmq,omitempty"`
-	ProvisionManager *ServiceStatus   `json:"provisionManager,omitempty"`
 	CrdStatus        []CrdStatus      `json:"crdStatus,omitempty"`
 	Keystone         *ServiceStatus   `json:"keystone,omitempty"`
 	Postgres         *ServiceStatus   `json:"postgres,omitempty"`
 	Swift            *ServiceStatus   `json:"swift,omitempty"`
 	Command          *ServiceStatus   `json:"command,omitempty"`
 	Memcached        *ServiceStatus   `json:"memcached,omitempty"`
-	Contrailmonitor  *ServiceStatus   `json:"contrailmonitor,omitempty"`
 	ContrailCNIs     []*ServiceStatus `json:"contrailCNIs,omitempty"`
 	Replicas         int32            `json:"replicas,omitempty"`
 	// +optional
@@ -274,16 +270,10 @@ func (m Manager) IsClusterReady() bool {
 	if m.Spec.Services.Webui != nil && !m.Status.Webui.ready() {
 		return false
 	}
-	if m.Spec.Services.ProvisionManager != nil && !m.Status.ProvisionManager.ready() {
-		return false
-	}
 	if m.Spec.Services.Config != nil && !m.Status.Config.ready() {
 		return false
 	}
 	if m.Spec.Services.Rabbitmq != nil && !m.Status.Rabbitmq.ready() {
-		return false
-	}
-	if m.Spec.Services.Contrailmonitor != nil && !m.Status.Contrailmonitor.ready() {
 		return false
 	}
 	return true

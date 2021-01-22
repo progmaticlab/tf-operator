@@ -150,6 +150,8 @@ spec:
                   type: integer
                 dnsPort:
                   type: integer
+                logLevel:
+                  type: string
                 nodeManager:
                   type: boolean
                 rabbitmqPassword:

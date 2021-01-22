@@ -196,14 +196,6 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 		hostname := pod.Annotations["hostname"]
 		dataIP := getDataIP(&pod)
 		podIP := pod.Status.PodIP
-		configIntrospectEndpointsList := configtemplates.EndpointList(configNodesInformation.APIServerIPList, ControlIntrospectPort)
-		statusMonitorConfig, err := StatusMonitorConfig(hostname, configIntrospectEndpointsList, podIP,
-			"control", request.Name, request.Namespace, pod.Name)
-		if err != nil {
-			return err
-		}
-		data["monitorconfig."+podIP+".yaml"] = statusMonitorConfig
-
 		configApiIPListSpaceSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, " ")
 		configApiIPListCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
 		configApiIPListCommaSeparatedQuoted := configtemplates.JoinListWithSeparatorAndSingleQuotes(configNodesInformation.APIServerIPList, ",")

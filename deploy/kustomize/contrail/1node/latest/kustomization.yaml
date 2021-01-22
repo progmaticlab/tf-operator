@@ -38,9 +38,6 @@ images:
 - name: contrail-analytics-query-engine
   newTag: latest
   newName: tungstenfabric/contrail-analytics-query-engine
-- name: contrail-statusmonitor
-  newTag: latest
-  newName: localhost:5000/contrail-statusmonitor
 - name: contrail-controller-control-control
   newTag: latest
   newName: tungstenfabric/contrail-controller-control-control
@@ -53,9 +50,6 @@ images:
 - name: contrail-kubernetes-kube-manager
   newTag: latest
   newName: tungstenfabric/contrail-kubernetes-kube-manager
-- name: contrail-operator-provisioner
-  newTag: latest
-  newName: localhost:5000/contrail-operator-provisioner
 - name: rabbitmq
   newTag: "3.7"
   newName: rabbitmq

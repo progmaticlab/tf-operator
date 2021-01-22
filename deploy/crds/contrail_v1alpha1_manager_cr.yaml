@@ -83,8 +83,6 @@ spec:
             image: python:alpine
           - name: named
             image: opencontrailnightly/contrail-controller-control-named:1910-latest
-          - name: statusmonitor
-            image: kaweue/contrail-statusmonitor:master-180ab9
     kubemanagers:
     - metadata:
         labels:
@@ -106,22 +104,6 @@ spec:
           kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
           useKubeadmConfig: true
           zookeeperInstance: zookeeper1
-    provisionManager:
-      metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: provmanager1
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
-          replicas: 1
-        serviceConfiguration:
-          containers:
-          - name: init
-            image: python:alpine
-          - name: provisioner
-            image: kaweue/contrail-operator-provisioner:master.1175
     rabbitmq:
       metadata:
         labels:

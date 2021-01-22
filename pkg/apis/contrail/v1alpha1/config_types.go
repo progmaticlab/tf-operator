@@ -80,8 +80,8 @@ type ConfigConfiguration struct {
 	SchemaIntrospectPort        *int               `json:"schemaIntrospectPort,omitempty"`
 	DeviceManagerIntrospectPort *int               `json:"deviceManagerIntrospectPort,omitempty"`
 	SvcMonitorIntrospectPort    *int               `json:"svcMonitorIntrospectPort,omitempty"`
-	AnalyticsApiIntrospectPort  *int               `json:"analyticsMonitorIntrospectPort,omitempty"`
-	CollectorIntrospectPort     *int               `json:"collectorMonitorIntrospectPort,omitempty"`
+	AnalyticsApiIntrospectPort  *int               `json:"analyticsIntrospectPort,omitempty"`
+	CollectorIntrospectPort     *int               `json:"collectorIntrospectPort,omitempty"`
 	CassandraInstance           string             `json:"cassandraInstance,omitempty"`
 	ZookeeperInstance           string             `json:"zookeeperInstance,omitempty"`
 	NodeManager                 *bool              `json:"nodeManager,omitempty"`
@@ -251,12 +251,6 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			configIntrospectNodes = append(configIntrospectNodes, nodesPortStr)
 		}
 		hostname := podList.Items[idx].Annotations["hostname"]
-		statusMonitorConfig, err := StatusMonitorConfig(hostname, configIntrospectNodes,
-			podList.Items[idx].Status.PodIP, "config", request.Name, request.Namespace, pod.Name)
-		if err != nil {
-			return err
-		}
-		data["monitorconfig."+podList.Items[idx].Status.PodIP+".yaml"] = statusMonitorConfig
 		var configApiConfigBuffer bytes.Buffer
 		configtemplates.ConfigAPIConfig.Execute(&configApiConfigBuffer, struct {
 			HostIP              string

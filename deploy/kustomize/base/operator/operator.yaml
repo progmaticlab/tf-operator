@@ -59,13 +59,9 @@ rules:
   - kubemanagers
   - webuis
   - vrouters
-  - provisionmanagers
-  - contrailcommands
   - keystones
   - swifts
   - memcacheds
-  - contrailmonitors
-  - contrailstatusmonitors
   verbs:
   - '*'
 - apiGroups:

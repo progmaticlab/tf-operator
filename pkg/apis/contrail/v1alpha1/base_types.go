@@ -12,7 +12,6 @@ import (
 
 	mRand "math/rand"
 
-	yaml "gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -37,26 +36,6 @@ const (
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
-
-type MonitorConfig struct {
-	APIServerList  []string          `yaml:"apiServerList,omitempty"`
-	Encryption     MonitorEncryption `yaml:"encryption,omitempty"`
-	NodeType       string            `yaml:"nodeType,omitempty"`
-	Interval       int64             `yaml:"interval,omitempty"`
-	Hostname       string            `yaml:"hostname,omitempty"`
-	InCluster      *bool             `yaml:"inCluster,omitempty"`
-	KubeConfigPath string            `yaml:"kubeConfigPath,omitempty"`
-	NodeName       string            `yaml:"nodeName,omitempty"`
-	Namespace      string            `yaml:"namespace,omitempty"`
-	PodName        string            `yaml:"podName,omitempty"`
-}
-
-type MonitorEncryption struct {
-	CA       *string `yaml:"ca,omitempty"`
-	Cert     *string `yaml:"cert,omitempty"`
-	Key      *string `yaml:"key,omitempty"`
-	Insecure bool    `yaml:"insecure,omitempty"`
-}
 
 // Container defines name, image and command.
 // +k8s:openapi-gen=true
@@ -246,35 +225,6 @@ func CreateAccount(accountName string, namespace string, client client.Client, s
 		}
 	}
 	return nil
-}
-
-func StatusMonitorConfig(hostname string, configNodeList []string, podIP, nodeType, nodeName, namespace, podName string) (string, error) {
-	cert := "/etc/certificates/server-" + podIP + ".crt"
-	key := "/etc/certificates/server-key-" + podIP + ".pem"
-	ca := certificates.SignerCAFilepath
-	inCluster := true
-	monitorConfig := MonitorConfig{
-		APIServerList: configNodeList,
-		Encryption: MonitorEncryption{
-			CA:       &ca,
-			Cert:     &cert,
-			Key:      &key,
-			Insecure: true,
-		},
-		NodeType:  nodeType,
-		Hostname:  hostname,
-		Interval:  10,
-		InCluster: &inCluster,
-		NodeName:  nodeName,
-		Namespace: namespace,
-		PodName:   podName,
-	}
-
-	monitorYaml, err := yaml.Marshal(monitorConfig)
-	if err != nil {
-		return "", err
-	}
-	return string(monitorYaml), nil
 }
 
 // SetPodsToReady sets the status label of a POD to ready.
@@ -982,12 +932,6 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 
 // WebUIClusterConfiguration defines all configuration knobs used to write the config file.
 type WebUIClusterConfiguration struct {
-	AdminUsername string
-	AdminPassword string
-}
-
-// CommandClusterConfiguration defines all configuration knobs used to write the config file.
-type CommandClusterConfiguration struct {
 	AdminUsername string
 	AdminPassword string
 }

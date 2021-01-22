@@ -170,8 +170,14 @@ spec:
                       items:
                         type: string
                       type: array
+                    configServerIPList:
+                      items:
+                        type: string
+                      type: array
                     redisPort:
                       type: integer
+                  required:
+                  - configServerIPList
                   type: object
                 containers:
                   items:
@@ -204,6 +210,8 @@ spec:
                 kubernetesClusterName:
                   type: string
                 kubernetesTokenFile:
+                  type: string
+                logLevel:
                   type: string
                 podSubnets:
                   type: string

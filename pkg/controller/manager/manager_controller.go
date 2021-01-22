@@ -32,13 +32,11 @@ var resourcesList = []runtime.Object{
 	&v1alpha1.Cassandra{},
 	&v1alpha1.Zookeeper{},
 	&v1alpha1.Webui{},
-	&v1alpha1.ProvisionManager{},
 	&v1alpha1.Config{},
 	&v1alpha1.Control{},
 	&v1alpha1.Rabbitmq{},
 	&v1alpha1.Vrouter{},
 	&v1alpha1.Kubemanager{},
-	&v1alpha1.Contrailmonitor{},
 	&v1alpha1.ContrailCNI{},
 	&corev1.ConfigMap{},
 }
@@ -171,12 +169,6 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	/*
-	if err := r.processProvisionManager(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-	*/
-	
 	if err := r.processConfig(instance, replicas, nodesHostAliases); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -198,10 +190,6 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	if err := r.processContrailCNIs(instance); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err = r.processContrailmonitor(instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -412,45 +400,6 @@ func (r *ReconcileManager) processWebui(manager *v1alpha1.Manager, replicas int3
 	status.Name = &webui.Name
 	status.Active = &webui.Status.Active
 	manager.Status.Webui = status
-	return err
-}
-
-func (r *ReconcileManager) processProvisionManager(manager *v1alpha1.Manager, replicas int32) error {
-	if manager.Spec.Services.ProvisionManager == nil {
-		if manager.Status.ProvisionManager != nil {
-			oldPM := &v1alpha1.ProvisionManager{}
-			oldPM.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *manager.Status.ProvisionManager.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldPM)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			manager.Status.ProvisionManager = nil
-		}
-		return nil
-	}
-
-	pm := &v1alpha1.ProvisionManager{}
-	pm.ObjectMeta = manager.Spec.Services.ProvisionManager.ObjectMeta
-	pm.ObjectMeta.Namespace = manager.Namespace
-	manager.Spec.Services.ProvisionManager.Spec.ServiceConfiguration.KeystoneSecretName = manager.Spec.KeystoneSecretName
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, pm, func() error {
-		pm.Spec = manager.Spec.Services.ProvisionManager.Spec
-		pm.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, pm.Spec.CommonConfiguration)
-		if pm.Spec.CommonConfiguration.Replicas == nil {
-			pm.Spec.CommonConfiguration.Replicas = &replicas
-		}
-		return controllerutil.SetControllerReference(manager, pm, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Name = &pm.Name
-	status.Active = pm.Status.Active
-	manager.Status.ProvisionManager = status
 	return err
 }
 
@@ -763,23 +712,6 @@ func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager
 		return controllerutil.SetControllerReference(manager, csrSignerCaConfigMap, r.scheme)
 	})
 
-	return err
-}
-
-func (r *ReconcileManager) processContrailmonitor(manager *v1alpha1.Manager) error {
-	if manager.Spec.Services.Contrailmonitor == nil {
-		return nil
-	}
-	cms := &v1alpha1.Contrailmonitor{}
-	cms.ObjectMeta = manager.Spec.Services.Contrailmonitor.ObjectMeta
-	cms.ObjectMeta.Namespace = manager.Namespace
-	_, err := controllerutil.CreateOrUpdate(context.Background(), r.client, cms, func() error {
-		cms.Spec = manager.Spec.Services.Contrailmonitor.Spec
-		return controllerutil.SetControllerReference(manager, cms, r.scheme)
-	})
-	status := &v1alpha1.ServiceStatus{}
-	status.Active = &cms.Status.Active
-	manager.Status.Contrailmonitor = status
 	return err
 }
 

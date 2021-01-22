@@ -189,15 +189,6 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 	sort.SliceStable(podList.Items, func(i, j int) bool { return podList.Items[i].Status.PodIP < podList.Items[j].Status.PodIP })
 	var data = map[string]string{}
 	for idx := range podList.Items {
-		hostname := podList.Items[idx].Annotations["hostname"]
-		configAnalyticsEndpoints := configtemplates.EndpointList(configNodesInformation.AnalyticsServerIPList, configNodesInformation.AnalyticsServerPort)
-		statusMonitorConfig, err := StatusMonitorConfig(hostname, configAnalyticsEndpoints, podList.Items[idx].Status.PodIP,
-			"kubemanager", request.Name, request.Namespace, podList.Items[idx].Name)
-		if err != nil {
-			return err
-		}
-		data["monitorconfig."+podList.Items[idx].Status.PodIP+".yaml"] = statusMonitorConfig
-
 		configApiIPListCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
 		configCollectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
 		configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
@@ -208,7 +199,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 		cassandraEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(cassandraEndpointList, " ")
 		var kubemanagerConfigBuffer bytes.Buffer
 		secret := &corev1.Secret{}
-		if err = client.Get(context.TODO(), types.NamespacedName{Name: "kubemanagersecret", Namespace: request.Namespace}, secret); err != nil {
+		if err := client.Get(context.TODO(), types.NamespacedName{Name: "kubemanagersecret", Namespace: request.Namespace}, secret); err != nil {
 			return err
 		}
 		token := string(secret.Data["token"])

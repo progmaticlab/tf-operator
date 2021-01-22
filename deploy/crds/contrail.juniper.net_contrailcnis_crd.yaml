@@ -102,6 +102,8 @@ spec:
               description: ContrailCNIConfiguration is the Service Configuration for
                 ContrailCNI
               properties:
+                binariesDirectory:
+                  type: string
                 cniMetaPlugin:
                   type: string
                 containers:
@@ -120,6 +122,8 @@ spec:
                   type: array
                 controlInstance:
                   type: string
+                kubernetesClusterName:
+                  type: string
                 logLevel:
                   format: int32
                   type: integer
@@ -129,6 +133,8 @@ spec:
                 pollTimeout:
                   format: int32
                   type: integer
+                useKubeadmConfig:
+                  type: boolean
                 vrouterIP:
                   type: string
                 vrouterPort:

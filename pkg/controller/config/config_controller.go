@@ -248,7 +248,15 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	})
 	config.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
-	statefulSet.Spec.Template.Spec.ServiceAccountName = "serviceaccount-statusmonitor-config"
+	// var serviceAccountName string
+	// if config.Spec.ServiceConfiguration.ServiceAccount != "" {
+	// 	serviceAccountName = config.Spec.ServiceConfiguration.ServiceAccount
+	// } else {
+	// 	serviceAccountName = "contrail-config-service-account"
+	// }
+	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+	statefulSet.Spec.Template.Spec.ServiceAccountName = "contrail-config-service-account"
+
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{

@@ -120,6 +120,8 @@ spec:
               description: VrouterServiceConfiguration defines all vRouter service
                 configuration
               properties:
+                cassandraInstance:
+                  type: string
                 clusterRole:
                   type: string
                 clusterRoleBinding:
@@ -151,8 +153,14 @@ spec:
                       items:
                         type: string
                       type: array
+                    configServerIPList:
+                      items:
+                        type: string
+                      type: array
                     redisPort:
                       type: integer
+                  required:
+                  - configServerIPList
                   type: object
                 containers:
                   items:
