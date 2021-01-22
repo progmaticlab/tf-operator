@@ -325,7 +325,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",
-				"/entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
+				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; /entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
@@ -368,39 +368,38 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			//if nodemgr {
 				//command := []string{"bash", "-c",
 				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
-				command := []string{"bash", "-c",
-					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
-				}
-				
-				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-				if instanceContainer.Command == nil {
-					(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
-				} else {
-					(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
-				}
+			command := []string{"bash", "-c",
+				"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
+			}
 
-				volumeMountList := []corev1.VolumeMount{}
-				if len((&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
-					volumeMountList = (&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
-				}
-				volumeMount := corev1.VolumeMount{
-					Name:      request.Name + "-" + instanceType + "-volume",
-					MountPath: "/etc/contrailconfigmaps",
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				volumeMount = corev1.VolumeMount{
-					Name:      request.Name + "-secret-certificates",
-					MountPath: "/etc/certificates",
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				volumeMount = corev1.VolumeMount{
-					Name:      csrSignerCaVolumeName,
-					MountPath: certificates.SignerCAMountPath,
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
-				(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			//}
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command == nil {
+				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMount := corev1.VolumeMount{
+				Name:      request.Name + "-" + instanceType + "-volume",
+				MountPath: "/etc/contrailconfigmaps",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image	
 		}
 		if container.Name == "provisioner" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)

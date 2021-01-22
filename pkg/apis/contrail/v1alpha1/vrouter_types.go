@@ -458,6 +458,7 @@ func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
 		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod, configNodesInformation, cassandraNodesInformation)
 		data["nodemanager.env."+vrouterPod.Status.PodIP] = createNodeManagerEnvForPod(&vrouterPod, controlNodesInformation, configNodesInformation)
+		data["vnc."+vrouterPod.Status.PodIP] = createVncApiLibIniForPod(&vrouterPod, configNodesInformation)
 	}
 	return data
 }
@@ -512,9 +513,25 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 	return vrouterConfigBuffer.String()
 }
 
+func createVncApiLibIniForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration) string {
+	configNodesCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.ConfigServerIPList, ",")
+	
+	var vncApiLibIniBuffer bytes.Buffer
+	configtemplates.VRouterVncApiLibIni.Execute(&vncApiLibIniBuffer, struct{
+		ConfigNodes string
+		CAFilePath  string
+	}{
+		ConfigNodes: configNodesCommaSeparated,
+		CAFilePath: certificates.SignerCAFilepath,
+	})
+
+	return vncApiLibIniBuffer.String()
+}
+
 func createNodeManagerConfigForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration, cassandraNodesInformation *CassandraClusterConfiguration) string {
 	configCollectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
 	configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
+
 	var nodeManagerConfigBuffer bytes.Buffer
 	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct{
 			ListenAddress       string
