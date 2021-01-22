@@ -121,3 +121,22 @@ transparent_data_encryption_options:
       key_password: cassandra
 auto_bootstrap: true
 `))
+
+var CassandraNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
+http_server_ip=0.0.0.0
+log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
+log_level=SYS_NOTICE
+log_local=1
+hostip={{ .ListenAddress }}
+db_port={{ .CassandraPort }}
+db_jmx_port={{ .CassandraJmxPort }}
+db_use_ssl=False
+[COLLECTOR]
+server_list={{ .CollectorServerList }}
+[SANDESH]
+introspect_ssl_enable=True
+introspect_ssl_insecure=True
+sandesh_ssl_enable=True
+sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
+sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
+sandesh_ca_cert={{ .CAFilePath }}`))
