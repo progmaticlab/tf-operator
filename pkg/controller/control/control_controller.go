@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 )
 
 var log = logf.Log.WithName("controller_control")
@@ -224,21 +225,8 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	})
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
-	/*
-	nodemgr := true
-	controlNodemgrContainer := utils.GetContainerFromList("nodemanager", instance.Spec.ServiceConfiguration.Containers)
-
-	if controlNodemgrContainer == nil {
-		nodemgr = false
-	}
-	*/
-	/*
-	if err = v1alpha1.CreateAccount("statusmonitor-control", request.Namespace, r.Client, r.Scheme, instance); err != nil {
-		return reconcile.Result{}, err
-	}
 
 	statefulSet.Spec.Template.Spec.ServiceAccountName = "serviceaccount-statusmonitor-control"
-	*/
 	
 	if instance.Spec.ServiceConfiguration.DataSubnet != "" {
 		if statefulSet.Spec.Template.ObjectMeta.Annotations == nil {
@@ -295,40 +283,6 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
-		/*
-		if container.Name == "statusmonitor" {
-			command := []string{"sh", "-c",
-				"/app/statusmonitor/contrail-statusmonitor-image.binary -config /etc/contrailconfigmaps/monitorconfig.${POD_IP}.yaml"}
-			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer.Command == nil {
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
-			} else {
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
-			}
-
-			volumeMountList := []corev1.VolumeMount{}
-			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
-				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
-			}
-			volumeMount := corev1.VolumeMount{
-				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-secret-certificates",
-				MountPath: "/etc/certificates",
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      csrSignerCaVolumeName,
-				MountPath: certificates.SignerCAMountPath,
-			}
-			volumeMountList = append(volumeMountList, volumeMount)
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-		}
-		*/
 		if container.Name == "named" {
 			command := []string{"bash", "-c",
 				"touch /var/log/contrail/contrail-named.log; chgrp contrail /var/log/contrail/contrail-named.log; chmod g+w /var/log/contrail/contrail-named.log; /usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}"}
@@ -397,49 +351,9 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "nodemanager" {
-			//if nodemgr {
-
-				//command := []string{"bash", "-c",
-				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-control"}
-				command := []string{"bash", "-c",
-					"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-control",
-				}
-				//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
-				instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-				if instanceContainer.Command == nil {
-					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
-				} else {
-					(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
-				}
-
-				volumeMountList := []corev1.VolumeMount{}
-				if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
-					volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
-				}
-				volumeMount := corev1.VolumeMount{
-					Name:      request.Name + "-" + instanceType + "-volume",
-					MountPath: "/etc/contrailconfigmaps",
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				volumeMount = corev1.VolumeMount{
-					Name:      request.Name + "-secret-certificates",
-					MountPath: "/etc/certificates",
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				volumeMount = corev1.VolumeMount{
-					Name:      csrSignerCaVolumeName,
-					MountPath: certificates.SignerCAMountPath,
-				}
-				volumeMountList = append(volumeMountList, volumeMount)
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			//}
-		}
-		if container.Name == "provisioner" {
 			command := []string{"bash", "-c",
-				"while [ ! -f /etc/contrailconfigmaps/nodemanager.env.${POD_IP} ]; do sleep 1; done; source /etc/contrailconfigmaps/nodemanager.env.${POD_IP}; /entrypoint.sh /usr/bin/tail -f /dev/null",
+				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-control",
 			}
-				
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -469,15 +383,60 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
-	}
-
-	/*if !nodemgr {
-		for idx, container := range statefulSet.Spec.Template.Spec.Containers {
-			if container.Name == "nodemanager" {
-				statefulSet.Spec.Template.Spec.Containers = utils.RemoveIndex(statefulSet.Spec.Template.Spec.Containers, idx)
+		if container.Name == "provisioner" {
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command != nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
+			
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name: request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			})
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name: csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			envList := []corev1.EnvVar{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
+				envList = (&statefulSet.Spec.Template.Spec.Containers[idx]).Env
+			}
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SSL_ENABLE",
+				Value: "True",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CA_CERTFILE",
+				Value: certificates.SignerCAFilepath,
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CERTFILE",
+				Value: "/etc/certificates/server-$(POD_IP).crt",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_KEYFILE",
+				Value: "/etc/certificates/server-key-$(POD_IP).pem",
+			})
+			configNodesInformation, err := v1alpha1.NewConfigClusterConfiguration(instance.Labels["contrail_cluster"], request.Namespace, r.Client)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			configNodeList := configNodesInformation.ConfigServerIPList
+			envList = append(envList, corev1.EnvVar{
+				Name:  "CONFIG_NODES",
+				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
+			})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Env = envList
+
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
-	}*/
+	}
 
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {
 		instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
