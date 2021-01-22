@@ -20,3 +20,6 @@ cd tf-operator
 ```bash
 ./scripts/run_operator.sh
 ```
+
+# To descroy AIO environemnt
+./scripts/cleanup_aip.sh

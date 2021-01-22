@@ -596,18 +596,6 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			LogLevel:            configConfig.LogLevel,
 		})
 		data["nodemanageranalytics."+podList.Items[idx].Status.PodIP] = configNodemanageranalyticsConfigBuffer.String()
-
-		var nodeManagerEnvBuffer bytes.Buffer
-		configtemplates.ControlNodeManagerEnv.Execute(&nodeManagerEnvBuffer, struct{
-			ControllerNodes       string
-			ServerCaCertfile      string
-			ListenAddress         string
-		}{
-			ControllerNodes: configtemplates.JoinListWithSeparator(podIPList, ","),
-			ServerCaCertfile: certificates.SignerCAFilepath,
-			ListenAddress: podList.Items[idx].Status.PodIP,
-		})
-		data["nodemanager.env."+podList.Items[idx].Status.PodIP] = nodeManagerEnvBuffer.String()
 	}
 	configMapInstanceDynamicConfig.Data = data
 	err = client.Update(context.TODO(), configMapInstanceDynamicConfig)

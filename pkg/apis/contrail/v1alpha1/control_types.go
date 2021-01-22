@@ -335,18 +335,6 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			Hostname:      hostname,
 		})
 		data["deprovision.py."+podIP] = controlDeProvisionBuffer.String()
-
-		var nodeManagerEnvBuffer bytes.Buffer
-		configtemplates.ControlNodeManagerEnv.Execute(&nodeManagerEnvBuffer, struct{
-			ControllerNodes       string
-			ServerCaCertfile      string
-			ListenAddress         string
-		}{
-			ControllerNodes: configApiIPListCommaSeparated,
-			ServerCaCertfile: certificates.SignerCAFilepath,
-			ListenAddress: podIP,
-		})
-		data["nodemanager.env."+podIP] = nodeManagerEnvBuffer.String()
 	}
 	configMapInstanceDynamicConfig.Data = data
 	err = client.Update(context.TODO(), configMapInstanceDynamicConfig)
