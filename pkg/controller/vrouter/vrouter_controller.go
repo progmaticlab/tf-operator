@@ -369,7 +369,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				//command := []string{"bash", "-c",
 				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
 			command := []string{"bash", "-c",
-				"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /entrypoint.sh /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
+				"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
 			}
 
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -441,10 +441,10 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				Name:  "SERVER_KEYFILE",
 				Value: "/etc/certificates/server-key-$(POD_IP).pem",
 			})
-			controlNodeList := instance.Spec.ServiceConfiguration.ControlNodesConfiguration.ControlServerIPList
+			configNodeList := instance.Spec.ServiceConfiguration.ConfigNodesConfiguration.ConfigServerIPList
 			envList = append(envList, corev1.EnvVar{
-				Name:  "CONTROLLER_NODES",
-				Value: configtemplates.JoinListWithSeparator(controlNodeList, ","),
+				Name:  "CONFIG_NODES",
+				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
 			})
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Env = envList
 
