@@ -50,6 +50,17 @@ fabric_snat_hash_table_size = 4096
 slo_destination = collector
 sample_destination = collector`))
 
+var VRouterVncApiLibIni = template.Must(template.New("").Parse(`
+[global]
+WEB_SERVER = {{ .ConfigNodes }}
+WEB_PORT = "8082"
+BASE_URL = /
+use_ssl = "True"
+cafile = {{ .CAFilePath }}
+
+[auth]
+AUTHN_TYPE = noauth`))
+
 //VrouterNodemanagerConfig is the template of the Vrouter Nodemanager service configuration
 var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0

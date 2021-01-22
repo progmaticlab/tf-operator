@@ -448,8 +448,9 @@ func (c *Vrouter) createVrouterDynamicConfig(podList *corev1.PodList,
 	data := map[string]string{}
 	for _, vrouterPod := range podList.Items {
 		data["vrouter."+vrouterPod.Status.PodIP] = createVrouterConfigForPod(&vrouterPod, vrouterConfig, controlNodesInformation, configNodesInformation)
-		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod)
+		data["nodemanager."+vrouterPod.Status.PodIP] = createNodeManagerConfigForPod(&vrouterPod, configNodesInformation)
 		data["nodemanager.env."+vrouterPod.Status.PodIP] = createNodeManagerEnvForPod(&vrouterPod, controlNodesInformation, configNodesInformation)
+		data["vnc."+vrouterPod.Status.PodIP] = createVncApiLibIniForPod(&vrouterPod, configNodesInformation)
 	}
 	return data
 }
@@ -501,7 +502,26 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 	return vrouterConfigBuffer.String()
 }
 
-func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
+func createVncApiLibIniForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration) string {
+	configNodesCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.ConfigServerIPList, ",")
+	
+	var vncApiLibIniBuffer bytes.Buffer
+	configtemplates.VRouterVncApiLibIni.Execute(&vncApiLibIniBuffer, struct{
+		ConfigNodes string
+		CAFilePath  string
+	}{
+		ConfigNodes: configNodesCommaSeparated,
+		CAFilePath: certificates.SignerCAFilepath,
+	})
+
+	return vncApiLibIniBuffer.String()
+}
+
+func createNodeManagerConfigForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration) string {
+	collectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
+	collectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(collectorEndpointList, " ")
+	
+
 	var nodeManagerConfigBuffer bytes.Buffer
 	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct{
 			ListenAddress       string
@@ -511,9 +531,12 @@ func createNodeManagerConfigForPod(vrouterPod *corev1.Pod) string {
 			CassandraJmxPort    string
 			CAFilePath          string
 		}{
-			ListenAddress: vrouterPod.Status.PodIP,
-			Hostname:      vrouterPod.Annotations["hostname"],
-			CAFilePath:    certificates.SignerCAFilepath,
+			ListenAddress:       vrouterPod.Status.PodIP,
+			Hostname:            vrouterPod.Annotations["hostname"],
+			CollectorServerList: collectorEndpointListSpaceSeparated,
+			CassandraPort:       "9042",
+			CassandraJmxPort:    "7200",
+			CAFilePath:          certificates.SignerCAFilepath,
 	})
 	return nodeManagerConfigBuffer.String()
 }

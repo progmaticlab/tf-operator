@@ -971,6 +971,7 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 		APIServerIPList:       configNodes,
 		AnalyticsServerPort:   analyticsPort,
 		AnalyticsServerIPList: configNodes,
+		ConfigServerIPList:    configNodes,
 		CollectorPort:         collectorPort,
 		CollectorServerIPList: configNodes,
 		RedisPort:             redisPort,
@@ -998,6 +999,7 @@ type ConfigClusterConfiguration struct {
 	APIServerIPList       []string           `json:"apiServerIPList,omitempty"`
 	AnalyticsServerPort   int                `json:"analyticsServerPort,omitempty"`
 	AnalyticsServerIPList []string           `json:"analyticsServerIPList,omitempty"`
+	ConfigServerIPList    []string           `json:"configServerIPList"`
 	CollectorPort         int                `json:"collectorPort,omitempty"`
 	CollectorServerIPList []string           `json:"collectorServerIPList,omitempty"`
 	RedisPort             int                `json:"redisPort,omitempty"`
