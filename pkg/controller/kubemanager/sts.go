@@ -28,7 +28,7 @@ func GetSTS() *apps.StatefulSet {
 	var podInitContainers = []core.Container{
 		{
 			Name:  "init",
-			Image: "busybox",
+			Image: "busybox:latest",
 			Command: []string{
 				"sh",
 				"-c",
@@ -50,7 +50,7 @@ func GetSTS() *apps.StatefulSet {
 	var podContainers = []core.Container{
 		{
 			Name:  "kubemanager",
-			Image: "docker.io/michaelhenkel/contrail-kubernetes-kube-manager:5.2.0-dev1",
+			Image: "tungstenfabric/contrail-kubernetes-kube-manager:latest",
 			VolumeMounts: []core.VolumeMount{
 				kubemanagerLogsMount,
 			},

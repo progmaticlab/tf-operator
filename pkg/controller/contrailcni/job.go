@@ -7,13 +7,13 @@ import (
 )
 
 // GetJob is a method that returns k8s Job object filled with containers configuration contrail CNI plugin
-func GetJob(cniDirs string,requestName, instanceType string, replicas *int32) *batch.Job {
+func GetJob(cniDirs string, requestName, instanceType string, replicas *int32) *batch.Job {
 	var trueVal = true
 	var TTLseconds int32 = 3
 
 	var cniContainer = core.Container{
 		Name:  "vroutercni",
-		Image: "hub.juniper.net/contrail-nightly/contrail-kubernetes-cni-init:master.latest",
+		Image: "tungstenfabric/contrail-kubernetes-cni-init:latest",
 		Command: []string{"sh", "-c",
 			"mkdir -p /host/etc_cni/net.d && " +
 				"mkdir -p /var/lib/contrail/ports/vm && " +

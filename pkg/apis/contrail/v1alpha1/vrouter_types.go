@@ -68,7 +68,6 @@ type VrouterConfiguration struct {
 	Gateway             string            `json:"gateway,omitempty"`
 	PhysicalInterface   string            `json:"physicalInterface,omitempty"`
 	MetaDataSecret      string            `json:"metaDataSecret,omitempty"`
-	NodeManager         *bool             `json:"nodeManager,omitempty"`
 	Distribution        *Distribution     `json:"distribution,omitempty"`
 	ServiceAccount      string            `json:"serviceAccount,omitempty"`
 	ClusterRole         string            `json:"clusterRole,omitempty"`
@@ -110,23 +109,23 @@ var VrouterDefaultContainers = []*Container{
 	},
 	{
 		Name:  "nodeinit",
-		Image: "opencontrailnightly/contrail-node-init",
+		Image: "tungstenfabric/contrail-node-init",
 	},
 	{
 		Name:  "vrouteragent",
-		Image: "opencontrailnightly/contrail-vrouter-agent",
+		Image: "tungstenfabric/contrail-vrouter-agent",
 	},
 	{
 		Name:  "vroutercni",
-		Image: "opencontrailnightly/contrail-kubernetes-cni-init",
+		Image: "tungstenfabric/contrail-kubernetes-cni-init",
 	},
 	{
 		Name:  "vrouterkernelbuildinit",
-		Image: "opencontrailnightly/contrail-vrouter-kernel-build-init",
+		Image: "tungstenfabric/contrail-vrouter-kernel-build-init",
 	},
 	{
 		Name:  "vrouterkernelinit",
-		Image: "opencontrailnightly/contrail-vrouter-kernel-init",
+		Image: "tungstenfabric/contrail-vrouter-kernel-init",
 	},
 	{
 		Name:  "multusconfig",
@@ -413,13 +412,6 @@ func (c *Vrouter) ConfigurationParameters() VrouterConfiguration {
 		metaDataSecret = MetadataProxySecret
 	}
 
-	/*if c.Spec.ServiceConfiguration.NodeManager != nil {
-		vrouterConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	} else {*/
-		nodeManager := true
-		vrouterConfiguration.NodeManager = &nodeManager
-	/*}*/
-
 	vrouterConfiguration.VrouterEncryption = c.Spec.ServiceConfiguration.VrouterEncryption
 	vrouterConfiguration.PhysicalInterface = physicalInterface
 	vrouterConfiguration.Gateway = gateway
@@ -493,8 +485,8 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		Gateway              string
 		MetaDataSecret       string
 		CAFilePath           string
-		LogLevel            string
-		}{
+		LogLevel             string
+	}{
 		Hostname:             hostname,
 		ListenAddress:        vrouterPod.Status.PodIP,
 		ControlServerList:    controlXMPPEndpointListSpaceSeparated,
@@ -507,21 +499,21 @@ func createVrouterConfigForPod(vrouterPod *corev1.Pod, vrouterConfig VrouterConf
 		MetaDataSecret:       vrouterConfig.MetaDataSecret,
 		CAFilePath:           certificates.SignerCAFilepath,
 		// TODO: replace harcode
-		LogLevel:            "SYS_DEBUG",
+		LogLevel: "SYS_DEBUG",
 	})
 	return vrouterConfigBuffer.String()
 }
 
 func createVncApiLibIniForPod(vrouterPod *corev1.Pod, configNodesInformation *ConfigClusterConfiguration) string {
-	configNodesCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.ConfigServerIPList, ",")
-	
+	configNodesCommaSeparated := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+
 	var vncApiLibIniBuffer bytes.Buffer
-	configtemplates.VRouterVncApiLibIni.Execute(&vncApiLibIniBuffer, struct{
+	configtemplates.VRouterVncApiLibIni.Execute(&vncApiLibIniBuffer, struct {
 		ConfigNodes string
 		CAFilePath  string
 	}{
 		ConfigNodes: configNodesCommaSeparated,
-		CAFilePath: certificates.SignerCAFilepath,
+		CAFilePath:  certificates.SignerCAFilepath,
 	})
 
 	return vncApiLibIniBuffer.String()
@@ -532,23 +524,23 @@ func createNodeManagerConfigForPod(vrouterPod *corev1.Pod, configNodesInformatio
 	configCollectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(configCollectorEndpointList, " ")
 
 	var nodeManagerConfigBuffer bytes.Buffer
-	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct{
-			ListenAddress       string
-			Hostname            string
-			CollectorServerList string
-			CassandraPort       string
-			CassandraJmxPort    string
-			CAFilePath          string
-			LogLevel            string
-		}{
-			ListenAddress:       vrouterPod.Status.PodIP,
-			Hostname:            vrouterPod.Annotations["hostname"],
-			CollectorServerList: configCollectorEndpointListSpaceSeparated,
-			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
-			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
-			CAFilePath:          certificates.SignerCAFilepath,
-			// TODO: replace harcode
-			LogLevel:            "SYS_DEBUG",
+	configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
+		Hostname            string
+		ListenAddress       string
+		CollectorServerList string
+		CassandraPort       string
+		CassandraJmxPort    string
+		CAFilePath          string
+		LogLevel            string
+	}{
+		Hostname:            vrouterPod.Annotations["hostname"],
+		ListenAddress:       vrouterPod.Status.PodIP,
+		CollectorServerList: configCollectorEndpointListSpaceSeparated,
+		CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
+		CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
+		CAFilePath:          certificates.SignerCAFilepath,
+		// TODO: replace harcode
+		LogLevel: "SYS_DEBUG",
 	})
 	return nodeManagerConfigBuffer.String()
 }

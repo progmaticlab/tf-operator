@@ -20,11 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 )
 
 var log = logf.Log.WithName("controller_control")
@@ -232,8 +232,8 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	// 	serviceAccountName = "contrail-control-service-account"
 	// }
 	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-	statefulSet.Spec.Template.Spec.ServiceAccountName = "contrail-control-service-account"
-	
+	// statefulSet.Spec.Template.Spec.ServiceAccountName = "contrail-control-service-account"
+
 	if instance.Spec.ServiceConfiguration.DataSubnet != "" {
 		if statefulSet.Spec.Template.ObjectMeta.Annotations == nil {
 			statefulSet.Spec.Template.ObjectMeta.Annotations = map[string]string{"dataSubnet": instance.Spec.ServiceConfiguration.DataSubnet}
@@ -258,7 +258,8 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "control" {
 			command := []string{"bash", "-c",
-				"/usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}"}
+				"/usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}",
+			}
 			//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
@@ -290,11 +291,14 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "named" {
-			command := []string{"bash", "-c",
-				"touch /var/log/contrail/contrail-named.log; chgrp contrail /var/log/contrail/contrail-named.log; chmod g+w /var/log/contrail/contrail-named.log; /usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}"}
-			//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"touch /var/log/contrail/contrail-named.log; " +
+						"chgrp contrail /var/log/contrail/contrail-named.log; " +
+						"chmod g+w /var/log/contrail/contrail-named.log; " +
+						"/usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -324,11 +328,11 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "dns" {
-			command := []string{"bash", "-c",
-				"/usr/bin/contrail-dns --conf_file /etc/contrailconfigmaps/dns.${POD_IP}"}
-			//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"/usr/bin/contrail-dns --conf_file /etc/contrailconfigmaps/dns.${POD_IP}",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -357,11 +361,12 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "nodemanager" {
-			command := []string{"bash", "-c",
-				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-control",
-			}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-control-nodemgr.conf; " +
+						"/usr/bin/contrail-nodemgr --nodetype=contrail-control",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -394,17 +399,17 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			if instanceContainer.Command != nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
-			
+
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
 			}
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: request.Name + "-secret-certificates",
+				Name:      request.Name + "-secret-certificates",
 				MountPath: "/etc/certificates",
 			})
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: csrSignerCaVolumeName,
+				Name:      csrSignerCaVolumeName,
 				MountPath: certificates.SignerCAMountPath,
 			})
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
@@ -433,7 +438,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			configNodeList := configNodesInformation.ConfigServerIPList
+			configNodeList := configNodesInformation.APIServerIPList
 			envList = append(envList, corev1.EnvVar{
 				Name:  "CONFIG_NODES",
 				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),

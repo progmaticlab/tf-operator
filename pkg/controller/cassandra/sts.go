@@ -25,7 +25,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 1800
       containers:
-      - image: hub.juniper.net/contrail-nightly/contrail-external-cassandra:5.2.0-0.740
+      - image: cassandra:3.11.4
         imagePullPolicy: Always
         env:
         - name: POD_IP
@@ -74,7 +74,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: busybox
+        image: busybox:latest
         imagePullPolicy: Always
         name: init
         resources: {}
@@ -95,7 +95,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: busybox
+        image: busybox:latest
         imagePullPolicy: Always
         name: init2
         resources: {}

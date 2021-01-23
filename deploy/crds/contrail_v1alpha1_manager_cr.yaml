@@ -39,27 +39,27 @@ spec:
           cassandraInstance: cassandra1
           containers:
           - name: analyticsapi
-            image: opencontrailnightly/contrail-analytics-api:1910-latest
+            image: tungstenfabric/contrail-analytics-api:latest
           - name: api
-            image: opencontrailnightly/contrail-controller-config-api:1910-latest
+            image: tungstenfabric/contrail-controller-config-api:latest
           - name: collector
-            image: opencontrailnightly/contrail-analytics-collector:1910-latest
+            image: tungstenfabric/contrail-analytics-collector:latest
           - name: devicemanager
-            image: opencontrailnightly/contrail-controller-config-devicemgr:1910-latest
+            image: tungstenfabric/contrail-controller-config-devicemgr:latest
           - name: dnsmasq
-            image: opencontrailnightly/contrail-external-dnsmasq:1910-latest
+            image: tungstenfabric/contrail-external-dnsmasq:latest
           - name: init
             image: python:alpine
           - name: init2
-            image: busybox
+            image: busybox:latest
           - name: redis
-            image: redis:4.0.2
+            image: redis:4.0.14
           - name: schematransformer
-            image: opencontrailnightly/contrail-controller-config-schema:1910-latest
+            image: tungstenfabric/contrail-controller-config-schema:latest
           - name: servicemonitor
-            image: opencontrailnightly/contrail-controller-config-svcmonitor:1910-latest
+            image: tungstenfabric/contrail-controller-config-svcmonitor:latest
           - name: queryengine
-            image: opencontrailnightly/contrail-analytics-query-engine:1910-latest
+            image: tungstenfabric/contrail-analytics-query-engine:latest
           logLevel: SYS_DEBUG
           zookeeperInstance: zookeeper1
     controls:
@@ -76,13 +76,13 @@ spec:
           cassandraInstance: cassandra1
           containers:
           - name: control
-            image: opencontrailnightly/contrail-controller-control-control:1910-latest
+            image: tungstenfabric/contrail-controller-control-control:latest
           - name: dns
-            image: opencontrailnightly/contrail-controller-control-dns:1910-latest
+            image: tungstenfabric/contrail-controller-control-dns:latest
           - name: init
             image: python:alpine
           - name: named
-            image: opencontrailnightly/contrail-controller-control-named:1910-latest
+            image: tungstenfabric/contrail-controller-control-named:latest
     kubemanagers:
     - metadata:
         labels:
@@ -98,7 +98,7 @@ spec:
           - name: init
             image: python:alpine
           - name: kubemanager
-            image: michaelhenkel/contrail-kubernetes-kube-manager:1910-latest
+            image: michaelhenkel/contrail-kubernetes-kube-manager:latest
           ipFabricForwarding: false
           ipFabricSnat: true
           kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -134,15 +134,15 @@ spec:
           - name: init
             image: python:alpine
           - name: nodeinit
-            image: opencontrailnightly/contrail-node-init:1910-latest
+            image: tungstenfabric/contrail-node-init:latest
           - name: vrouteragent
-            image: opencontrailnightly/contrail-vrouter-agent:1910-latest
+            image: tungstenfabric/contrail-vrouter-agent:latest
           - name: vroutercni
             image: michaelhenkel/contrailcni:v0.0.1
           - name: vrouterkernelbuildinit
-            image: opencontrailnightly/contrail-vrouter-kernel-build-init:1910-latest
+            image: tungstenfabric/contrail-vrouter-kernel-build-init:latest
           - name: vrouterkernelinit
-            image: opencontrailnightly/contrail-vrouter-kernel-init:1910-latest
+            image: tungstenfabric/contrail-vrouter-kernel-init:latest
           controlInstance: control1
     - metadata:
         labels:
@@ -158,15 +158,15 @@ spec:
           - name: init
             image: python:alpine
           - name: nodeinit
-            image: opencontrailnightly/contrail-node-init:1910-latest
+            image: tungstenfabric/contrail-node-init:latest
           - name: vrouteragent
-            image: opencontrailnightly/contrail-vrouter-agent:1910-latest
+            image: tungstenfabric/contrail-vrouter-agent:latest
           - name: vroutercni
             image: michaelhenkel/contrailcni:v0.0.1
           - name: vrouterkernelbuildinit
-            image: opencontrailnightly/contrail-vrouter-kernel-build-init:1910-latest
+            image: tungstenfabric/contrail-vrouter-kernel-build-init:latest
           - name: vrouterkernelinit
-            image: opencontrailnightly/contrail-vrouter-kernel-init:1910-latest
+            image: tungstenfabric/contrail-vrouter-kernel-init:latest
           controlInstance: control1
     webui:
       metadata:
@@ -183,11 +183,11 @@ spec:
           - name: init
             image: python:alpine
           - name: redis
-            image: redis:4.0.2
+            image: redis:4.0.14
           - name: webuijob
-            image: opencontrailnightly/contrail-controller-webui-job:1910-latest
+            image: tungstenfabric/contrail-controller-webui-job:latest
           - name: webuiweb
-            image: opencontrailnightly/contrail-controller-webui-web:1910-latest
+            image: tungstenfabric/contrail-controller-webui-web:latest
     zookeepers:
     - metadata:
         labels:
@@ -202,4 +202,4 @@ spec:
           - name: init
             image: python:alpine
           - name: zookeeper
-            image: docker.io/zookeeper:3.5.5
+            image: zookeeper:3.5.5

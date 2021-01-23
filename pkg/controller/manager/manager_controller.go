@@ -2,13 +2,13 @@ package manager
 
 import (
 	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -129,18 +129,19 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, nil
 	}
 
-	provisionConfigMap := &corev1.ConfigMap{}
-	if err = r.client.Get(context.TODO(), types.NamespacedName{Name: "provision-config", Namespace: request.Namespace}, provisionConfigMap); err != nil {
-		if errors.IsNotFound(err) {
-			provisionConfigMap.Name = "provision-config"
-			provisionConfigMap.Namespace = request.Namespace
-			data := map[string]string{"apiserver.yaml": "", "confignodes.yaml": "", "controlnodes.yaml": "", "analyticsnodes.yaml": "", "vrouternodes.yaml": ""}
-			provisionConfigMap.Data = data
-			if err = controllerutil.SetControllerReference(instance, provisionConfigMap, r.scheme); err != nil {
-				return reconcile.Result{}, err
-			}
-		}
-	}
+	// TODO: is it needed?
+	// provisionConfigMap := &corev1.ConfigMap{}
+	// if err = r.client.Get(context.TODO(), types.NamespacedName{Name: "provision-config", Namespace: request.Namespace}, provisionConfigMap); err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		provisionConfigMap.Name = "provision-config"
+	// 		provisionConfigMap.Namespace = request.Namespace
+	// 		data := map[string]string{"apiserver.yaml": "", "confignodes.yaml": "", "controlnodes.yaml": "", "analyticsnodes.yaml": "", "vrouternodes.yaml": ""}
+	// 		provisionConfigMap.Data = data
+	// 		if err = controllerutil.SetControllerReference(instance, provisionConfigMap, r.scheme); err != nil {
+	// 			return reconcile.Result{}, err
+	// 		}
+	// 	}
+	// }
 
 	if err := r.processCSRSignerCaConfigMap(instance); err != nil {
 		return reconcile.Result{}, err
@@ -748,7 +749,7 @@ func kubemanagerDependenciesReady(cassandraName, zookeeperName string, managerMe
 }
 
 func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraName, zookeeperName string, managerMeta v1.ObjectMeta, client client.Client) error {
-        cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
+	cassandraConfig, err := v1alpha1.NewCassandraClusterConfiguration(cassandraName, managerMeta.Namespace, client)
 	if err != nil {
 		return err
 	}
@@ -768,7 +769,7 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 		return err
 	}
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
-    return nil
+	return nil
 }
 
 func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {

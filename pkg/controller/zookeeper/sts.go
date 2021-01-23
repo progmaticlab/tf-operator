@@ -77,7 +77,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: docker.io/michaelhenkel/contrail-external-zookeeper:5.2.0-dev1
+        image: tungstenfabric/contrail-external-zookeeper:latest
         imagePullPolicy: Always
         resources:
           requests:

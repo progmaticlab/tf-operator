@@ -7,7 +7,7 @@ spec:
     serviceConfiguration:
       containers:
         - name: vroutercni
-          image: hub.juniper.net/contrail-nightly/contrail-kubernetes-cni-init:master.latest
+          image: tungstenfabric/contrail-kubernetes-cni-init:latest
     commonConfiguration:
       create: true
 

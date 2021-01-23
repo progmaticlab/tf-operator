@@ -152,8 +152,6 @@ spec:
                   type: integer
                 logLevel:
                   type: string
-                nodeManager:
-                  type: boolean
                 rabbitmqPassword:
                   type: string
                 rabbitmqUser:

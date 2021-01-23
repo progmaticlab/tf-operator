@@ -643,41 +643,46 @@ func getPodInitStatus(reconcileClient client.Client,
 								annotationMap = make(map[string]string)
 							}
 							if getHostname {
-
 								hostname, err := getPodsHostname(reconcileClient, &pod)
 								if err != nil {
 									return map[string]string{}, err
 								}
 								annotationMap["hostname"] = hostname
 							}
-							if getInterface {
-								command := []string{"/bin/sh", "-c", "ifconfig | sed -n '/addr:" + pod.Status.PodIP + "/{g;h;p};h;x'  |awk '{print $1}'"}
-								physicalInterface, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
+							if getMac {
+								command := []string{"/bin/sh", "-c", "ip addr show | sed -n '/inet " + pod.Status.PodIP + "\\//{g;h;p};h;x' | awk '{print $2}' | head -n 1"}
+								physicalInterfaceMac, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 								if err != nil {
-									return map[string]string{}, fmt.Errorf("failed getting interface")
+									log.Error(err, "Failed to get iface", strings.Join(command, " "), physicalInterfaceMac)
+									return map[string]string{}, fmt.Errorf("failed getting mac")
 								}
-								annotationMap["physicalInterface"] = strings.Trim(physicalInterface, "\n")
+								annotationMap["physicalInterfaceMac"] = strings.Trim(physicalInterfaceMac, "\n")
+								// TODO: it is not possible to detect iface in case if vhost0 already init via this method..
+								// ideally is to remove all of this ip addr hacks
+								if getInterface {
+									command := []string{"/bin/sh", "-c", "ip addr show | sed -n '/ether " + annotationMap["physicalInterfaceMac"] + " /{g;h;p};h;x' | awk '{print $2}' | tr -d ':' | grep -v vhost0"}
+									physicalInterface, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
+									if err != nil {
+										log.Error(err, "Failed to get iface", strings.Join(command, " "), physicalInterface)
+										return map[string]string{}, fmt.Errorf("failed getting interface")
+									}
+									annotationMap["physicalInterface"] = strings.Trim(physicalInterface, "\n")
+								}
 							}
 							if getGateway {
-								command := []string{"/bin/sh", "-c", "ip route get 1.1.1.1 |grep -v cache |sed -e 's/.* via \\(.*\\) dev.*/\\1/'"}
+								command := []string{"/bin/sh", "-c", "ip route get 1.1.1.1 | grep -v cache | sed -e 's/.* via \\(.*\\) dev.*/\\1/'"}
 								gateway, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 								if err != nil {
+									log.Error(err, "Failed to get gateway", strings.Join(command, " "), gateway)
 									return map[string]string{}, fmt.Errorf("failed getting gateway")
 								}
 								annotationMap["gateway"] = strings.Trim(gateway, "\n")
 							}
-							if getMac {
-								command := []string{"/bin/sh", "-c", "ip address show | sed -n '/inet " + pod.Status.PodIP + "\\//{g;h;p};h;x' |awk '{print $2}'"}
-								physicalInterfaceMac, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
-								if err != nil {
-									return map[string]string{}, fmt.Errorf("failed getting mac")
-								}
-								annotationMap["physicalInterfaceMac"] = strings.Trim(physicalInterfaceMac, "\n")
-							}
 							if getPrefix {
-								command := []string{"/bin/sh", "-c", "ip addr sh |sed -n 's/.*" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p'"}
+								command := []string{"/bin/sh", "-c", "ip addr show | sed -n 's/.*]" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p' | head -n 1"}
 								prefixLength, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 								if err != nil {
+									log.Error(err, "Failed to get prefix", strings.Join(command, " "), prefixLength)
 									return map[string]string{}, fmt.Errorf("failed getting prefix")
 								}
 								annotationMap["prefixLength"] = strings.Trim(prefixLength, "\n")
@@ -688,6 +693,7 @@ func getPodInitStatus(reconcileClient client.Client,
 									command := []string{"/bin/sh", "-c", "ip r | grep " + cidr + " | awk -F' ' '{print $NF}'"}
 									addr, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 									if err != nil {
+										log.Error(err, "Failed to get data subnet ip", strings.Join(command, " "), addr)
 										return map[string]string{}, fmt.Errorf("failed getting ip address from data subnet")
 									}
 									ip := strings.Trim(addr, "\n")
@@ -921,7 +927,6 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 		APIServerIPList:       configNodes,
 		AnalyticsServerPort:   analyticsPort,
 		AnalyticsServerIPList: configNodes,
-		ConfigServerIPList:    configNodes,
 		CollectorPort:         collectorPort,
 		CollectorServerIPList: configNodes,
 		RedisPort:             redisPort,
@@ -943,7 +948,6 @@ type ConfigClusterConfiguration struct {
 	APIServerIPList       []string           `json:"apiServerIPList,omitempty"`
 	AnalyticsServerPort   int                `json:"analyticsServerPort,omitempty"`
 	AnalyticsServerIPList []string           `json:"analyticsServerIPList,omitempty"`
-	ConfigServerIPList    []string           `json:"configServerIPList"`
 	CollectorPort         int                `json:"collectorPort,omitempty"`
 	CollectorServerIPList []string           `json:"collectorServerIPList,omitempty"`
 	RedisPort             int                `json:"redisPort,omitempty"`

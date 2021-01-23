@@ -170,14 +170,8 @@ spec:
                       items:
                         type: string
                       type: array
-                    configServerIPList:
-                      items:
-                        type: string
-                      type: array
                     redisPort:
                       type: integer
-                  required:
-                  - configServerIPList
                   type: object
                 containers:
                   items:

@@ -6,7 +6,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,7 +15,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -238,107 +236,88 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
-	var serviceAccountName string
-	if instance.Spec.ServiceConfiguration.ServiceAccount != "" {
-		serviceAccountName = instance.Spec.ServiceConfiguration.ServiceAccount
-	} else {
-		serviceAccountName = "contrail-webui-service-account"
-	}
+	// TODO: why it is needed for web ui ??
+	//
+	// existingServiceAccount := &corev1.ServiceAccount{}
+	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: instance.Namespace}, existingServiceAccount)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	serviceAccount := &corev1.ServiceAccount{
+	// 		TypeMeta: metav1.TypeMeta{
+	// 			APIVersion: "v1",
+	// 			Kind:       "ServiceAccount",
+	// 		},
+	// 		ObjectMeta: metav1.ObjectMeta{
+	// 			Name:      serviceAccountName,
+	// 			Namespace: instance.Namespace,
+	// 		},
+	// 	}
+	// 	err = controllerutil.SetControllerReference(instance, serviceAccount, r.Scheme)
+	// 	if err != nil {
+	// 		return reconcile.Result{}, err
+	// 	}
+	// 	if err = r.Client.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
+	// 		return reconcile.Result{}, err
+	// 	}
+	// }
 
-	var clusterRoleName string
-	if instance.Spec.ServiceConfiguration.ClusterRole != "" {
-		clusterRoleName = instance.Spec.ServiceConfiguration.ClusterRole
-	} else {
-		clusterRoleName = "contrail-webui-cluster-role"
-	}
+	// existingClusterRole := &rbacv1.ClusterRole{}
+	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleName}, existingClusterRole)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	clusterRole := &rbacv1.ClusterRole{
+	// 		TypeMeta: metav1.TypeMeta{
+	// 			APIVersion: "rbac/v1",
+	// 			Kind:       "ClusterRole",
+	// 		},
+	// 		ObjectMeta: metav1.ObjectMeta{
+	// 			Name:      clusterRoleName,
+	// 			Namespace: instance.Namespace,
+	// 		},
+	// 		Rules: []rbacv1.PolicyRule{{
+	// 			Verbs: []string{
+	// 				"*",
+	// 			},
+	// 			APIGroups: []string{
+	// 				"*",
+	// 			},
+	// 			Resources: []string{
+	// 				"*",
+	// 			},
+	// 		}},
+	// 	}
+	// 	if err = r.Client.Create(context.TODO(), clusterRole); err != nil {
+	// 		return reconcile.Result{}, err
+	// 	}
+	// }
 
-	var clusterRoleBindingName string
-	if instance.Spec.ServiceConfiguration.ClusterRoleBinding != "" {
-		clusterRoleBindingName = instance.Spec.ServiceConfiguration.ClusterRoleBinding
-	} else {
-		clusterRoleBindingName = "contrail-webui-cluster-role-binding"
-	}
+	// existingClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBindingName}, existingClusterRoleBinding)
+	// if err != nil && errors.IsNotFound(err) {
+	// 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+	// 		TypeMeta: metav1.TypeMeta{
+	// 			APIVersion: "rbac/v1",
+	// 			Kind:       "ClusterRoleBinding",
+	// 		},
+	// 		ObjectMeta: metav1.ObjectMeta{
+	// 			Name:      clusterRoleBindingName,
+	// 			Namespace: instance.Namespace,
+	// 		},
+	// 		Subjects: []rbacv1.Subject{{
+	// 			Kind:      "ServiceAccount",
+	// 			Name:      serviceAccountName,
+	// 			Namespace: instance.Namespace,
+	// 		}},
+	// 		RoleRef: rbacv1.RoleRef{
+	// 			APIGroup: "rbac.authorization.k8s.io",
+	// 			Kind:     "ClusterRole",
+	// 			Name:     clusterRoleName,
+	// 		},
+	// 	}
+	// 	if err = r.Client.Create(context.TODO(), clusterRoleBinding); err != nil {
+	// 		return reconcile.Result{}, err
+	// 	}
+	// }
 
-	existingServiceAccount := &corev1.ServiceAccount{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: instance.Namespace}, existingServiceAccount)
-	if err != nil && errors.IsNotFound(err) {
-		serviceAccount := &corev1.ServiceAccount{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ServiceAccount",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceAccountName,
-				Namespace: instance.Namespace,
-			},
-		}
-		err = controllerutil.SetControllerReference(instance, serviceAccount, r.Scheme)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if err = r.Client.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		}
-	}
-
-	existingClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleName}, existingClusterRole)
-	if err != nil && errors.IsNotFound(err) {
-		clusterRole := &rbacv1.ClusterRole{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac/v1",
-				Kind:       "ClusterRole",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterRoleName,
-				Namespace: instance.Namespace,
-			},
-			Rules: []rbacv1.PolicyRule{{
-				Verbs: []string{
-					"*",
-				},
-				APIGroups: []string{
-					"*",
-				},
-				Resources: []string{
-					"*",
-				},
-			}},
-		}
-		if err = r.Client.Create(context.TODO(), clusterRole); err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
-	existingClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBindingName}, existingClusterRoleBinding)
-	if err != nil && errors.IsNotFound(err) {
-		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterRoleBindingName,
-				Namespace: instance.Namespace,
-			},
-			Subjects: []rbacv1.Subject{{
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: instance.Namespace,
-			}},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     clusterRoleName,
-			},
-		}
-		if err = r.Client.Create(context.TODO(), clusterRoleBinding); err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
-	statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "webuiweb" {
 			command := []string{"bash", "-c",

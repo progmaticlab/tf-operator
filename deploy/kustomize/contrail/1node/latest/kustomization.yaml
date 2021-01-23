@@ -1,6 +1,19 @@
 bases:
 - ../../../base/contrail
 
+# set replicas=1
+patchesStrategicMerge:
+  - replicas.yaml
+
+# set contrail-status image
+patchesJson6902:
+  - target:
+      kind: Manager
+      name: cluster1
+      group: contrail.juniper.net
+      version: v1alpha1
+    path: contrail-status.json
+
 images:
 - name: python
   newTag: 3.8.2-alpine
@@ -11,6 +24,12 @@ images:
 - name: cassandra
   newTag: "3.11.4"
   newName: cassandra
+- name: zookeeper
+  newTag: "3.5.5"
+  newName: zookeeper
+- name: rabbitmq
+  newTag: "3.7"
+  newName: rabbitmq
 - name: contrail-analytics-api
   newTag: latest
   newName: tungstenfabric/contrail-analytics-api
@@ -27,7 +46,7 @@ images:
   newTag: latest
   newName: tungstenfabric/contrail-controller-config-dnsmasq
 - name: redis
-  newTag: "4.0.2"
+  newTag: "4.0.14"
   newName: redis
 - name: contrail-controller-config-schema
   newTag: latest
@@ -50,9 +69,6 @@ images:
 - name: contrail-kubernetes-kube-manager
   newTag: latest
   newName: tungstenfabric/contrail-kubernetes-kube-manager
-- name: rabbitmq
-  newTag: "3.7"
-  newName: rabbitmq
 - name: contrail-node-init
   newTag: latest
   newName: tungstenfabric/contrail-node-init
@@ -86,9 +102,6 @@ images:
 - name: contrail-controller-webui-web
   newTag: latest
   newName: tungstenfabric/contrail-controller-webui-web
-- name: zookeeper
-  newTag: "3.5.5"
-  newName: docker.io/zookeeper
 - name: contrail-provisioner
   newTag: latest
   newName: tungstenfabric/contrail-provisioner

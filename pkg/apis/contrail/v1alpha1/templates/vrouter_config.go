@@ -67,6 +67,7 @@ http_server_ip=0.0.0.0
 log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
 log_level={{ .LogLevel }}
 log_local=1
+hostname={{ .Hostname }}
 hostip={{ .ListenAddress }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}

@@ -84,7 +84,6 @@ type ConfigConfiguration struct {
 	CollectorIntrospectPort     *int               `json:"collectorIntrospectPort,omitempty"`
 	CassandraInstance           string             `json:"cassandraInstance,omitempty"`
 	ZookeeperInstance           string             `json:"zookeeperInstance,omitempty"`
-	NodeManager                 *bool              `json:"nodeManager,omitempty"`
 	RabbitmqUser                string             `json:"rabbitmqUser,omitempty"`
 	RabbitmqPassword            string             `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost               string             `json:"rabbitmqVhost,omitempty"`
@@ -94,13 +93,13 @@ type ConfigConfiguration struct {
 	Storage                     Storage            `json:"storage,omitempty"`
 	FabricMgmtIP                string             `json:"fabricMgmtIP,omitempty"`
 	// Time (in hours) that the analytics object and log data stays in the Cassandra database. Defaults to 48 hours.
-	AnalyticsDataTTL            *int               `json:"analyticsDataTTL,omitempty"`
+	AnalyticsDataTTL *int `json:"analyticsDataTTL,omitempty"`
 	// Time (in hours) the analytics config data entering the collector stays in the Cassandra database. Defaults to 2160 hours.
-	AnalyticsConfigAuditTTL     *int               `json:"analyticsConfigAuditTTL,omitempty"`
+	AnalyticsConfigAuditTTL *int `json:"analyticsConfigAuditTTL,omitempty"`
 	// Time to live (TTL) for statistics data in hours. Defaults to 4 hours.
-	AnalyticsStatisticsTTL      *int               `json:"analyticsStatisticsTTL,omitempty"`
+	AnalyticsStatisticsTTL *int `json:"analyticsStatisticsTTL,omitempty"`
 	// Time to live (TTL) for flow data in hours. Defaults to 2 hours.
-	AnalyticsFlowTTL            *int               `json:"analyticsFlowTTL,omitempty"`
+	AnalyticsFlowTTL *int `json:"analyticsFlowTTL,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -488,13 +487,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			LogLevel:                   configConfig.LogLevel,
 		})
 		data["analyticsapi."+podList.Items[idx].Status.PodIP] = configAnalyticsapiConfigBuffer.String()
-		/*
-			command := []string{"/bin/sh", "-c", "hostname"}
-			hostname, _, err := ExecToPodThroughAPI(command, "init", podList.Items[idx].Name, podList.Items[idx].Namespace, nil)
-			if err != nil {
-				return err
-			}
-		*/
+
 		var configCollectorConfigBuffer bytes.Buffer
 		configtemplates.ConfigCollectorConfig.Execute(&configCollectorConfigBuffer, struct {
 			Hostname                string
@@ -557,6 +550,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 
 		var configNodemanagerconfigConfigBuffer bytes.Buffer
 		configtemplates.ConfigNodemanagerConfigConfig.Execute(&configNodemanagerconfigConfigBuffer, struct {
+			Hostname            string
 			HostIP              string
 			CollectorServerList string
 			CassandraPort       string
@@ -564,6 +558,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CAFilePath          string
 			LogLevel            string
 		}{
+			Hostname:            hostname,
 			HostIP:              podList.Items[idx].Status.PodIP,
 			CollectorServerList: collectorServerList,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
@@ -575,6 +570,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 
 		var configNodemanageranalyticsConfigBuffer bytes.Buffer
 		configtemplates.ConfigNodemanagerAnalyticsConfig.Execute(&configNodemanageranalyticsConfigBuffer, struct {
+			Hostname            string
 			HostIP              string
 			CollectorServerList string
 			CassandraPort       string
@@ -582,6 +578,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			CAFilePath          string
 			LogLevel            string
 		}{
+			Hostname:            hostname,
 			HostIP:              podList.Items[idx].Status.PodIP,
 			CollectorServerList: collectorServerList,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
@@ -600,6 +597,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 	return nil
 }
 
+// ConfigAuthParameters is Keystone auth options
 type ConfigAuthParameters struct {
 	AdminUsername     string
 	AdminPassword     string
@@ -611,6 +609,7 @@ type ConfigAuthParameters struct {
 	ProjectDomainName string
 }
 
+// AuthParameters makes default empty ConfigAuthParameters
 func (c *Config) AuthParameters(client client.Client) (*ConfigAuthParameters, error) {
 	w := &ConfigAuthParameters{
 		AdminUsername: "admin",
@@ -618,6 +617,7 @@ func (c *Config) AuthParameters(client client.Client) (*ConfigAuthParameters, er
 	return w, nil
 }
 
+// CreateConfigMap makes default empty ConfigMap
 func (c *Config) CreateConfigMap(configMapName string,
 	client client.Client,
 	scheme *runtime.Scheme,
@@ -876,13 +876,6 @@ func (c *Config) ConfigurationParameters() ConfigConfiguration {
 		collectorIntrospectPort = CollectorIntrospectPort
 	}
 	configConfiguration.CollectorIntrospectPort = &collectorIntrospectPort
-
-	//if c.Spec.ServiceConfiguration.NodeManager != nil {
-	//	configConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	//} else {
-		nodeManager := true
-		configConfiguration.NodeManager = &nodeManager
-	//}
 
 	if c.Spec.ServiceConfiguration.RabbitmqUser != "" {
 		rabbitmqUser = c.Spec.ServiceConfiguration.RabbitmqUser

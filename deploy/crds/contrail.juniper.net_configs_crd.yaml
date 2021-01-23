@@ -196,8 +196,6 @@ spec:
                   type: string
                 logLevel:
                   type: string
-                nodeManager:
-                  type: boolean
                 rabbitmqPassword:
                   type: string
                 rabbitmqUser:

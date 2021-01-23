@@ -428,11 +428,6 @@ func (in *ConfigConfiguration) DeepCopyInto(out *ConfigConfiguration) {
 		*out = new(int)
 		**out = **in
 	}
-	if in.NodeManager != nil {
-		in, out := &in.NodeManager, &out.NodeManager
-		*out = new(bool)
-		**out = **in
-	}
 	out.Storage = in.Storage
 	if in.AnalyticsDataTTL != nil {
 		in, out := &in.AnalyticsDataTTL, &out.AnalyticsDataTTL
@@ -915,11 +910,6 @@ func (in *ControlConfiguration) DeepCopyInto(out *ControlConfiguration) {
 	if in.DNSIntrospectPort != nil {
 		in, out := &in.DNSIntrospectPort, &out.DNSIntrospectPort
 		*out = new(int)
-		**out = **in
-	}
-	if in.NodeManager != nil {
-		in, out := &in.NodeManager, &out.NodeManager
-		*out = new(bool)
 		**out = **in
 	}
 	return
@@ -2096,11 +2086,6 @@ func (in *VrouterConfiguration) DeepCopyInto(out *VrouterConfiguration) {
 				(*in).DeepCopyInto(*out)
 			}
 		}
-	}
-	if in.NodeManager != nil {
-		in, out := &in.NodeManager, &out.NodeManager
-		*out = new(bool)
-		**out = **in
 	}
 	if in.Distribution != nil {
 		in, out := &in.Distribution, &out.Distribution

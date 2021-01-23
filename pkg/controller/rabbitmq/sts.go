@@ -46,7 +46,7 @@ func GetSTS() *apps.StatefulSet {
 	var podContainers = []core.Container{
 		{
 			Name:  "rabbitmq",
-			Image: "docker.io/michaelhenkel/contrail-external-rabbitmq:5.2.0-dev1",
+			Image: "tungstenfabric/contrail-external-rabbitmq:latest",
 			VolumeMounts: []core.VolumeMount{
 				{
 					Name:      "rabbitmq-data",

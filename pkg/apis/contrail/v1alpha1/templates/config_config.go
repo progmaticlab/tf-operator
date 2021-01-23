@@ -389,6 +389,7 @@ http_server_ip=0.0.0.0
 log_file=/var/log/contrail/contrail-config-nodemgr.log
 log_level={{ .LogLevel }}
 log_local=1
+hostname={{ .Hostname }}
 hostip={{ .HostIP }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
@@ -409,6 +410,7 @@ http_server_ip=0.0.0.0
 log_file=/var/log/contrail/contrail-config-nodemgr.log
 log_level={{ .LogLevel }}
 log_local=1
+hostname={{ .Hostname }}
 hostip={{ .HostIP }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
@@ -422,13 +424,3 @@ sandesh_ssl_enable=True
 sandesh_keyfile=/etc/certificates/server-key-{{ .HostIP }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .HostIP }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
-
-var ConfigNodeManagerEnv = template.Must(template.New("").Parse(`
-# Controller
-export CONTROLLER_NODES={{ .ControllerNodes }}
-# Server SSL
-export SSL_ENABLE=True
-export SERVER_CA_CERTFILE={{ .ServerCaCertfile }}
-export SERVER_CERTFILE=/etc/certificates/server-{{ .ListenAddress }}.crt
-export SERVER_KEYFILE=/etc/certificates/server-key-{{ .ListenAddress }}.pem
-`))

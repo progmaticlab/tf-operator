@@ -51,7 +51,6 @@ type ControlConfiguration struct {
 	XMPPPort          *int         `json:"xmppPort,omitempty"`
 	DNSPort           *int         `json:"dnsPort,omitempty"`
 	DNSIntrospectPort *int         `json:"dnsIntrospectPort,omitempty"`
-	NodeManager       *bool        `json:"nodeManager,omitempty"`
 	RabbitmqUser      string       `json:"rabbitmqUser,omitempty"`
 	RabbitmqPassword  string       `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost     string       `json:"rabbitmqVhost,omitempty"`
@@ -60,8 +59,8 @@ type ControlConfiguration struct {
 	// discovered and used both in configuration for hostip directive and provision
 	// script.
 	// +kubebuilder:validation:Pattern=`^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/(3[0-2]|2[0-9]|1[0-9]|[0-9]))$`
-	DataSubnet        string        `json:"dataSubnet,omitempty"`
-	LogLevel          string        `json:"logLevel,omitempty"`
+	DataSubnet string `json:"dataSubnet,omitempty"`
+	LogLevel   string `json:"logLevel,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -276,14 +275,16 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 
 		var controlNodemanagerBuffer bytes.Buffer
 		configtemplates.ControlNodemanagerConfig.Execute(&controlNodemanagerBuffer, struct {
-			PodIP               string
+			Hostname            string
+			ListenAddress       string
 			CollectorServerList string
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
 			LogLevel            string
 		}{
-			PodIP:               podIP,
+			Hostname:            hostname,
+			ListenAddress:       podIP,
 			CollectorServerList: configCollectorEndpointListSpaceSeparated,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
 			CassandraJmxPort:    strconv.Itoa(cassandraNodesInformation.JMXPort),
@@ -430,6 +431,7 @@ func (c *Control) SetInstanceActive(client client.Client, activeStatus *bool, st
 	return SetInstanceActive(client, activeStatus, sts, request, c)
 }
 
+// ManageNodeStatus updates the Control node status
 func (c *Control) ManageNodeStatus(podNameIPMap map[string]string,
 	client client.Client) error {
 	c.Status.Nodes = podNameIPMap
@@ -446,6 +448,7 @@ func (c *Control) ManageNodeStatus(podNameIPMap map[string]string,
 	return nil
 }
 
+// ConfigurationParameters makes ControlConfiguration
 func (c *Control) ConfigurationParameters() ControlConfiguration {
 	controlConfiguration := ControlConfiguration{}
 	var bgpPort int
@@ -460,7 +463,7 @@ func (c *Control) ConfigurationParameters() ControlConfiguration {
 	} else {
 		logLevel = LogLevel
 	}
-	
+
 	if c.Spec.ServiceConfiguration.BGPPort != nil {
 		bgpPort = *c.Spec.ServiceConfiguration.BGPPort
 	} else {
@@ -491,12 +494,6 @@ func (c *Control) ConfigurationParameters() ControlConfiguration {
 		dnsIntrospectPort = DnsIntrospectPort
 	}
 
-	//if c.Spec.ServiceConfiguration.NodeManager != nil {
-	//	controlConfiguration.NodeManager = c.Spec.ServiceConfiguration.NodeManager
-	//} else {
-		nodeManager := true
-		controlConfiguration.NodeManager = &nodeManager
-	//}
 	controlConfiguration.BGPPort = &bgpPort
 	controlConfiguration.ASNNumber = &asnNumber
 	controlConfiguration.XMPPPort = &xmppPort

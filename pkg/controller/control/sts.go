@@ -26,7 +26,7 @@ spec:
         fsGroup: 1999
       initContainers:
         - name: init
-          image: busybox
+          image: busybox:latest
           command:
             - sh
             - -c
@@ -42,7 +42,7 @@ spec:
               name: status
       containers:
         - name: control
-          image: docker.io/michaelhenkel/contrail-controller-control-control:5.2.0-dev1
+          image: tungstenfabric/contrail-controller-control-control:latest
           env:
             - name: POD_IP
               valueFrom:
@@ -53,7 +53,7 @@ spec:
             - mountPath: /var/log/contrail
               name: control-logs
         - name: dns
-          image: docker.io/michaelhenkel/contrail-controller-control-dns:5.2.0-dev1
+          image: tungstenfabric/contrail-controller-control-dns:latest
           env:
             - name: POD_IP
               valueFrom:
@@ -68,7 +68,7 @@ spec:
             - mountPath: /etc/contrail/dns
               name: etc-contrail-dns
         - name: named
-          image: docker.io/michaelhenkel/contrail-controller-control-named:5.2.0-dev1
+          image: tungstenfabric/contrail-controller-control-named:latest
           env:
             - name: POD_IP
               valueFrom:
@@ -86,48 +86,54 @@ spec:
             - mountPath: /etc/contrail/dns
               name: etc-contrail-dns
         - name: nodemanager
-          image: docker.io/michaelhenkel/contrail-nodemgr:5.2.0-dev1
+          image: tungstenfabric/contrail-nodemgr:latest
           env:
+            - name: VENDOR_DOMAIN
+              value: tungsten.io
             - name: NODE_TYPE
               value: control
-            - name: DOCKER_HOST
-              value: unix://mnt/docker.sock
             - name: POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: CONTROL_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/log/contrail
+              name: control-logs
+            - mountPath: /var/crashes
+              name: crashes
+            - mountPath: /var/run
+              name: var-run
+        - name: provisioner
+          image: tungstenfabric/contrail-provisioner:latest
+          env:
+            - name: NODE_TYPE
+              value: control
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CONTROL_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
           imagePullPolicy: Always
           lifecycle:
             preStop:
               exec:
                 command:
-                  - python /etc/contrailconfigmaps/deprovision.sh.${POD_IP}
+                  - python /etc/contrailconfigmaps/deprovision.py.${POD_IP}
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs
             - mountPath: /var/crashes
               name: crashes
-            - mountPath: /mnt
-              name: docker-unix-socket
-        - name: provisioner
-          image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
-          env:
-            - name: NODE_TYPE
-              value: control
-            - name: DOCKER_HOST
-              value: unix://mnt/docker.sock
-            - name: POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-          imagePullPolicy: Always
-          volumeMounts:
-            - mountPath: /var/log/contrail
-              name: control-logs
-            - mountPath: /var/crashes
-              name: crashes
-            - mountPath: /mnt
-              name: docker-unix-socket
+            - mountPath: /var/run
+              name: var-run
       dnsPolicy: ClusterFirst
       hostNetwork: true
       nodeSelector:
@@ -150,7 +156,7 @@ spec:
         - hostPath:
             path: /var/run
             type: ""
-          name: docker-unix-socket
+          name: var-run
         - hostPath:
             path: /usr/local/bin
             type: ""

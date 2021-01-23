@@ -13,7 +13,22 @@ func GetDaemonset() *apps.DaemonSet {
 
 	var contrailStatusImageEnv = core.EnvVar{
 		Name:  "CONTRAIL_STATUS_IMAGE",
-		Value: "docker.io/opencontrailnightly/contrail-status:latest",
+		Value: "tungstenfabric/contrail-status:latest",
+	}
+
+	var vendorDomainEnv = core.EnvVar{
+		Name:  "VENDOR_DOMAIN",
+		Value: "tungsten.io",
+	}
+
+	var introspectSslEnableEnv = core.EnvVar{
+		Name:  "INTROSPECT_SSL_ENABLE",
+		Value: "True",
+	}
+
+	var nodeTypeEnv = core.EnvVar{
+		Name:  "NODE_TYPE",
+		Value: "vrouter",
 	}
 
 	var podIPEnv = core.EnvVar{
@@ -21,6 +36,15 @@ func GetDaemonset() *apps.DaemonSet {
 		ValueFrom: &core.EnvVarSource{
 			FieldRef: &core.ObjectFieldSelector{
 				FieldPath: "status.podIP",
+			},
+		},
+	}
+
+	var vrouterHostnameEnv = core.EnvVar{
+		Name: "VROUTER_HOSTNAME",
+		ValueFrom: &core.EnvVarSource{
+			FieldRef: &core.ObjectFieldSelector{
+				FieldPath: "metadata.annotations['hostname']",
 			},
 		},
 	}
@@ -37,7 +61,7 @@ func GetDaemonset() *apps.DaemonSet {
 	var podInitContainers = []core.Container{
 		{
 			Name:  "init",
-			Image: "busybox",
+			Image: "busybox:latest",
 			Command: []string{
 				"sh",
 				"-c",
@@ -56,10 +80,12 @@ func GetDaemonset() *apps.DaemonSet {
 		},
 		{
 			Name:  "nodeinit",
-			Image: "docker.io/michaelhenkel/contrail-node-init:5.2.0-dev1",
+			Image: "tungstenfabric/contrail-node-init:latest",
 			Env: []core.EnvVar{
+				vendorDomainEnv,
 				contrailStatusImageEnv,
 				podIPEnv,
+				introspectSslEnableEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -74,7 +100,7 @@ func GetDaemonset() *apps.DaemonSet {
 		},
 		{
 			Name:  "vrouterkernelinit",
-			Image: "docker.io/michaelhenkel/contrail-vrouter-kernel-init:5.2.0-dev1",
+			Image: "tungstenfabric/contrail-vrouter-kernel-init:latest",
 			Env: []core.EnvVar{
 				podIPEnv,
 			},
@@ -109,11 +135,49 @@ func GetDaemonset() *apps.DaemonSet {
 
 	var podContainers = []core.Container{
 		{
+			Name:  "provisioner",
+			Image: "tungstenfabric/contrail-provisioner:latest",
+			Env: []core.EnvVar{
+				podIPEnv,
+				vrouterHostnameEnv,
+				nodeTypeEnv,
+			},
+			VolumeMounts: []core.VolumeMount{
+				core.VolumeMount{
+					Name:      "vrouter-logs",
+					MountPath: "/var/log/contrail",
+				},
+			},
+			ImagePullPolicy: "Always",
+		},
+		{
+			Name:  "nodemanager",
+			Image: "tungstenfabric/contrail-nodemgr:latest",
+			Env: []core.EnvVar{
+				vendorDomainEnv,
+				podIPEnv,
+				vrouterHostnameEnv,
+				nodeTypeEnv,
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "vrouter-logs",
+					MountPath: "/var/log/contrail",
+				},
+				{
+					Name:      "var-run",
+					MountPath: "/var/run",
+				},
+			},
+			ImagePullPolicy: "Always",
+		},
+		{
 			Name:  "vrouteragent",
-			Image: "docker.io/michaelhenkel/contrail-vrouter-agent:5.2.0-dev1",
+			Image: "tungstenfabric/contrail-vrouter-agent:latest",
 			Env: []core.EnvVar{
 				physicalInterfaceEnv,
 				podIPEnv,
+				vrouterHostnameEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -141,12 +205,16 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/lib/modules",
 				},
 				{
+					Name:      "var-run",
+					MountPath: "/var/run",
+				},
+				{
 					Name:      "var-lib-contrail",
 					MountPath: "/var/lib/contrail",
 				},
 				{
 					Name:      "var-crashes",
-					MountPath: "/var/contrail/crashes",
+					MountPath: "/var/crashes",
 				},
 				{
 					Name:      "resolv-conf",
@@ -165,58 +233,6 @@ func GetDaemonset() *apps.DaemonSet {
 				},
 			},
 		},
-		{
-			Name:  "nodemanager",
-			Image: "docker.io/michaelhenkel/contrail-nodemgr:5.2.0-dev1",
-			Env: []core.EnvVar{
-				podIPEnv,
-				{
-					Name:  "DOCKER_HOST",
-					Value: "unix://mnt/docker.sock",
-				},
-				{
-					Name:  "NODE_TYPE",
-					Value: "vrouter",
-				},
-			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      "vrouter-logs",
-					MountPath: "/var/log/contrail",
-				},
-				{
-					Name:      "docker-unix-socket",
-					MountPath: "/mnt",
-				},
-			},
-			ImagePullPolicy: "Always",
-		},
-		{
-			Name:  "provisioner",
-			Image: "docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1",
-			Env: []core.EnvVar{
-				podIPEnv,
-				core.EnvVar{
-					Name:  "DOCKER_HOST",
-					Value: "unix://mnt/docker.sock",
-				},
-				core.EnvVar{
-					Name:  "NODE_TYPE",
-					Value: "vrouter",
-				},
-			},
-			VolumeMounts: []core.VolumeMount{
-				core.VolumeMount{
-					Name:      "vrouter-logs",
-					MountPath: "/var/log/contrail",
-				},
-				core.VolumeMount{
-					Name:      "docker-unix-socket",
-					MountPath: "/mnt",
-				},
-			},
-			ImagePullPolicy: "Always",
-		},
 	}
 
 	var podVolumes = []core.Volume{
@@ -229,7 +245,7 @@ func GetDaemonset() *apps.DaemonSet {
 			},
 		},
 		{
-			Name: "docker-unix-socket",
+			Name: "var-run",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
 					Path: "/var/run",

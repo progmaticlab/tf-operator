@@ -24,9 +24,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
 	"github.com/Juniper/contrail-operator/pkg/controller/utils"
-	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 )
 
 var log = logf.Log.WithName("controller_vrouter")
@@ -355,7 +355,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -365,15 +367,13 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}}
 		}
 		if container.Name == "nodemanager" {
-			//if nodemgr {
-				//command := []string{"bash", "-c",
-				//	"bash /etc/contrailconfigmaps/provision.sh.${POD_IP} add; /usr/bin/python /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter"}
-			command := []string{"bash", "-c",
-				"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
-			}
-
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
+						"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; " +
+						"/usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
+				}
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -399,27 +399,46 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
-			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image	
+
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
+				ConfigMapRef: &corev1.ConfigMapEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: request.Name + "-" + instanceType + "-configmap-1",
+					},
+				},
+			}}
 		}
 		if container.Name == "provisioner" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command != nil {
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
-			
+
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
 			}
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: request.Name + "-secret-certificates",
+				Name:      request.Name + "-secret-certificates",
 				MountPath: "/etc/certificates",
 			})
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: csrSignerCaVolumeName,
+				Name:      csrSignerCaVolumeName,
 				MountPath: certificates.SignerCAMountPath,
 			})
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
+				ConfigMapRef: &corev1.ConfigMapEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: request.Name + "-" + instanceType + "-configmap-1",
+					},
+				},
+			}}
 
 			envList := []corev1.EnvVar{}
 			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
@@ -441,14 +460,12 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				Name:  "SERVER_KEYFILE",
 				Value: "/etc/certificates/server-key-$(POD_IP).pem",
 			})
-			configNodeList := instance.Spec.ServiceConfiguration.ConfigNodesConfiguration.ConfigServerIPList
+			configNodeList := instance.Spec.ServiceConfiguration.ConfigNodesConfiguration.APIServerIPList
 			envList = append(envList, corev1.EnvVar{
 				Name:  "CONFIG_NODES",
 				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
 			})
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Env = envList
-
-			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
 
@@ -507,7 +524,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList
+
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
+
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -531,6 +550,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList
+
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "nodeinit" && instance.Spec.ServiceConfiguration.ContrailStatusImage != "" {
@@ -541,8 +561,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				},
 			}
 		}
-
 	}
+
 	if err = instance.CreateDS(daemonSet, &instance.Spec.CommonConfiguration, instanceType, request,
 		r.Scheme, r.Client); err != nil {
 		return reconcile.Result{}, err

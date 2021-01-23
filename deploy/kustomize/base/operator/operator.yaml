@@ -192,7 +192,6 @@ spec:
         imagePullPolicy: Always
       containers:
         - name: tf-operator
-          # Replace this with the built image name
           image: tf-operator
           imagePullPolicy: Always
           env:

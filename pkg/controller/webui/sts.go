@@ -41,7 +41,7 @@ spec:
               name: status
       containers:
         - name: webuiweb
-          image: docker.io/michaelhenkel/contrail-controller-webui-web:5.2.0-dev1
+          image: tungstenfabric/contrail-controller-webui-web:latest
           env:
             - name: WEBUI_SSL_KEY_FILE
               value: /etc/contrail/webui_ssl/cs-key.pem
@@ -60,7 +60,7 @@ spec:
             - mountPath: /var/log/contrail
               name: webui-logs
         - name: webuijob
-          image: docker.io/michaelhenkel/contrail-controller-webui-job:5.2.0-dev1
+          image: tungstenfabric/contrail-controller-webui-job:latest
           env:
             - name: WEBUI_SSL_KEY_FILE
               value: /etc/contrail/webui_ssl/cs-key.pem
@@ -75,7 +75,7 @@ spec:
             - mountPath: /var/log/contrail
               name: webui-logs
         - name: redis
-          image: docker.io/michaelhenkel/contrail-external-redis:5.2.0-dev1
+          image: redis:4.0.14
           env:
             - name: POD_IP
               valueFrom:

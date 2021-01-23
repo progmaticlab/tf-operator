@@ -8,3 +8,10 @@ images:
 - name: tf-crdsloader
   newTag: latest
   newName: localhost:5000/tf-crdsloader
+# images:
+# - name: tf-operator
+#   newTag: latest
+#   newName: tungstenfabric/tf-operator
+# - name: tf-crdsloader
+#   newTag: latest
+#   newName: tungstenfabric/tf-crdsloader

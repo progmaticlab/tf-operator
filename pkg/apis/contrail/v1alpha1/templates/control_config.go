@@ -147,7 +147,8 @@ http_server_ip=0.0.0.0
 log_file=/var/log/contrail/contrail-control-nodemgr.log
 log_level={{ .LogLevel }}
 log_local=1
-hostip={{ .PodIP }}
+hostname={{ .Hostname }}
+hostip={{ .ListenAddress }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
 db_use_ssl=True
@@ -157,25 +158,15 @@ server_list={{ .CollectorServerList }}
 introspect_ssl_enable=True
 introspect_ssl_insecure=True
 sandesh_ssl_enable=True
-sandesh_keyfile=/etc/certificates/server-key-{{ .PodIP }}.pem
-sandesh_certfile=/etc/certificates/server-{{ .PodIP }}.crt
+sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
+sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
-
-var ControlNodeManagerEnv = template.Must(template.New("").Parse(`
-# Controller
-export CONTROLLER_NODES={{ .ControllerNodes }}
-# Server SSL
-export SSL_ENABLE=True
-export SERVER_CA_CERTFILE={{ .ServerCaCertfile }}
-export SERVER_CERTFILE=/etc/certificates/server-{{ .ListenAddress }}.crt
-export SERVER_KEYFILE=/etc/certificates/server-key-{{ .ListenAddress }}.pem
-`))
 
 // ControlProvisionConfig is the template of the Control provision script.
 var ControlProvisionConfig = template.Must(template.New("").Parse(`#!/bin/bash
 servers=$(echo {{ .APIServerList }} | tr ',' ' ')
 for server in $servers ; do
-  python /opt/contrail/utils/provision_control.py --oper $1 \
+  /opt/contrail/utils/provision_control.py --oper $1 \
   --api_server_use_ssl true \
   --host_ip {{ .DataIP }} \
   --router_asn {{ .ASNNumber }} \
@@ -184,7 +175,7 @@ for server in $servers ; do
   --api_server_port {{ .APIServerPort }} \
   --host_name {{ .Hostname }}
   if [[ $? -eq 0 ]]; then
-	break
+    break
   fi
 done
 `))
@@ -193,12 +184,13 @@ done
 var ControlDeProvisionConfig = template.Must(template.New("").Parse(`#!/usr/bin/python
 from vnc_api import vnc_api
 import socket
-vncServerList = [{{ .APIServerList }}]
+vncServerList = {{ .APIServerList }}
 vnc_client = vnc_api.VncApi(
-            username = '{{ .User }}',
-            password = '{{ .Password }}',
-            tenant_name = '{{ .Tenant }}',
-            api_server_host= vncServerList[0],
-            api_server_port={{ .APIServerPort }})
+    api_server_use_ssl=True,
+    username='{{ .User }}',
+    password='{{ .Password }}',
+    tenant_name='{{ .Tenant }}',
+    api_server_host=vncServerList.split(','),
+    api_server_port={{ .APIServerPort }})
 vnc_client.bgp_router_delete(fq_name=['default-domain','default-project','ip-fabric','__default__', '{{ .Hostname }}' ])
 `))
