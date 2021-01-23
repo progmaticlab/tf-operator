@@ -21,10 +21,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
 	"github.com/Juniper/contrail-operator/pkg/controller/utils"
 	"github.com/Juniper/contrail-operator/pkg/k8s"
-	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 )
 
 var log = logf.Log.WithName("controller_config")
@@ -184,8 +184,9 @@ type ReconcileConfig struct {
 
 // Reconcile reconciles Config.
 func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Config")
+	reqLogger := log.WithName("Reconcile").WithValues("Request.Namespace", request.Namespace,
+		"Request.Name", request.Name)
+	reqLogger.Info("Start")
 	instanceType := "config"
 	config := &v1alpha1.Config{}
 	cassandraInstance := &v1alpha1.Cassandra{}
@@ -193,10 +194,12 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	rabbitmqInstance := &v1alpha1.Rabbitmq{}
 
 	if err := r.Client.Get(context.TODO(), request.NamespacedName, config); err != nil && errors.IsNotFound(err) {
+		reqLogger.Error(err, "Failed to get config obj")
 		return reconcile.Result{}, nil
 	}
 
 	if !config.GetDeletionTimestamp().IsZero() {
+		reqLogger.Info("Config is deleting, skip reconcile")
 		return reconcile.Result{}, nil
 	}
 	cassandraActive := cassandraInstance.IsActive(config.Spec.ServiceConfiguration.CassandraInstance,
@@ -207,6 +210,8 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		request.Namespace, r.Client)
 
 	if !cassandraActive || !rabbitmqActive || !zookeeperActive {
+		reqLogger.Info("Config DB is not ready", "cassandraActive", cassandraActive,
+			"zookeeperActive", zookeeperActive, "rabbitmqActive", rabbitmqActive)
 		return reconcile.Result{}, nil
 	}
 	servicePortsMap := map[int32]string{
@@ -216,17 +221,20 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	configService := r.Kubernetes.Service(request.Name+"-"+instanceType, corev1.ServiceTypeClusterIP, servicePortsMap, instanceType, config)
 
 	if err := configService.EnsureExists(); err != nil {
+		reqLogger.Error(err, "Config service doesnt exist")
 		return reconcile.Result{}, err
 	}
 	currentConfigMap, currentConfigExists := config.CurrentConfigMapExists(request.Name+"-"+instanceType+"-configmap", r.Client, r.Scheme, request)
 
 	configMap, err := config.CreateConfigMap(request.Name+"-"+instanceType+"-configmap", r.Client, r.Scheme, request)
 	if err != nil {
+		reqLogger.Error(err, "Failed to create configmap")
 		return reconcile.Result{}, err
 	}
 
 	secretCertificates, err := config.CreateSecret(request.Name+"-secret-certificates", r.Client, r.Scheme, request)
 	if err != nil {
+		reqLogger.Error(err, "Failed to create secret")
 		return reconcile.Result{}, err
 	}
 
@@ -238,6 +246,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	trueVal := true
 	statefulSet.Spec.Template.Spec.ShareProcessNamespace = &trueVal
 	if err = config.PrepareSTS(statefulSet, &config.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
+		reqLogger.Error(err, "Failed to prepare stateful set")
 		return reconcile.Result{}, err
 	}
 
@@ -383,7 +392,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			// DNSMasq container requires those variables to be set
 			container.VolumeMounts = volumeMountList
 			container.Image = instanceContainer.Image
-		
+
 		case "servicemonitor":
 			command := []string{"bash", "-c",
 				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; /usr/bin/python /usr/bin/contrail-svc-monitor --conf_file /etc/contrailconfigmaps/servicemonitor.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf"}
@@ -558,7 +567,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image			
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		case "nodemanageranalytics":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			command := []string{"bash", "-c",
@@ -590,23 +599,26 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 
-		case "provisionerconfig": fallthrough
+		case "provisionerconfig":
+			reqLogger.Info("TODO: provisionerconfig not implemented yet")
+			// fallthrough
+
 		case "provisioneranalytics":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command != nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
-			
+
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
 			}
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: request.Name + "-secret-certificates",
+				Name:      request.Name + "-secret-certificates",
 				MountPath: "/etc/certificates",
 			})
 			volumeMountList = append(volumeMountList, corev1.VolumeMount{
-				Name: csrSignerCaVolumeName,
+				Name:      csrSignerCaVolumeName,
 				MountPath: certificates.SignerCAMountPath,
 			})
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
@@ -633,6 +645,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			})
 			configNodesInformation, err := v1alpha1.NewConfigClusterConfiguration(config.Labels["contrail_cluster"], request.Namespace, r.Client)
 			if err != nil {
+				reqLogger.Error(err, "Failed to create ConfigClusterConfiguration")
 				return reconcile.Result{}, err
 			}
 			configNodeList := configNodesInformation.ConfigServerIPList
@@ -661,11 +674,13 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 
 	if err = config.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
+		reqLogger.Error(err, "Failed to create stateful set")
 		return reconcile.Result{}, err
 	}
 
 	strategy := "deleteFirst"
 	if err = config.UpdateSTS(statefulSet, instanceType, request, r.Client, strategy); err != nil {
+		reqLogger.Error(err, "Failed to update stateful set")
 		return reconcile.Result{}, err
 	}
 
@@ -675,27 +690,33 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 	if len(podIPMap) > 0 {
 		if err = config.InstanceConfiguration(request, podIPList, r.Client); err != nil {
+			reqLogger.Error(err, "Failed to create InstanceConfiguration")
 			return reconcile.Result{}, err
 		}
 
 		if err := r.ensureCertificatesExist(config, podIPList, instanceType); err != nil {
+			reqLogger.Error(err, "Failed to ensure CertificatesExist")
 			return reconcile.Result{}, err
 		}
 
 		if err = config.SetPodsToReady(podIPList, r.Client); err != nil {
+			reqLogger.Error(err, "Failed to set pods to ready")
 			return reconcile.Result{}, err
 		}
 
 		if err = config.WaitForPeerPods(request, r.Client); err != nil {
+			reqLogger.Error(err, "Failed to wait peer pods")
 			return reconcile.Result{}, err
 		}
 
 		if err = config.ManageNodeStatus(podIPMap, r.Client); err != nil {
+			reqLogger.Error(err, "Failed manager node status")
 			return reconcile.Result{}, err
 		}
 	}
 
 	if err = config.SetEndpointInStatus(r.Client, configService.ClusterIP()); err != nil {
+		reqLogger.Error(err, "Failed to set endpointIn status")
 		return reconcile.Result{}, err
 	}
 
@@ -715,13 +736,16 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		config.Status.Active = &active
 	}
 	if err = config.SetInstanceActive(r.Client, config.Status.Active, statefulSet, request); err != nil {
+		reqLogger.Error(err, "Failed to set instance active")
 		return reconcile.Result{}, err
 	}
 	if config.Status.ConfigChanged != nil {
 		if *config.Status.ConfigChanged {
+			reqLogger.Info("Done: Result{Requeue: true}")
 			return reconcile.Result{Requeue: true}, nil
 		}
 	}
+	reqLogger.Info("Done: Result{}")
 	return reconcile.Result{}, nil
 }
 

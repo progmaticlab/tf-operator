@@ -94,13 +94,13 @@ type ConfigConfiguration struct {
 	Storage                     Storage            `json:"storage,omitempty"`
 	FabricMgmtIP                string             `json:"fabricMgmtIP,omitempty"`
 	// Time (in hours) that the analytics object and log data stays in the Cassandra database. Defaults to 48 hours.
-	AnalyticsDataTTL *int `json:"analyticsDataTTL,omitempty"`
+	AnalyticsDataTTL            *int               `json:"analyticsDataTTL,omitempty"`
 	// Time (in hours) the analytics config data entering the collector stays in the Cassandra database. Defaults to 2160 hours.
-	AnalyticsConfigAuditTTL *int `json:"analyticsConfigAuditTTL,omitempty"`
+	AnalyticsConfigAuditTTL     *int               `json:"analyticsConfigAuditTTL,omitempty"`
 	// Time to live (TTL) for statistics data in hours. Defaults to 4 hours.
-	AnalyticsStatisticsTTL *int `json:"analyticsStatisticsTTL,omitempty"`
+	AnalyticsStatisticsTTL      *int               `json:"analyticsStatisticsTTL,omitempty"`
 	// Time to live (TTL) for flow data in hours. Defaults to 2 hours.
-	AnalyticsFlowTTL *int `json:"analyticsFlowTTL,omitempty"`
+	AnalyticsFlowTTL            *int               `json:"analyticsFlowTTL,omitempty"`
 }
 
 // +k8s:openapi-gen=true

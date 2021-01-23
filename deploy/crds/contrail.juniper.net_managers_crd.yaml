@@ -1587,8 +1587,6 @@ spec:
                                     type: string
                                 type: object
                               type: array
-                            keystoneInstance:
-                              type: string
                             keystoneSecretName:
                               type: string
                             serviceAccount:

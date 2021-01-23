@@ -5,7 +5,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-var yamlDataconfig_sts = `
+var yamlDataConfigSts = `
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -289,13 +289,14 @@ spec:
               path: pod_labelsx
           name: status`
 
+// GetSTS returns StatesfulSet object created from yamlDataConfigSts
 func GetSTS() *appsv1.StatefulSet {
 	sts := appsv1.StatefulSet{}
-	err := yaml.Unmarshal([]byte(yamlDataconfig_sts), &sts)
+	err := yaml.Unmarshal([]byte(yamlDataConfigSts), &sts)
 	if err != nil {
 		panic(err)
 	}
-	jsonData, err := yaml.YAMLToJSON([]byte(yamlDataconfig_sts))
+	jsonData, err := yaml.YAMLToJSON([]byte(yamlDataConfigSts))
 	if err != nil {
 		panic(err)
 	}

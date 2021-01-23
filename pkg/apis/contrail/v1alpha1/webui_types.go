@@ -56,7 +56,6 @@ type WebuiConfiguration struct {
 	ClusterRole        string       `json:"clusterRole,omitempty"`
 	ClusterRoleBinding string       `json:"clusterRoleBinding,omitempty"`
 	KeystoneSecretName string       `json:"keystoneSecretName,omitempty"`
-	KeystoneInstance   string       `json:"keystoneInstance,omitempty"`
 }
 
 type WebUIStatusPorts struct {
