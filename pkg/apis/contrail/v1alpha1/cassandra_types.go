@@ -125,6 +125,11 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 
 	seedsListString := strings.Join(c.seeds(podList), ",")
 
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
+	if err != nil {
+		return err
+	}
+
 	for idx := range podList.Items {
 		var cassandraConfigBuffer bytes.Buffer
 		configtemplates.CassandraConfig.Execute(&cassandraConfigBuffer, struct {
@@ -158,11 +163,34 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 		})
 		cassandraConfigString := cassandraConfigBuffer.String()
 
+		collectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
+		collectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(collectorEndpointList, " ")
+		var nodeManagerConfigBuffer bytes.Buffer
+		configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
+			ListenAddress       string
+			Hostname            string
+			CollectorServerList string
+			CassandraPort       string
+			CassandraJmxPort    string
+			CAFilePath          string
+		}{
+			ListenAddress:       podList.Items[idx].Status.PodIP,
+			Hostname:            podList.Items[idx].Annotations["hostname"],
+			CollectorServerList: collectorEndpointListSpaceSeparated,
+			CassandraPort:       strconv.Itoa(*cassandraConfig.CqlPort),
+			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
+			CAFilePath:          certificates.SignerCAFilepath,
+		})
+		nodemanagerConfigString := nodeManagerConfigBuffer.String()
 		if configMapInstanceDynamicConfig.Data == nil {
-			data := map[string]string{podList.Items[idx].Status.PodIP + ".yaml": cassandraConfigString}
+			data := map[string]string{
+				podList.Items[idx].Status.PodIP + ".yaml":        cassandraConfigString,
+				"nodemanager." + podList.Items[idx].Status.PodIP: nodemanagerConfigString,
+			}
 			configMapInstanceDynamicConfig.Data = data
 		} else {
 			configMapInstanceDynamicConfig.Data[podList.Items[idx].Status.PodIP+".yaml"] = cassandraConfigString
+			configMapInstanceDynamicConfig.Data["nodemanager."+podList.Items[idx].Status.PodIP] = nodemanagerConfigString
 		}
 		err = client.Update(context.TODO(), configMapInstanceDynamicConfig)
 		if err != nil {

@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -325,7 +326,92 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 
 		}
+		if container.Name == "nodemanager" {
+			command := []string{"bash", "-c",
+				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-database",
+			}
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command == nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
 
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMount := corev1.VolumeMount{
+				Name:      request.Name + "-" + instanceType + "-volume",
+				MountPath: "/etc/contrailconfigmaps",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+		}
+		if container.Name == "provisioner" {
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command != nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			})
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			envList := []corev1.EnvVar{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
+				envList = (&statefulSet.Spec.Template.Spec.Containers[idx]).Env
+			}
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SSL_ENABLE",
+				Value: "True",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CA_CERTFILE",
+				Value: certificates.SignerCAFilepath,
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_CERTFILE",
+				Value: "/etc/certificates/server-$(POD_IP).crt",
+			})
+			envList = append(envList, corev1.EnvVar{
+				Name:  "SERVER_KEYFILE",
+				Value: "/etc/certificates/server-key-$(POD_IP).pem",
+			})
+			configNodesInformation, err := v1alpha1.NewConfigClusterConfiguration(instance.Labels["contrail_cluster"], request.Namespace, r.Client)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			configNodeList := configNodesInformation.APIServerIPList
+			envList = append(envList, corev1.EnvVar{
+				Name:  "CONFIG_NODES",
+				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
+			})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Env = envList
+
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+		}
 	}
 	initHostPathType := corev1.HostPathType("DirectoryOrCreate")
 	initHostPathSource := &corev1.HostPathVolumeSource{
