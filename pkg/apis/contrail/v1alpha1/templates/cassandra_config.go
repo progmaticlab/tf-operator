@@ -125,7 +125,7 @@ auto_bootstrap: true
 // CassandraNodemanagerConfig is a template for nodemanager.{$POD_IP} file
 var CassandraNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0
-log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
+log_file=/var/log/contrail/cassandra-nodemgr.log
 log_level=SYS_NOTICE
 log_local=1
 hostip={{ .ListenAddress }}

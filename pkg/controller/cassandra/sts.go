@@ -65,46 +65,37 @@ spec:
       - name: nodemanager
         image: docker.io/michaelhenkel/contrail-nodemgr:5.2.0-dev1
         env:
+        - name: VENDOR_DOMAIN
+          value: tungsten.io
         - name: NODE_TYPE
           value: database
-        - name: DOCKER_HOST
-          value: unix://mnt/docker.sock
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
         imagePullPolicy: Always
-        #lifecycle:
-        #  preStop:
-        #    exec:
-        #      command:
-        #      - python /etc/contrailconfigmaps/deprovision.sh.${POD_IP}
-        #volumeMounts:
-        #- mountPath: /var/log/contrail
-        #  name: control-logs
-        #- mountPath: /var/crashes
-        #  name: crashes
-        #- mountPath: /mnt
-        #  name: docker-unix-socket
+        volumeMounts:
+        - mountPath: /var/log/contrail
+          name: cassandra-logs
+        - mountPath: /var/crashes
+          name: crashes
+        - mountPath: /var/run
+          name: var-run
       - name: provisioner
         image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
         env:
         - name: NODE_TYPE
           value: database
-        - name: DOCKER_HOST
-          value: unix://mnt/docker.sock
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
         imagePullPolicy: Always
-        #volumeMounts:
-        #- mountPath: /var/log/contrail
-        #  name: control-logs
-        #- mountPath: /var/crashes
-        #  name: crashes
-        #- mountPath: /mnt
-        #  name: docker-unix-socket
+        volumeMounts:
+            - mountPath: /var/log/contrail
+              name: cassandra-logs
+            - mountPath: /var/crashes
+              name: crashes
       dnsPolicy: ClusterFirst
       hostNetwork: true
       initContainers:
@@ -160,14 +151,22 @@ spec:
       - effect: NoExecute
         operator: Exists
       volumes:
-      #- hostPath:
-      #    path: /var/log/contrail/cassandra
-      #    type: ""
-      #  name: cassandra-logs
+      - hostPath:
+          path: /var/log/contrail/cassandra
+          type: ""
+        name: cassandra-logs
       #- hostPath:
       #    path: /var/lib/contrail/cassandra
       #    type: ""
       #  name: cassandra-data
+      - hostPath:
+          path: /var/run
+          type: ""
+        name: var-run
+      - hostPath:
+          path: /var/contrail/crashes
+          type: ""
+        name: crashes
       - downwardAPI:
           defaultMode: 420
           items:
