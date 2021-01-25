@@ -179,6 +179,7 @@ const (
 	KubernetesServiceSubnets                    string = "10.96.0.0/12"
 	KubernetesIPFabricForwarding                bool   = false
 	KubernetesIPFabricSnat                      bool   = true
+	KubernetesPublicFIPPool                     string = "{'project' : 'k8s-default', 'domain': 'default-domain', 'name': '__fip_pool_public__' , 'network' : '__public__'}"
 	KubernetesHostNetworkService                bool   = false
 	KubernetesUseKubeadm                        bool   = false
 	KubernetesServiceAccount                    string = ""

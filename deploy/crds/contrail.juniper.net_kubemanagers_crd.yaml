@@ -209,6 +209,8 @@ spec:
                   type: string
                 podSubnets:
                   type: string
+                publicFIPPool:
+                  type: string
                 rabbitmqNodesConfiguration:
                   description: RabbitmqClusterConfiguration stores all information
                     about Rabbitmq's endpoints.

@@ -684,7 +684,7 @@ func getPodInitStatus(reconcileClient client.Client,
 								annotationMap["gateway"] = strings.Trim(gateway, "\n")
 							}
 							if getPrefix {
-								command := []string{"/bin/sh", "-c", "ip addr show | sed -n 's/.*]" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p' | head -n 1"}
+								command := []string{"/bin/sh", "-c", "ip addr show | sed -n 's/.*" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p' | head -n 1"}
 								prefixLength, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 								if err != nil {
 									log.Error(err, "Failed to get prefix", strings.Join(command, " "), prefixLength)

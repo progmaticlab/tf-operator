@@ -210,7 +210,7 @@ spec:
           - name: init
             image: python:alpine
           - name: redis
-            image: redis:4.0.14
+            image: redis
           - name: webuijob
             image: contrail-controller-webui-job
           - name: webuiweb

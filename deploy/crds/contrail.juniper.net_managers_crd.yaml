@@ -1093,6 +1093,8 @@ spec:
                                 type: string
                               podSubnets:
                                 type: string
+                              publicFIPPool:
+                                type: string
                               rabbitmqPassword:
                                 type: string
                               rabbitmqUser:

@@ -84,6 +84,7 @@ type KubemanagerConfiguration struct {
 	RabbitmqPassword      string       `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost         string       `json:"rabbitmqVhost,omitempty"`
 	LogLevel              string       `json:"logLevel,omitempty"`
+	PublicFIPPool         string       `json:"publicFIPPool,omitempty"`
 }
 
 // KubemanagerNodesConfiguration is the configuration for third party dependencies
@@ -237,6 +238,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqVhost         string
 			CAFilePath            string
 			LogLevel              string
+			PublicFIPPool         string
 		}{
 			Token:                 token,
 			ListenAddress:         podList.Items[idx].Status.PodIP,
@@ -263,6 +265,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqVhost:         rabbitmqSecretVhost,
 			CAFilePath:            certificates.SignerCAFilepath,
 			LogLevel:              kubemanagerConfig.LogLevel,
+			PublicFIPPool:         kubemanagerConfig.PublicFIPPool,
 		})
 		data["kubemanager."+podList.Items[idx].Status.PodIP] = kubemanagerConfigBuffer.String()
 
@@ -397,6 +400,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	var serviceSubnets string
 	var ipFabricForwarding bool
 	var ipFabricSnat bool
+	var publicFIPPool string
 	var hostNetworkService bool
 	var useKubeadmConfig bool
 	var logLevel string
@@ -479,6 +483,12 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 		ipFabricSnat = KubernetesIPFabricSnat
 	}
 
+	if c.Spec.ServiceConfiguration.PublicFIPPool != "" {
+		publicFIPPool = c.Spec.ServiceConfiguration.PublicFIPPool
+	} else {
+		publicFIPPool = KubernetesPublicFIPPool
+	}
+
 	kubemanagerConfiguration.CloudOrchestrator = cloudOrchestrator
 	kubemanagerConfiguration.KubernetesAPIServer = kubernetesApiServer
 	kubemanagerConfiguration.KubernetesAPIPort = &kubernetesApiPort
@@ -491,6 +501,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration.HostNetworkService = &hostNetworkService
 	kubemanagerConfiguration.UseKubeadmConfig = &useKubeadmConfig
 	kubemanagerConfiguration.IPFabricSnat = &ipFabricSnat
+	kubemanagerConfiguration.PublicFIPPool = publicFIPPool
 	kubemanagerConfiguration.LogLevel = logLevel
 
 	return kubemanagerConfiguration
