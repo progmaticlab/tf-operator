@@ -98,13 +98,13 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         imagePullPolicy: Always
-        volumeMounts:
-        - mountPath: /var/log/contrail
-          name: control-logs
-        - mountPath: /var/crashes
-          name: crashes
-        - mountPath: /mnt
-          name: docker-unix-socket
+        #volumeMounts:
+        #- mountPath: /var/log/contrail
+        #  name: control-logs
+        #- mountPath: /var/crashes
+        #  name: crashes
+        #- mountPath: /mnt
+        #  name: docker-unix-socket
       dnsPolicy: ClusterFirst
       hostNetwork: true
       initContainers:
