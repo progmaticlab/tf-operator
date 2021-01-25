@@ -59,9 +59,6 @@ rules:
   - kubemanagers
   - webuis
   - vrouters
-  - keystones
-  - swifts
-  - memcacheds
   verbs:
   - '*'
 - apiGroups:

@@ -69,9 +69,6 @@ type VrouterConfiguration struct {
 	PhysicalInterface   string            `json:"physicalInterface,omitempty"`
 	MetaDataSecret      string            `json:"metaDataSecret,omitempty"`
 	Distribution        *Distribution     `json:"distribution,omitempty"`
-	ServiceAccount      string            `json:"serviceAccount,omitempty"`
-	ClusterRole         string            `json:"clusterRole,omitempty"`
-	ClusterRoleBinding  string            `json:"clusterRoleBinding,omitempty"`
 	VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
 	ContrailStatusImage string            `json:"contrailStatusImage,omitempty"`
 	EnvVariablesConfig  map[string]string `json:"envVariablesConfig,omitempty"`

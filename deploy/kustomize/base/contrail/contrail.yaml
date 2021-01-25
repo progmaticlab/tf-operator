@@ -48,15 +48,7 @@ spec:
             image: contrail-controller-config-api
           - name: devicemanager
             image: contrail-controller-config-devicemgr
-            command:
-            - "/bin/sh"
-            - "-c"
-            - "tail -f /dev/null"
           - name: dnsmasq
-            command:
-            - "/bin/sh"
-            - "-c"
-            - "tail -f /dev/null"
             image: contrail-controller-config-dnsmasq
           - name: schematransformer
             image: contrail-controller-config-schema
@@ -258,7 +250,7 @@ spec:
             - name: vroutercni
               image: contrail-kubernetes-cni-init
             - name: multusconfig
-              image: busybox:1.31
+              image: busybox
     - metadata:
         labels:
           contrail_cluster: cluster1
@@ -274,4 +266,4 @@ spec:
             - name: vroutercni
               image: contrail-kubernetes-cni-init
             - name: multusconfig
-              image: busybox:1.31
+              image: busybox

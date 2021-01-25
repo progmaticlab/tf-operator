@@ -236,92 +236,12 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	instance.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
-	// TODO: why it is needed for web ui ??
-	//
-	// existingServiceAccount := &corev1.ServiceAccount{}
-	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: instance.Namespace}, existingServiceAccount)
-	// if err != nil && errors.IsNotFound(err) {
-	// 	serviceAccount := &corev1.ServiceAccount{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			APIVersion: "v1",
-	// 			Kind:       "ServiceAccount",
-	// 		},
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      serviceAccountName,
-	// 			Namespace: instance.Namespace,
-	// 		},
-	// 	}
-	// 	err = controllerutil.SetControllerReference(instance, serviceAccount, r.Scheme)
-	// 	if err != nil {
-	// 		return reconcile.Result{}, err
-	// 	}
-	// 	if err = r.Client.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
-	// 		return reconcile.Result{}, err
-	// 	}
-	// }
-
-	// existingClusterRole := &rbacv1.ClusterRole{}
-	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleName}, existingClusterRole)
-	// if err != nil && errors.IsNotFound(err) {
-	// 	clusterRole := &rbacv1.ClusterRole{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			APIVersion: "rbac/v1",
-	// 			Kind:       "ClusterRole",
-	// 		},
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      clusterRoleName,
-	// 			Namespace: instance.Namespace,
-	// 		},
-	// 		Rules: []rbacv1.PolicyRule{{
-	// 			Verbs: []string{
-	// 				"*",
-	// 			},
-	// 			APIGroups: []string{
-	// 				"*",
-	// 			},
-	// 			Resources: []string{
-	// 				"*",
-	// 			},
-	// 		}},
-	// 	}
-	// 	if err = r.Client.Create(context.TODO(), clusterRole); err != nil {
-	// 		return reconcile.Result{}, err
-	// 	}
-	// }
-
-	// existingClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	// err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBindingName}, existingClusterRoleBinding)
-	// if err != nil && errors.IsNotFound(err) {
-	// 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			APIVersion: "rbac/v1",
-	// 			Kind:       "ClusterRoleBinding",
-	// 		},
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name:      clusterRoleBindingName,
-	// 			Namespace: instance.Namespace,
-	// 		},
-	// 		Subjects: []rbacv1.Subject{{
-	// 			Kind:      "ServiceAccount",
-	// 			Name:      serviceAccountName,
-	// 			Namespace: instance.Namespace,
-	// 		}},
-	// 		RoleRef: rbacv1.RoleRef{
-	// 			APIGroup: "rbac.authorization.k8s.io",
-	// 			Kind:     "ClusterRole",
-	// 			Name:     clusterRoleName,
-	// 		},
-	// 	}
-	// 	if err = r.Client.Create(context.TODO(), clusterRoleBinding); err != nil {
-	// 		return reconcile.Result{}, err
-	// 	}
-	// }
-
-	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "webuiweb" {
 			command := []string{"bash", "-c",
-				"/usr/bin/rm -f /etc/contrail/config.global.js; ln -s /etc/contrailconfigmaps/config.global.js.${POD_IP} /etc/contrail/config.global.js; /usr/bin/rm -f /etc/contrail/contrail-webui-userauth.js; ln -s /etc/contrailconfigmaps/contrail-webui-userauth.js /etc/contrail/contrail-webui-userauth.js; until ss -tulwn |grep LISTEN |grep 6380; do sleep 2; done;/usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrail/config.global.js"}
+				"until ss -tulwn | grep LISTEN | grep 6380; do sleep 2; done; " +
+					"/usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_gile /etc/contrailconfigmaps/contrail-webui-userauth.js",
+			}
 
 			//"/certs-init.sh && /usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -364,7 +284,9 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 		if container.Name == "webuijob" {
 			command := []string{"bash", "-c",
-				"/usr/bin/rm -f /etc/contrail/config.global.js; ln -s /etc/contrailconfigmaps/config.global.js.${POD_IP} /etc/contrail/config.global.js; /usr/bin/rm -f /etc/contrail/contrail-webui-userauth.js; ln -s /etc/contrailconfigmaps/contrail-webui-userauth.js /etc/contrail/contrail-webui-userauth.js; until ss -tulwn |grep LISTEN |grep 6380; do sleep 2; done;/usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrail/config.global.js"}
+				"until ss -tulwn |grep LISTEN |grep 6380; do sleep 2; done; " +
+					"/usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-webui-userauth.js",
+			}
 
 			//"/certs-init.sh && sleep 10;/usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
@@ -460,27 +382,33 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	podIPList, podIPMap, err := instance.PodIPListAndIPMapFromInstance(instanceType, request, r.Client)
 	if err != nil {
+		log.Error(err, "PodIPListAndIPMapFromInstance failed")
 		return reconcile.Result{}, err
 	}
 	if len(podIPList.Items) > 0 {
 		if err = instance.InstanceConfiguration(request, podIPList, r.Client); err != nil {
+			log.Error(err, "InstanceConfiguration failed")
 			return reconcile.Result{}, err
 		}
 
 		if err := r.ensureCertificatesExist(instance, podIPList, instanceType); err != nil {
+			log.Error(err, "ensureCertificatesExist failed")
 			return reconcile.Result{}, err
 		}
 
 		if err = instance.SetPodsToReady(podIPList, r.Client); err != nil {
+			log.Error(err, "SetPodsToReady failed")
 			return reconcile.Result{}, err
 		}
 
 		if err = instance.ManageNodeStatus(podIPMap, r.Client); err != nil {
+			log.Error(err, "ManageNodeStatus failed")
 			return reconcile.Result{}, err
 		}
 	}
 
 	if err = r.updateStatus(instance, statefulSet, webuiService.ClusterIP()); err != nil {
+		log.Error(err, "updateStatus failed")
 		return reconcile.Result{}, err
 	}
 
@@ -533,6 +461,7 @@ func (r *ReconcileWebui) listWebUIPods(webUIName string) (*corev1.PodList, error
 	labelSelector := labels.SelectorFromSet(map[string]string{"contrail_manager": "webui", "webui": webUIName})
 	listOpts := client.ListOptions{LabelSelector: labelSelector}
 	if err := r.Client.List(context.TODO(), pods, &listOpts); err != nil {
+		log.Error(err, "listWebUIPods failed")
 		return &corev1.PodList{}, err
 	}
 	return pods, nil

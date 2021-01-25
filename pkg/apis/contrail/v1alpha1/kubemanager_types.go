@@ -68,6 +68,7 @@ type KubemanagerConfiguration struct {
 	ClusterRole           string       `json:"clusterRole,omitempty"`
 	ClusterRoleBinding    string       `json:"clusterRoleBinding,omitempty"`
 	CloudOrchestrator     string       `json:"cloudOrchestrator,omitempty"`
+	SecretName            string       `json:"secretName,omitempty"`
 	KubernetesAPIServer   string       `json:"kubernetesAPIServer,omitempty"`
 	KubernetesAPIPort     *int         `json:"kubernetesAPIPort,omitempty"`
 	KubernetesAPISSLPort  *int         `json:"kubernetesAPISSLPort,omitempty"`
@@ -106,6 +107,7 @@ func init() {
 	SchemeBuilder.Register(&Kubemanager{}, &KubemanagerList{})
 }
 
+// InstanceConfiguration creates kubemanager's instance sonfiguration
 func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
 	client client.Client,
@@ -199,7 +201,13 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 		cassandraEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(cassandraEndpointList, " ")
 		var kubemanagerConfigBuffer bytes.Buffer
 		secret := &corev1.Secret{}
-		if err := client.Get(context.TODO(), types.NamespacedName{Name: "kubemanagersecret", Namespace: request.Namespace}, secret); err != nil {
+		var secretName string
+		if c.Spec.ServiceConfiguration.SecretName != "" {
+			secretName = c.Spec.ServiceConfiguration.SecretName
+		} else {
+			secretName = "contrail-kubemanager-secret"
+		}
+		if err := client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: request.Namespace}, secret); err != nil {
 			return err
 		}
 		token := string(secret.Data["token"])
@@ -356,11 +364,27 @@ func (c *Kubemanager) SetInstanceActive(client client.Client, activeStatus *bool
 	return SetInstanceActive(client, activeStatus, sts, request, c)
 }
 
+// ManageNodeStatus updates node status
 func (c *Kubemanager) ManageNodeStatus(podNameIPMap map[string]string, client client.Client) error {
 	c.Status.Nodes = podNameIPMap
 	return client.Status().Update(context.TODO(), c)
 }
 
+// EnsureServiceAccount creates ServiceAccoung, Secret, ClusterRole and ClusterRoleBinding
+// objects if they are not exist.
+func (c *Kubemanager) EnsureServiceAccount(
+	serviceAccountName string,
+	clusterRoleName string,
+	clusterRoleBindingName string,
+	secretName string,
+	client client.Client,
+	scheme *runtime.Scheme) error {
+
+	return EnsureServiceAccount(serviceAccountName, clusterRoleName, clusterRoleBindingName, secretName,
+		client, scheme, c)
+}
+
+// ConfigurationParameters creates KubemanagerConfiguration
 func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration := KubemanagerConfiguration{}
 	var cloudOrchestrator string

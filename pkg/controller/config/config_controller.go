@@ -245,6 +245,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	// persistent volumes and capabilities
 	trueVal := true
 	statefulSet.Spec.Template.Spec.ShareProcessNamespace = &trueVal
+
 	if err = config.PrepareSTS(statefulSet, &config.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
 		reqLogger.Error(err, "Failed to prepare stateful set")
 		return reconcile.Result{}, err
@@ -256,15 +257,6 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		certificates.SignerCAConfigMapName: csrSignerCaVolumeName,
 	})
 	config.AddSecretVolumesToIntendedSTS(statefulSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
-
-	// var serviceAccountName string
-	// if config.Spec.ServiceConfiguration.ServiceAccount != "" {
-	// 	serviceAccountName = config.Spec.ServiceConfiguration.ServiceAccount
-	// } else {
-	// 	serviceAccountName = "contrail-config-service-account"
-	// }
-	// statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-	// statefulSet.Spec.Template.Spec.ServiceAccountName = "contrail-config-service-account"
 
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{

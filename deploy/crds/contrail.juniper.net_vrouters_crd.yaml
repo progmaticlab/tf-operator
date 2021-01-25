@@ -122,10 +122,6 @@ spec:
               properties:
                 cassandraInstance:
                   type: string
-                clusterRole:
-                  type: string
-                clusterRoleBinding:
-                  type: string
                 configNodesConfiguration:
                   description: ConfigClusterConfiguration  stores all information
                     about service's endpoints under the Contrail Config
@@ -200,8 +196,6 @@ spec:
                 metaDataSecret:
                   type: string
                 physicalInterface:
-                  type: string
-                serviceAccount:
                   type: string
                 vrouterEncryption:
                   type: boolean
