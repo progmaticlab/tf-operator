@@ -166,7 +166,7 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 		collectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
 		collectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(collectorEndpointList, " ")
 		var nodeManagerConfigBuffer bytes.Buffer
-		configtemplates.VrouterNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
+		configtemplates.CassandraNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
 			ListenAddress       string
 			Hostname            string
 			CollectorServerList string

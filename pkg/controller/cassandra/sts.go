@@ -79,13 +79,13 @@ spec:
         #    exec:
         #      command:
         #      - python /etc/contrailconfigmaps/deprovision.sh.${POD_IP}
-        volumeMounts:
-        - mountPath: /var/log/contrail
-          name: control-logs
-        - mountPath: /var/crashes
-          name: crashes
-        - mountPath: /mnt
-          name: docker-unix-socket
+        #volumeMounts:
+        #- mountPath: /var/log/contrail
+        #  name: control-logs
+        #- mountPath: /var/crashes
+        #  name: crashes
+        #- mountPath: /mnt
+        #  name: docker-unix-socket
       - name: provisioner
         image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
         env:
