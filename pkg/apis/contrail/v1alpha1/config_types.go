@@ -380,6 +380,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 		})
 		data["contrail-keystone-auth.conf."+podList.Items[idx].Status.PodIP] = configKeystoneAuthConfBuffer.String()
 		data["dnsmasq."+podList.Items[idx].Status.PodIP] = configtemplates.ConfigDNSMasqConfig
+		data["dnsmasq_base."+podList.Items[idx].Status.PodIP] = configtemplates.ConfigDNSMasqBaseConfig
 
 		var configSchematransformerConfigBuffer bytes.Buffer
 		configtemplates.ConfigSchematransformerConfig.Execute(&configSchematransformerConfigBuffer, struct {

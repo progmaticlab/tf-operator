@@ -154,15 +154,16 @@ sandesh_keyfile=/etc/certificates/server-key-{{ .HostIP }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .HostIP }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
 
-// ConfigDNSMasqConfig is the template of the DNSMasq service configuration.
-var ConfigDNSMasqConfig = `
-log-facility=/dev/stdout
+// ConfigDNSMasqBaseConfig is the template of the DNSMasq service configuration.
+var ConfigDNSMasqBaseConfig = `log-facility=/dev/stdout
 bogus-priv
 log-dhcp
 enable-tftp
-tftp-root=/etc/tftp
-dhcp-leasefile=/var/lib/dnsmasq/dnsmasq.leases
-conf-dir=/var/lib/dnsmasq/,*.conf
+tftp-root=/var/lib/tftp
+`
+
+// ConfigDNSMasqConfig is the template of the main DNSMasq service configuration.
+var ConfigDNSMasqConfig = `conf-dir=/var/lib/dnsmasq/,*.conf
 `
 
 // ConfigSchematransformerConfig is the template of the SchemaTransformer service configuration.

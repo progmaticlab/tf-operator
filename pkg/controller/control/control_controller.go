@@ -248,12 +248,11 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "control" {
-			command := []string{"bash", "-c",
-				"/usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}",
-			}
-			//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"/usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command

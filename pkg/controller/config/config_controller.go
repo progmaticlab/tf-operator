@@ -306,9 +306,12 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		case "devicemanager":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				// exec /usr/bin/contrail-device-manager is importnant as
+				// as dm use search byt inclusion in cmd line to kill others
+				// and occasionally kill parent bash (and himself indirectly)
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-device-manager --conf_file /etc/contrailconfigmaps/devicemanager.${POD_IP} " +
+						"exec /usr/bin/contrail-device-manager --conf_file /etc/contrailconfigmaps/devicemanager.${POD_IP} " +
 						" --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}" +
 						" --fabric_ansible_conf_file /etc/contrailconfigmaps/contrail-fabric-ansible.conf.${POD_IP} /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
 				}
@@ -318,7 +321,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			}
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).SecurityContext = &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
-					Add: []corev1.Capability{"SYS_PTRACE"},
+					Add: []corev1.Capability{"SYS_PTRACE", "KILL"},
 				},
 			}
 			volumeMountList := statefulSet.Spec.Template.Spec.Containers[idx].VolumeMounts
@@ -348,11 +351,18 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		case "dnsmasq":
 			container := &statefulSet.Spec.Template.Spec.Containers[idx]
-			container.Command = []string{"bash", "-c",
-				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini;ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini;" +
-					"dnsmasq -k -p0 --conf-file=/etc/contrailconfigmaps/dnsmasq.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command != nil {
+				// exec dnsmasq is important because dm does process
+				// management by names and search in cmd line
+				// (to avoid wrong trigger of search on bash cmd)
+				container.Command = []string{"bash", "-c",
+					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini ; " +
+						"mkdir -p /var/lib/dnsmasq ; " +
+						"rm -f /var/lib/dnsmasq/base.conf ; " +
+						"cp /etc/contrailconfigmaps/dnsmasq_base.${POD_IP} /var/lib/dnsmasq/base.conf ; " +
+						"exec dnsmasq -k -p0 --conf-file=/etc/contrailconfigmaps/dnsmasq.${POD_IP}",
+				}
 				container.Command = instanceContainer.Command
 			}
 			container.SecurityContext = &corev1.SecurityContext{
@@ -376,7 +386,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				},
 				corev1.VolumeMount{
 					Name:      "tftp",
-					MountPath: "/etc/tftp",
+					MountPath: "/var/lib/tftp",
 				},
 				corev1.VolumeMount{
 					Name:      "dnsmasq",

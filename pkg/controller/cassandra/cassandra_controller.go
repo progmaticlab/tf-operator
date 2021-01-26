@@ -267,13 +267,14 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 
 		if container.Name == "cassandra" {
-			command := []string{"bash", "-c",
-				"/docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///mydata/${POD_IP}.yaml"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
 			}
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"/docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///mydata/${POD_IP}.yaml",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -375,12 +376,12 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 	for idx, container := range statefulSet.Spec.Template.Spec.InitContainers {
 		if container.Name == "init" {
-			command := []string{"sh", "-c", "until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
 			}
 			if instanceContainer.Command == nil {
+				command := []string{"sh", "-c", "until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done"}
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command
@@ -407,8 +408,8 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
 			}
-			command := []string{"bash", "-c", cassandraInit2CommandBuffer.String()}
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c", cassandraInit2CommandBuffer.String()}
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command

@@ -63,6 +63,8 @@ spec:
         - name: devicemanager
           image: tungstenfabric/contrail-controller-config-devicemgr:latest
           env:
+            - name: VENDOR_DOMAIN
+              value: tungsten.io
             - name: POD_IP
               valueFrom:
                 fieldRef:
@@ -74,6 +76,8 @@ spec:
         - name: dnsmasq
           image: tungstenfabric/contrail-external-dnsmasq:latest
           env:
+            - name: VENDOR_DOMAIN
+              value: tungsten.io
             - name: POD_IP
               valueFrom:
                 fieldRef:
@@ -236,9 +240,13 @@ spec:
         - effect: NoExecute
           operator: Exists
       volumes:
-        - emptyDir: {}
+        - hostPath:
+            path: /var/lib/tftp
+            type: ""
           name: tftp
-        - emptyDir: {}
+        - hostPath:
+            path: /var/lib/dnsmasq
+            type: ""
           name: dnsmasq
         - hostPath:
             path: /var/log/contrail/config
