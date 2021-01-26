@@ -381,8 +381,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 			KeystoneRegion:            configAuth.Region,
 			CAFilePath:                certificates.SignerCAFilepath,
 		})
-		data["contrail-keystone-auth.conf"] = configKeystoneAuthConfBuffer.String()
-
+		data["contrail-keystone-auth.conf."+podList.Items[idx].Status.PodIP] = configKeystoneAuthConfBuffer.String()
 		data["dnsmasq."+podList.Items[idx].Status.PodIP] = configtemplates.ConfigDNSMasqConfig
 
 		var configSchematransformerConfigBuffer bytes.Buffer
