@@ -69,8 +69,8 @@ spec:
                   fieldPath: status.podIP
           imagePullPolicy: Always
           volumeMounts:
-            - mountPath: /var/log/contrail/config-device-manager
-              name: config-device-manager-logs
+            - mountPath: /var/log/contrail
+              name: config-logs
         - name: dnsmasq
           image: tungstenfabric/contrail-external-dnsmasq:latest
           env:
@@ -244,10 +244,6 @@ spec:
             path: /var/log/contrail/config
             type: ""
           name: config-logs
-        - hostPath:
-            path: /var/log/contrail/config-device-manager
-            type: ""
-          name: config-device-manager-logs
         - hostPath:
             path: /var/contrail/crashes
             type: ""

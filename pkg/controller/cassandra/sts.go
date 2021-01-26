@@ -117,14 +117,6 @@ spec:
       - effect: NoExecute
         operator: Exists
       volumes:
-      #- hostPath:
-      #    path: /var/log/contrail/cassandra
-      #    type: ""
-      #  name: cassandra-logs
-      #- hostPath:
-      #    path: /var/lib/contrail/cassandra
-      #    type: ""
-      #  name: cassandra-data
       - downwardAPI:
           defaultMode: 420
           items:
