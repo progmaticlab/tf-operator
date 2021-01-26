@@ -75,7 +75,6 @@ type ConfigConfiguration struct {
 	APIPort                     *int               `json:"apiPort,omitempty"`
 	AnalyticsPort               *int               `json:"analyticsPort,omitempty"`
 	CollectorPort               *int               `json:"collectorPort,omitempty"`
-	RedisPort                   *int               `json:"redisPort,omitempty"`
 	ApiIntrospectPort           *int               `json:"apiIntrospectPort,omitempty"`
 	SchemaIntrospectPort        *int               `json:"schemaIntrospectPort,omitempty"`
 	DeviceManagerIntrospectPort *int               `json:"deviceManagerIntrospectPort,omitempty"`
@@ -134,7 +133,6 @@ type ConfigStatusPorts struct {
 	APIPort       string `json:"apiPort,omitempty"`
 	AnalyticsPort string `json:"analyticsPort,omitempty"`
 	CollectorPort string `json:"collectorPort,omitempty"`
-	RedisPort     string `json:"redisPort,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -217,8 +215,7 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 	analyticsServerSpaceSeparatedList = analyticsServerSpaceSeparatedList + ":" + strconv.Itoa(*configConfig.AnalyticsPort)
 	apiServerSpaceSeparatedList = strings.Join(podIPList, ":"+strconv.Itoa(*configConfig.APIPort)+" ")
 	apiServerSpaceSeparatedList = apiServerSpaceSeparatedList + ":" + strconv.Itoa(*configConfig.APIPort)
-	redisServerSpaceSeparatedList = strings.Join(podIPList, ":"+strconv.Itoa(*configConfig.RedisPort)+" ")
-	redisServerSpaceSeparatedList = redisServerSpaceSeparatedList + ":" + strconv.Itoa(*configConfig.RedisPort)
+	redisServerSpaceSeparatedList = strings.Join(podIPList, ":6379 ") + ":6379"
 	cassandraEndpointList := configtemplates.EndpointList(cassandraNodesInformation.ServerIPList, cassandraNodesInformation.Port)
 	cassandraEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(cassandraEndpointList, " ")
 	cassandraCQLEndpointList := configtemplates.EndpointList(cassandraNodesInformation.ServerIPList, cassandraNodesInformation.CQLPort)
@@ -756,7 +753,6 @@ func (c *Config) ManageNodeStatus(podNameIPMap map[string]string, client client.
 	c.Status.Ports.APIPort = strconv.Itoa(*configConfig.APIPort)
 	c.Status.Ports.AnalyticsPort = strconv.Itoa(*configConfig.AnalyticsPort)
 	c.Status.Ports.CollectorPort = strconv.Itoa(*configConfig.CollectorPort)
-	c.Status.Ports.RedisPort = strconv.Itoa(*configConfig.RedisPort)
 	err := client.Status().Update(context.TODO(), c)
 	if err != nil {
 		return err
@@ -788,7 +784,6 @@ func (c *Config) ConfigurationParameters() ConfigConfiguration {
 	var apiPort int
 	var analyticsPort int
 	var collectorPort int
-	var redisPort int
 	var rabbitmqUser string
 	var rabbitmqPassword string
 	var rabbitmqVhost string
@@ -820,13 +815,6 @@ func (c *Config) ConfigurationParameters() ConfigConfiguration {
 		collectorPort = CollectorPort
 	}
 	configConfiguration.CollectorPort = &collectorPort
-
-	if c.Spec.ServiceConfiguration.RedisPort != nil {
-		redisPort = *c.Spec.ServiceConfiguration.RedisPort
-	} else {
-		redisPort = RedisServerPort
-	}
-	configConfiguration.RedisPort = &redisPort
 
 	var apiIntrospectPort int
 	if c.Spec.ServiceConfiguration.ApiIntrospectPort != nil {

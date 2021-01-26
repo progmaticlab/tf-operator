@@ -313,9 +313,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 						" --fabric_ansible_conf_file /etc/contrailconfigmaps/contrail-fabric-ansible.conf.${POD_IP} /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
-				log.Info("devicemanager command", command)
 			} else {
-				log.Info("devicemanager command", instanceContainer.Command)
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).SecurityContext = &corev1.SecurityContext{
@@ -549,6 +547,14 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+			probe := corev1.Probe{
+				Handler: corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{"sh", "-c", "redis-cli -h ${POD_IP} -p 6379 ping"},
+					},
+				},
+			}
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &probe
 		case "nodemanagerconfig":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {

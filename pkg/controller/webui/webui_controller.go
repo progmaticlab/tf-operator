@@ -318,11 +318,11 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "redis" {
-			command := []string{"bash", "-c",
-				"redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 ${POD_IP} --port 6380"}
-			//command = []string{"sh", "-c", "while true; do echo hello; sleep 10;done"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"bash", "-c",
+					"redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 --port 6380",
+				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
@@ -341,7 +341,7 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			probe := corev1.Probe{
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
-						Command: []string{"sh", "-c", "redis-cli -h ${POD_IP} -p 6380 ping"},
+						Command: []string{"sh", "-c", "redis-cli -h 127.0.0.1 -p 6380 ping"},
 					},
 				},
 			}
@@ -430,7 +430,6 @@ func (r *ReconcileWebui) updateStatus(cr *v1alpha1.Webui, sts *appsv1.StatefulSe
 }
 
 func (r *ReconcileWebui) updatePorts(cr *v1alpha1.Webui) {
-	cr.Status.Ports.RedisPort = v1alpha1.RedisServerPortWebui
 	cr.Status.Ports.WebUIHttpPort = v1alpha1.WebuiHttpListenPort
 	cr.Status.Ports.WebUIHttpsPort = v1alpha1.WebuiHttpsListenPort
 }

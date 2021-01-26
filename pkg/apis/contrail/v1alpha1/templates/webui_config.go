@@ -16,12 +16,11 @@ config.endpoints = {};
 config.endpoints.apiServiceType = "ApiServer";
 config.endpoints.opServiceType = "OpServer";
 config.regions = {};
-{{- /* Create syntactically correct config when keystone not used. */}}
-{{- if .KeystoneRegion }}
-config.regions.{{ .KeystoneRegion }} = "{{ .KeystoneAuthProtocol }}://{{ .KeystoneAddress }}:{{ .KeystonePort }}/v3";
-{{- else }}
+{{ if .KeystoneAuthProtocol != "" && .KeystoneAddress != "" && .KeystonePort != "" }}
 config.regions.RegionOne = "{{ .KeystoneAuthProtocol }}://{{ .KeystoneAddress }}:{{ .KeystonePort }}/v3";
-{{- end }}
+{{ else }}
+config.regions.RegionOne = "http://127.0.0.1:5000/v3"
+{{ endif }}
 config.serviceEndPointTakePublicURL = true;
 config.networkManager = {};
 config.networkManager.ip = "127.0.0.1";
@@ -115,8 +114,8 @@ config.node_worker_count = 1;
 config.maxActiveJobs = 10;
 config.redisDBIndex = 3;
 config.CONTRAIL_SERVICE_RETRY_TIME = 300000; //5 minutes
-config.redis_server_port = '{{ .RedisServerPort }}';
-config.redis_server_ip = '{{ .RedisServerList }}';
+config.redis_server_port = '6379';
+config.redis_server_ip = '127.0.0.1';
 config.redis_dump_file = '/var/lib/redis/dump-webui.rdb';
 config.redis_password = '';
 config.logo_file = '/opt/contrail/images/logo.png';

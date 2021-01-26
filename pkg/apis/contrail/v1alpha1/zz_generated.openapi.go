@@ -452,12 +452,6 @@ func schema_pkg_apis_contrail_v1alpha1_ConfigConfiguration(ref common.ReferenceC
 							Format: "int32",
 						},
 					},
-					"redisPort": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 					"apiIntrospectPort": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"integer"},

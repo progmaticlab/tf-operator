@@ -202,8 +202,6 @@ spec:
                   type: string
                 rabbitmqVhost:
                   type: string
-                redisPort:
-                  type: integer
                 schemaIntrospectPort:
                   type: integer
                 storage:
@@ -245,8 +243,6 @@ spec:
                 apiPort:
                   type: string
                 collectorPort:
-                  type: string
-                redisPort:
                   type: string
               type: object
             serviceStatus:

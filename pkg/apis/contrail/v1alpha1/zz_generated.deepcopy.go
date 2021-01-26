@@ -393,11 +393,6 @@ func (in *ConfigConfiguration) DeepCopyInto(out *ConfigConfiguration) {
 		*out = new(int)
 		**out = **in
 	}
-	if in.RedisPort != nil {
-		in, out := &in.RedisPort, &out.RedisPort
-		*out = new(int)
-		**out = **in
-	}
 	if in.ApiIntrospectPort != nil {
 		in, out := &in.ApiIntrospectPort, &out.ApiIntrospectPort
 		*out = new(int)

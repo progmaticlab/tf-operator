@@ -913,7 +913,7 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 	}
 
 	var authMode AuthenticationMode
-	var apiServerPort, analyticsPort, collectorPort, redisPort int
+	var apiServerPort, analyticsPort, collectorPort int
 
 	if len(configList.Items) > 0 {
 		for _, ip := range configList.Items[0].Status.Nodes {
@@ -924,7 +924,6 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 		apiServerPort = *configConfig.APIPort
 		analyticsPort = *configConfig.AnalyticsPort
 		collectorPort = *configConfig.CollectorPort
-		redisPort = *configConfig.RedisPort
 	}
 	sort.SliceStable(configNodes, func(i, j int) bool { return configNodes[i] < configNodes[j] })
 	configCluster = ConfigClusterConfiguration{
@@ -934,7 +933,6 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 		AnalyticsServerIPList: configNodes,
 		CollectorPort:         collectorPort,
 		CollectorServerIPList: configNodes,
-		RedisPort:             redisPort,
 		AuthMode:              authMode,
 	}
 	return configCluster, nil
@@ -955,7 +953,6 @@ type ConfigClusterConfiguration struct {
 	AnalyticsServerIPList []string           `json:"analyticsServerIPList,omitempty"`
 	CollectorPort         int                `json:"collectorPort,omitempty"`
 	CollectorServerIPList []string           `json:"collectorServerIPList,omitempty"`
-	RedisPort             int                `json:"redisPort,omitempty"`
 	AuthMode              AuthenticationMode `json:"authMode,omitempty"`
 }
 
@@ -970,9 +967,6 @@ func (c *ConfigClusterConfiguration) FillWithDefaultValues() {
 	}
 	if c.CollectorPort == 0 {
 		c.CollectorPort = CollectorPort
-	}
-	if c.RedisPort == 0 {
-		c.RedisPort = RedisServerPort
 	}
 	if c.AuthMode == "" {
 		c.AuthMode = AuthenticationModeNoAuth

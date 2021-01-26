@@ -58,7 +58,6 @@ type WebuiConfiguration struct {
 type WebUIStatusPorts struct {
 	WebUIHttpPort  int `json:"webUIHttpPort,omitempty"`
 	WebUIHttpsPort int `json:"webUIHttpsPort,omitempty"`
-	RedisPort      int `json:"redisPort,omitempty"`
 }
 
 type WebUIServiceStatus struct {
@@ -155,8 +154,6 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 			DnsNodePort         string
 			CassandraServerList string
 			CassandraPort       string
-			RedisServerList     string
-			RedisServerPort     string
 			AdminUsername       string
 			AdminPassword       string
 			Manager             string
@@ -172,8 +169,6 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 			DnsNodePort:         strconv.Itoa(controlNodesInformation.DNSIntrospectPort),
 			CassandraServerList: cassandraIPListCommaSeparatedQuoted,
 			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
-			RedisServerList:     "127.0.0.1",
-			RedisServerPort:     "6380",
 			AdminUsername:       webUIConfig.AdminUsername,
 			AdminPassword:       webUIConfig.AdminPassword,
 			Manager:             manager,

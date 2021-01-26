@@ -170,8 +170,6 @@ spec:
                       items:
                         type: string
                       type: array
-                    redisPort:
-                      type: integer
                   type: object
                 containers:
                   items:

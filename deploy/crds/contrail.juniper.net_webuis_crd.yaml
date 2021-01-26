@@ -169,8 +169,6 @@ spec:
               type: object
             ports:
               properties:
-                redisPort:
-                  type: integer
                 webUIHttpPort:
                   type: integer
                 webUIHttpsPort:
