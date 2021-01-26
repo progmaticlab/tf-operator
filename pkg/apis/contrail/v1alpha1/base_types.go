@@ -938,10 +938,31 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 	return configCluster, nil
 }
 
-// WebUIClusterConfiguration defines all configuration knobs used to write the config file.
-type WebUIClusterConfiguration struct {
-	AdminUsername string
-	AdminPassword string
+// ConfigAuthParameters is Keystone auth options
+type ConfigAuthParameters struct {
+	AdminUsername     string
+	AdminPassword     string
+	Address           string
+	Port              int
+	Region            string
+	AuthProtocol      string
+	UserDomainName    string
+	ProjectDomainName string
+}
+
+// AuthParameters makes default empty ConfigAuthParameters
+func AuthParameters(namespace string, secretName string, client client.Client) (*ConfigAuthParameters, error) {
+	w := &ConfigAuthParameters{
+		AdminUsername: "admin",
+	}
+	if secretName != "" {
+		adminPasswordSecret := &corev1.Secret{}
+		if err := client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, adminPasswordSecret); err != nil {
+			return nil, err
+		}
+		w.AdminPassword = string(adminPasswordSecret.Data["password"])
+	}
+	return w, nil
 }
 
 // ConfigClusterConfiguration  stores all information about service's endpoints

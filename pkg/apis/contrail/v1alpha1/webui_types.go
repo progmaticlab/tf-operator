@@ -128,7 +128,7 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 		return err
 	}
 
-	webUIConfig, err := c.ConfigurationParameters(client)
+	authConfig, err := c.AuthParameters(client)
 	if err != nil {
 		return err
 	}
@@ -143,48 +143,70 @@ func (c *Webui) InstanceConfiguration(request reconcile.Request,
 	var data = make(map[string]string)
 	for idx := range podList.Items {
 		var webuiWebConfigBuffer bytes.Buffer
-		configtemplates.WebuiWebConfig.Execute(&webuiWebConfigBuffer, struct {
-			HostIP              string
-			Hostname            string
-			APIServerList       string
-			APIServerPort       string
-			AnalyticsServerList string
-			AnalyticsServerPort string
-			ControlNodeList     string
-			DnsNodePort         string
-			CassandraServerList string
-			CassandraPort       string
-			AdminUsername       string
-			AdminPassword       string
-			Manager             string
-			CAFilePath          string
+		err := configtemplates.WebuiWebConfig.Execute(&webuiWebConfigBuffer, struct {
+			HostIP                    string
+			Hostname                  string
+			APIServerList             string
+			APIServerPort             string
+			AnalyticsServerList       string
+			AnalyticsServerPort       string
+			ControlNodeList           string
+			DnsNodePort               string
+			CassandraServerList       string
+			CassandraPort             string
+			AdminUsername             string
+			AdminPassword             string
+			KeystoneProjectDomainName string
+			KeystoneUserDomainName    string
+			KeystoneAuthProtocol      string
+			KeystoneAddress           string
+			KeystonePort              int
+			KeystoneRegion            string
+			Manager                   string
+			CAFilePath                string
 		}{
-			HostIP:              podList.Items[idx].Status.PodIP,
-			Hostname:            podList.Items[idx].Name,
-			APIServerList:       configApiIPListCommaSeparatedQuoted,
-			APIServerPort:       strconv.Itoa(configNodesInformation.APIServerPort),
-			AnalyticsServerList: analyticsIPListCommaSeparatedQuoted,
-			AnalyticsServerPort: strconv.Itoa(configNodesInformation.AnalyticsServerPort),
-			ControlNodeList:     controlXMPPIPListCommaSeparatedQuoted,
-			DnsNodePort:         strconv.Itoa(controlNodesInformation.DNSIntrospectPort),
-			CassandraServerList: cassandraIPListCommaSeparatedQuoted,
-			CassandraPort:       strconv.Itoa(cassandraNodesInformation.CQLPort),
-			AdminUsername:       webUIConfig.AdminUsername,
-			AdminPassword:       webUIConfig.AdminPassword,
-			Manager:             manager,
-			CAFilePath:          certificates.SignerCAFilepath,
+			HostIP:                    podList.Items[idx].Status.PodIP,
+			Hostname:                  podList.Items[idx].Name,
+			APIServerList:             configApiIPListCommaSeparatedQuoted,
+			APIServerPort:             strconv.Itoa(configNodesInformation.APIServerPort),
+			AnalyticsServerList:       analyticsIPListCommaSeparatedQuoted,
+			AnalyticsServerPort:       strconv.Itoa(configNodesInformation.AnalyticsServerPort),
+			ControlNodeList:           controlXMPPIPListCommaSeparatedQuoted,
+			DnsNodePort:               strconv.Itoa(controlNodesInformation.DNSIntrospectPort),
+			CassandraServerList:       cassandraIPListCommaSeparatedQuoted,
+			CassandraPort:             strconv.Itoa(cassandraNodesInformation.CQLPort),
+			AdminUsername:             authConfig.AdminUsername,
+			AdminPassword:             authConfig.AdminPassword,
+			KeystoneProjectDomainName: authConfig.ProjectDomainName,
+			KeystoneUserDomainName:    authConfig.UserDomainName,
+			KeystoneAuthProtocol:      authConfig.AuthProtocol,
+			KeystoneAddress:           authConfig.Address,
+			KeystonePort:              authConfig.Port,
+			KeystoneRegion:            authConfig.Region,
+			Manager:                   manager,
+			CAFilePath:                certificates.SignerCAFilepath,
 		})
+		if err != nil {
+			log.Error(err, "configtemplates.WebuiWebConfig.Execute failed")
+		}
 		data["config.global.js."+podList.Items[idx].Status.PodIP] = webuiWebConfigBuffer.String()
 		//fmt.Println("DATA ", data)
 		var webuiAuthConfigBuffer bytes.Buffer
-		configtemplates.WebuiAuthConfig.Execute(&webuiAuthConfigBuffer, struct {
-			AdminUsername string
-			AdminPassword string
+		err = configtemplates.WebuiAuthConfig.Execute(&webuiAuthConfigBuffer, struct {
+			AdminUsername             string
+			AdminPassword             string
+			KeystoneProjectDomainName string
+			KeystoneUserDomainName    string
 		}{
-			AdminUsername: webUIConfig.AdminUsername,
-			AdminPassword: webUIConfig.AdminPassword,
+			AdminUsername:             authConfig.AdminUsername,
+			AdminPassword:             authConfig.AdminPassword,
+			KeystoneProjectDomainName: authConfig.ProjectDomainName,
+			KeystoneUserDomainName:    authConfig.UserDomainName,
 		})
-		data["contrail-webui-userauth.js"] = webuiAuthConfigBuffer.String()
+		if err != nil {
+			log.Error(err, "configtemplates.WebuiWebConfig.Execute failed")
+		}
+		data["contrail-webui-userauth.js."+podList.Items[idx].Status.PodIP] = webuiAuthConfigBuffer.String()
 	}
 	configMapInstanceDynamicConfig.Data = data
 	err = client.Update(context.TODO(), configMapInstanceDynamicConfig)
@@ -207,22 +229,6 @@ func (c *Webui) CreateSecret(secretName string,
 		c)
 }
 
-// ConfigurationParameters create WebUIClusterConfiguration
-func (c *Webui) ConfigurationParameters(client client.Client) (*WebUIClusterConfiguration, error) {
-	w := &WebUIClusterConfiguration{
-		AdminUsername: "admin",
-	}
-	adminPasswordSecretName := c.Spec.ServiceConfiguration.KeystoneSecretName
-	if adminPasswordSecretName != "" {
-		adminPasswordSecret := &corev1.Secret{}
-		if err := client.Get(context.TODO(), types.NamespacedName{Name: adminPasswordSecretName, Namespace: c.Namespace}, adminPasswordSecret); err != nil {
-			return nil, err
-		}
-		w.AdminPassword = string(adminPasswordSecret.Data["password"])
-	}
-	return w, nil
-}
-
 // CreateConfigMap create webui configmap
 func (c *Webui) CreateConfigMap(configMapName string,
 	client client.Client,
@@ -234,6 +240,13 @@ func (c *Webui) CreateConfigMap(configMapName string,
 		request,
 		"webui",
 		c)
+}
+
+// AuthParameters makes default empty ConfigAuthParameters
+func (c *Webui) AuthParameters(client client.Client) (*ConfigAuthParameters, error) {
+	// TODO: to be implented
+	secretName := ""
+	return AuthParameters(c.Namespace, secretName, client)
 }
 
 // PrepareSTS prepares the intended deployment for the Webui object.

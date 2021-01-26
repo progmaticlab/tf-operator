@@ -16,11 +16,11 @@ config.endpoints = {};
 config.endpoints.apiServiceType = "ApiServer";
 config.endpoints.opServiceType = "OpServer";
 config.regions = {};
-{{ if .KeystoneAuthProtocol != "" && .KeystoneAddress != "" && .KeystonePort != "" }}
-config.regions.RegionOne = "{{ .KeystoneAuthProtocol }}://{{ .KeystoneAddress }}:{{ .KeystonePort }}/v3";
-{{ else }}
+{{ if or (eq .KeystoneAuthProtocol "") (eq .KeystoneAddress "") (eq .KeystonePort 0) }}
 config.regions.RegionOne = "http://127.0.0.1:5000/v3"
-{{ endif }}
+{{ else }}
+config.regions.RegionOne = "{{ .KeystoneAuthProtocol }}://{{ .KeystoneAddress }}:{{ .KeystonePort }}/v3";
+{{ end }}
 config.serviceEndPointTakePublicURL = true;
 config.networkManager = {};
 config.networkManager.ip = "127.0.0.1";

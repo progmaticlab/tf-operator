@@ -593,24 +593,11 @@ func (c *Config) InstanceConfiguration(request reconcile.Request,
 	return nil
 }
 
-// ConfigAuthParameters is Keystone auth options
-type ConfigAuthParameters struct {
-	AdminUsername     string
-	AdminPassword     string
-	Address           string
-	Port              int
-	Region            string
-	AuthProtocol      string
-	UserDomainName    string
-	ProjectDomainName string
-}
-
 // AuthParameters makes default empty ConfigAuthParameters
 func (c *Config) AuthParameters(client client.Client) (*ConfigAuthParameters, error) {
-	w := &ConfigAuthParameters{
-		AdminUsername: "admin",
-	}
-	return w, nil
+	// TODO: to be implented
+	secretName := ""
+	return AuthParameters(c.Namespace, secretName, client)
 }
 
 // CreateConfigMap makes default empty ConfigMap
