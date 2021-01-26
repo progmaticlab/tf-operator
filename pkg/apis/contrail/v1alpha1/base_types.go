@@ -117,13 +117,18 @@ func (ss *ServiceStatus) ready() bool {
 
 }
 
-func CreateAccount(accountName string, namespace string, client client.Client, scheme *runtime.Scheme, owner v1.Object) error {
+// EnsureServiceAccount creates ServiceAccoung, Secret, ClusterRole and ClusterRoleBinding
+// objects if they are not exist.
+func EnsureServiceAccount(
+	serviceAccountName string,
+	clusterRoleName string,
+	clusterRoleBindingName string,
+	secretName string,
+	client client.Client,
+	scheme *runtime.Scheme,
+	owner v1.Object) error {
 
-	serviceAccountName := "serviceaccount-" + accountName
-	clusterRoleName := "clusterrole-" + accountName
-	clusterRoleBindingName := "clusterrolebinding-" + accountName
-	secretName := "secret-" + accountName
-
+	namespace := owner.GetNamespace()
 	existingServiceAccount := &corev1.ServiceAccount{}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, existingServiceAccount)
 	if err != nil && k8serrors.IsNotFound(err) {
@@ -679,7 +684,7 @@ func getPodInitStatus(reconcileClient client.Client,
 								annotationMap["gateway"] = strings.Trim(gateway, "\n")
 							}
 							if getPrefix {
-								command := []string{"/bin/sh", "-c", "ip addr show | sed -n 's/.*]" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p' | head -n 1"}
+								command := []string{"/bin/sh", "-c", "ip addr show | sed -n 's/.*" + pod.Status.PodIP + "\\/\\([^ ]*\\).*/\\1/p' | head -n 1"}
 								prefixLength, _, err := ExecToPodThroughAPI(command, "init", pod.Name, pod.Namespace, nil)
 								if err != nil {
 									log.Error(err, "Failed to get prefix", strings.Join(command, " "), prefixLength)

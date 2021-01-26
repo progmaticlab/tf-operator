@@ -137,10 +137,6 @@ spec:
               properties:
                 cassandraInstance:
                   type: string
-                clusterRole:
-                  type: string
-                clusterRoleBinding:
-                  type: string
                 containers:
                   items:
                     description: Container defines name, image and command.
@@ -156,8 +152,6 @@ spec:
                     type: object
                   type: array
                 keystoneSecretName:
-                  type: string
-                serviceAccount:
                   type: string
               type: object
           required:

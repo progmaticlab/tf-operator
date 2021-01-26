@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -25,7 +24,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -217,16 +215,19 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 
 	configMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-configmap", r.Client, r.Scheme, request)
 	if err != nil {
+		log.Error(err, "CreateConfigMap failed")
 		return reconcile.Result{}, err
 	}
 
 	secretCertificates, err := instance.CreateSecret(request.Name+"-secret-certificates", r.Client, r.Scheme, request)
 	if err != nil {
+		log.Error(err, "CreateSecret failed")
 		return reconcile.Result{}, err
 	}
 
 	statefulSet := GetSTS()
 	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
+		log.Error(err, "PrepareSTS failed")
 		return reconcile.Result{}, err
 	}
 
@@ -241,122 +242,35 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 	if instance.Spec.ServiceConfiguration.ServiceAccount != "" {
 		serviceAccountName = instance.Spec.ServiceConfiguration.ServiceAccount
 	} else {
-		serviceAccountName = "contrail-service-account"
+		serviceAccountName = "contrail-kubemanager-service-account"
 	}
 
 	var clusterRoleName string
 	if instance.Spec.ServiceConfiguration.ClusterRole != "" {
 		clusterRoleName = instance.Spec.ServiceConfiguration.ClusterRole
 	} else {
-		clusterRoleName = "contrail-cluster-role"
+		clusterRoleName = "contrail-kubemanager-cluster-role"
 	}
 
 	var clusterRoleBindingName string
 	if instance.Spec.ServiceConfiguration.ClusterRoleBinding != "" {
 		clusterRoleBindingName = instance.Spec.ServiceConfiguration.ClusterRoleBinding
 	} else {
-		clusterRoleBindingName = "contrail-cluster-role-binding"
+		clusterRoleBindingName = "contrail-kubemanager-cluster-role-binding"
 	}
 
-	existingServiceAccount := &corev1.ServiceAccount{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: serviceAccountName, Namespace: instance.Namespace}, existingServiceAccount)
-	if err != nil && errors.IsNotFound(err) {
-		serviceAccount := &corev1.ServiceAccount{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ServiceAccount",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceAccountName,
-				Namespace: instance.Namespace,
-			},
-		}
-		if err = controllerutil.SetControllerReference(instance, serviceAccount, r.Scheme); err != nil {
-			return reconcile.Result{}, err
-		}
-		if err = r.Client.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		}
+	var secretName string
+	if instance.Spec.ServiceConfiguration.SecretName != "" {
+		secretName = instance.Spec.ServiceConfiguration.SecretName
+	} else {
+		secretName = "contrail-kubemanager-secret"
 	}
 
-	existingSecret := &corev1.Secret{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: "kubemanagersecret", Namespace: instance.Namespace}, existingSecret)
-	if err != nil && errors.IsNotFound(err) {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kubemanagersecret",
-				Namespace: instance.Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/service-account.name": serviceAccountName,
-				},
-			},
-			Type: corev1.SecretType("kubernetes.io/service-account-token"),
-		}
-		err = controllerutil.SetControllerReference(instance, secret, r.Scheme)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		if err = r.Client.Create(context.TODO(), secret); err != nil {
-			return reconcile.Result{}, err
-		}
+	if err = instance.EnsureServiceAccount(serviceAccountName, clusterRoleName, clusterRoleBindingName, secretName, r.Client, r.Scheme); err != nil {
+		log.Error(err, "EnsureServiceAccount failed")
+		return reconcile.Result{}, err
 	}
 
-	existingClusterRole := &rbacv1.ClusterRole{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleName}, existingClusterRole)
-	if err != nil && errors.IsNotFound(err) {
-		clusterRole := &rbacv1.ClusterRole{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac/v1",
-				Kind:       "ClusterRole",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterRoleName,
-				Namespace: instance.Namespace,
-			},
-			Rules: []rbacv1.PolicyRule{{
-				Verbs: []string{
-					"*",
-				},
-				APIGroups: []string{
-					"*",
-				},
-				Resources: []string{
-					"*",
-				},
-			}},
-		}
-		if err = r.Client.Create(context.TODO(), clusterRole); err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
-	existingClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBindingName}, existingClusterRoleBinding)
-	if err != nil && errors.IsNotFound(err) {
-		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterRoleBindingName,
-				Namespace: instance.Namespace,
-			},
-			Subjects: []rbacv1.Subject{{
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: instance.Namespace,
-			}},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     clusterRoleName,
-			},
-		}
-		if err = r.Client.Create(context.TODO(), clusterRoleBinding); err != nil {
-			return reconcile.Result{}, err
-		}
-	}
 	statefulSet.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
@@ -427,27 +341,33 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 
 	strategy := "rolling"
 	if err = instance.UpdateSTS(statefulSet, instanceType, request, r.Client, strategy); err != nil {
+		log.Error(err, "UpdateSTS failed")
 		return reconcile.Result{}, err
 	}
 
 	podIPList, podIPMap, err := instance.PodIPListAndIPMapFromInstance(instanceType, request, r.Client)
 	if err != nil {
+		log.Error(err, "PodIPListAndIPMapFromInstance failed")
 		return reconcile.Result{}, err
 	}
 	if len(podIPList.Items) > 0 {
 		if err = instance.InstanceConfiguration(request, podIPList, r.Client, r.clusterInfo); err != nil {
+			log.Error(err, "InstanceConfiguration failed")
 			return reconcile.Result{}, err
 		}
 
 		if err := r.ensureCertificatesExist(instance, podIPList, instanceType); err != nil {
+			log.Error(err, "ensureCertificatesExist failed")
 			return reconcile.Result{}, err
 		}
 
 		if err = instance.SetPodsToReady(podIPList, r.Client); err != nil {
+			log.Error(err, "SetPodsToReady failed")
 			return reconcile.Result{}, err
 		}
 
 		if err = instance.ManageNodeStatus(podIPMap, r.Client); err != nil {
+			log.Error(err, "ManageNodeStatus failed")
 			return reconcile.Result{}, err
 		}
 	}
@@ -468,6 +388,7 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 		instance.Status.Active = &active
 	}
 	if err = instance.SetInstanceActive(r.Client, instance.Status.Active, statefulSet, request); err != nil {
+		log.Error(err, "SetInstanceActive failed")
 		return reconcile.Result{}, err
 	}
 	if instance.Status.ConfigChanged != nil {

@@ -68,6 +68,7 @@ type KubemanagerConfiguration struct {
 	ClusterRole           string       `json:"clusterRole,omitempty"`
 	ClusterRoleBinding    string       `json:"clusterRoleBinding,omitempty"`
 	CloudOrchestrator     string       `json:"cloudOrchestrator,omitempty"`
+	SecretName            string       `json:"secretName,omitempty"`
 	KubernetesAPIServer   string       `json:"kubernetesAPIServer,omitempty"`
 	KubernetesAPIPort     *int         `json:"kubernetesAPIPort,omitempty"`
 	KubernetesAPISSLPort  *int         `json:"kubernetesAPISSLPort,omitempty"`
@@ -83,6 +84,7 @@ type KubemanagerConfiguration struct {
 	RabbitmqPassword      string       `json:"rabbitmqPassword,omitempty"`
 	RabbitmqVhost         string       `json:"rabbitmqVhost,omitempty"`
 	LogLevel              string       `json:"logLevel,omitempty"`
+	PublicFIPPool         string       `json:"publicFIPPool,omitempty"`
 }
 
 // KubemanagerNodesConfiguration is the configuration for third party dependencies
@@ -106,6 +108,7 @@ func init() {
 	SchemeBuilder.Register(&Kubemanager{}, &KubemanagerList{})
 }
 
+// InstanceConfiguration creates kubemanager's instance sonfiguration
 func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 	podList *corev1.PodList,
 	client client.Client,
@@ -199,7 +202,13 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 		cassandraEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(cassandraEndpointList, " ")
 		var kubemanagerConfigBuffer bytes.Buffer
 		secret := &corev1.Secret{}
-		if err := client.Get(context.TODO(), types.NamespacedName{Name: "kubemanagersecret", Namespace: request.Namespace}, secret); err != nil {
+		var secretName string
+		if c.Spec.ServiceConfiguration.SecretName != "" {
+			secretName = c.Spec.ServiceConfiguration.SecretName
+		} else {
+			secretName = "contrail-kubemanager-secret"
+		}
+		if err := client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: request.Namespace}, secret); err != nil {
 			return err
 		}
 		token := string(secret.Data["token"])
@@ -229,6 +238,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqVhost         string
 			CAFilePath            string
 			LogLevel              string
+			PublicFIPPool         string
 		}{
 			Token:                 token,
 			ListenAddress:         podList.Items[idx].Status.PodIP,
@@ -255,6 +265,7 @@ func (c *Kubemanager) InstanceConfiguration(request reconcile.Request,
 			RabbitmqVhost:         rabbitmqSecretVhost,
 			CAFilePath:            certificates.SignerCAFilepath,
 			LogLevel:              kubemanagerConfig.LogLevel,
+			PublicFIPPool:         kubemanagerConfig.PublicFIPPool,
 		})
 		data["kubemanager."+podList.Items[idx].Status.PodIP] = kubemanagerConfigBuffer.String()
 
@@ -356,11 +367,27 @@ func (c *Kubemanager) SetInstanceActive(client client.Client, activeStatus *bool
 	return SetInstanceActive(client, activeStatus, sts, request, c)
 }
 
+// ManageNodeStatus updates node status
 func (c *Kubemanager) ManageNodeStatus(podNameIPMap map[string]string, client client.Client) error {
 	c.Status.Nodes = podNameIPMap
 	return client.Status().Update(context.TODO(), c)
 }
 
+// EnsureServiceAccount creates ServiceAccoung, Secret, ClusterRole and ClusterRoleBinding
+// objects if they are not exist.
+func (c *Kubemanager) EnsureServiceAccount(
+	serviceAccountName string,
+	clusterRoleName string,
+	clusterRoleBindingName string,
+	secretName string,
+	client client.Client,
+	scheme *runtime.Scheme) error {
+
+	return EnsureServiceAccount(serviceAccountName, clusterRoleName, clusterRoleBindingName, secretName,
+		client, scheme, c)
+}
+
+// ConfigurationParameters creates KubemanagerConfiguration
 func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration := KubemanagerConfiguration{}
 	var cloudOrchestrator string
@@ -373,6 +400,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	var serviceSubnets string
 	var ipFabricForwarding bool
 	var ipFabricSnat bool
+	var publicFIPPool string
 	var hostNetworkService bool
 	var useKubeadmConfig bool
 	var logLevel string
@@ -455,6 +483,12 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 		ipFabricSnat = KubernetesIPFabricSnat
 	}
 
+	if c.Spec.ServiceConfiguration.PublicFIPPool != "" {
+		publicFIPPool = c.Spec.ServiceConfiguration.PublicFIPPool
+	} else {
+		publicFIPPool = KubernetesPublicFIPPool
+	}
+
 	kubemanagerConfiguration.CloudOrchestrator = cloudOrchestrator
 	kubemanagerConfiguration.KubernetesAPIServer = kubernetesApiServer
 	kubemanagerConfiguration.KubernetesAPIPort = &kubernetesApiPort
@@ -467,6 +501,7 @@ func (c *Kubemanager) ConfigurationParameters() KubemanagerConfiguration {
 	kubemanagerConfiguration.HostNetworkService = &hostNetworkService
 	kubemanagerConfiguration.UseKubeadmConfig = &useKubeadmConfig
 	kubemanagerConfiguration.IPFabricSnat = &ipFabricSnat
+	kubemanagerConfiguration.PublicFIPPool = publicFIPPool
 	kubemanagerConfiguration.LogLevel = logLevel
 
 	return kubemanagerConfiguration

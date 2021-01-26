@@ -4,6 +4,7 @@
 
 # Install kubernetes prepared for tf  using kubespray
 ```bash
+sudo yum install -y git
 git clone https://github.com/tungstenfabric/tf-devstack.git
 ./tf-devstack/k8s_manifests/run.sh platform
 ```

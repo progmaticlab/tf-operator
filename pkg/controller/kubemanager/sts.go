@@ -116,15 +116,14 @@ func GetSTS() *apps.StatefulSet {
 	}
 
 	var podSpec = core.PodSpec{
-		Volumes:            podVolumes,
-		InitContainers:     podInitContainers,
-		Containers:         podContainers,
-		RestartPolicy:      "Always",
-		DNSPolicy:          "ClusterFirst",
-		HostNetwork:        true,
-		Tolerations:        podTolerations,
-		NodeSelector:       map[string]string{"node-role.kubernetes.io/master": ""},
-		ServiceAccountName: "contrail-service-account-kubemanager",
+		Volumes:        podVolumes,
+		InitContainers: podInitContainers,
+		Containers:     podContainers,
+		RestartPolicy:  "Always",
+		DNSPolicy:      "ClusterFirst",
+		HostNetwork:    true,
+		Tolerations:    podTolerations,
+		NodeSelector:   map[string]string{"node-role.kubernetes.io/master": ""},
 	}
 
 	var stsTemplate = core.PodTemplateSpec{
