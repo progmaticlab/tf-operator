@@ -942,6 +942,7 @@ func NewConfigClusterConfiguration(name string, namespace string, myclient clien
 type ConfigAuthParameters struct {
 	AdminUsername     string
 	AdminPassword     string
+	AdminTenant       string
 	Address           string
 	Port              int
 	Region            string
@@ -953,7 +954,13 @@ type ConfigAuthParameters struct {
 // AuthParameters makes default empty ConfigAuthParameters
 func AuthParameters(namespace string, secretName string, client client.Client) (*ConfigAuthParameters, error) {
 	w := &ConfigAuthParameters{
-		AdminUsername: "admin",
+		AdminUsername:     KeystoneAuthAdminUser,
+		AdminPassword:     KeystoneAuthAdminPassword,
+		AdminTenant:       KeystoneAuthAdminTenant,
+		Port:              KeystoneAuthPort,
+		AuthProtocol:      KeystoneAuthProto,
+		UserDomainName:    KeystoneAuthUserDomainName,
+		ProjectDomainName: KeystoneAuthProjectDomainName,
 	}
 	if secretName != "" {
 		adminPasswordSecret := &corev1.Secret{}

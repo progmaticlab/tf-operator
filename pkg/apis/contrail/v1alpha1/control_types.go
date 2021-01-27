@@ -312,17 +312,18 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 		data["provision.sh."+podIP] = controlProvisionBuffer.String()
 
 		var controlDeProvisionBuffer bytes.Buffer
+		// TODO: use auth options from config instead of defaults
 		configtemplates.ControlDeProvisionConfig.Execute(&controlDeProvisionBuffer, struct {
-			User          string
-			Password      string
-			Tenant        string
+			AdminUsername string
+			AdminPassword string
+			AdminTenant   string
 			APIServerList string
 			APIServerPort string
 			Hostname      string
 		}{
-			User:          KeystoneAuthAdminUser,
-			Password:      KeystoneAuthAdminPassword,
-			Tenant:        KeystoneAuthAdminTenant,
+			AdminUsername: KeystoneAuthAdminUser,
+			AdminPassword: KeystoneAuthAdminPassword,
+			AdminTenant:   KeystoneAuthAdminTenant,
 			APIServerList: configApiIPListCommaSeparatedQuoted,
 			APIServerPort: strconv.Itoa(configNodesInformation.APIServerPort),
 			Hostname:      hostname,

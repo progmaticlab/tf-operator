@@ -181,15 +181,19 @@ done
 `))
 
 // ControlDeProvisionConfig is the template of the Control de-provision script.
+// TODO:
+//  - support keystone
+//  - certs to disable insecure
 var ControlDeProvisionConfig = template.Must(template.New("").Parse(`#!/usr/bin/python
 from vnc_api import vnc_api
 import socket
 vncServerList = {{ .APIServerList }}
 vnc_client = vnc_api.VncApi(
     api_server_use_ssl=True,
-    username='{{ .User }}',
-    password='{{ .Password }}',
-    tenant_name='{{ .Tenant }}',
+    apiinsecure=True,
+    username='{{ .AdminUsername }}',
+    password='{{ .AdminPassword }}',
+    tenant_name='{{ .AdminTenant }}',
     api_server_host=vncServerList.split(','),
     api_server_port={{ .APIServerPort }})
 vnc_client.bgp_router_delete(fq_name=['default-domain','default-project','ip-fabric','__default__', '{{ .Hostname }}' ])

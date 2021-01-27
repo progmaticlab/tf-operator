@@ -35,8 +35,9 @@ const (
 type AAAMode string
 
 const (
-	AAAModeNoAuth AAAMode = "no-auth"
-	AAAModeRBAC   AAAMode = "rbac"
+	AAAModeNoAuth     AAAMode = "no-auth"
+	AAAModeRBAC       AAAMode = "rbac"
+	AAAModeCloudAdmin AAAMode = "cloud-admin"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
