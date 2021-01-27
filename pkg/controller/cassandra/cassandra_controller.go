@@ -9,6 +9,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
+	"sort"
+	"strings"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
@@ -604,15 +606,22 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		reqLogger.Info("Reconcile: Cannot get provisioner environment configmap.")
 		return reconcile.Result{}, err
 	}
-	provisionerEnvConfigHash := EncryptString(fmt.Sprint(provisionerEnvConfigMap))
+	provisionerEnvConfigHash := EncryptMap(provisionerEnvConfigMap.Data)
 
 	// Restart reconcile if environment in configmap different from needed environment
-	if  provisionerEnvConfigHash != EncryptString(fmt.Sprint(instance.EnvProvisionerConfigMapData(request, r.Client))) {
+	provisionerEnvMap, err := instance.EnvProvisionerConfigMapData(request, r.Client)
+	if err != nil {
+		reqLogger.Info("Reconcile: Cannot get data for provisioner environment configmap.")
+		return reconcile.Result{}, err
+	}
+	if  provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) {
+		reqLogger.Info(fmt.Sprintf("Here: %s %s", MapToString(provisionerEnvConfigMap.Data), MapToString(provisionerEnvMap)))
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Create statefulset if it doesn't exist
 	if err = instance.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
+		reqLogger.Info("Reconcile: Cannot create statefulset.")
 		return reconcile.Result{}, err
 	}
 
@@ -688,10 +697,24 @@ func (r *ReconcileCassandra) ensureCertificatesExist(cassandra *v1alpha1.Cassand
 	return crt.EnsureExistsAndIsSigned()
 }
 
+func MapToString(m map[string]string) string {
+	list := make([]string, 0, len(m))
+	for key, value := range m{
+		list = append(list, fmt.Sprintf("%s=%s", key, value))
+	}
+	sort.Strings(list)
+
+	return strings.Join(list, " ")
+}
+
 func EncryptString(str string) string {
 	h := sha1.New()
 	io.WriteString(h, str)
 	key := hex.EncodeToString(h.Sum(nil))
 
 	return string(key)
+}
+
+func EncryptMap(m map[string]string) string {
+	return EncryptString(MapToString(m))
 }
