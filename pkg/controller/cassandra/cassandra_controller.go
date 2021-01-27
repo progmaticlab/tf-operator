@@ -209,7 +209,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
-	envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nogemanager-env", r.Client, r.Scheme, request)
+	envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nodemanager-env", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

@@ -445,7 +445,7 @@ func (c *Cassandra) EnvironmentConfiguration (request reconcile.Request, client 
 		return err
 	}
 
-	data, err = c.EnvProvisionerConfigMapData(request, client)
+	data, err = c.EnvNodemanagerConfigMapData(request, client)
 	if err != nil {
 		return err
 	}
