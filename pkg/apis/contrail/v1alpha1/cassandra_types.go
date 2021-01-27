@@ -465,8 +465,8 @@ func (c *Cassandra) EnvNodemanagerConfigMapData (request reconcile.Request, clie
 	data := make(map[string]string)
 	data["SSL_ENABLE"] = "True"
 	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
-	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
-	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
+	data["SERVER_CERTFILE"] = "/etc/certificates/server-${POD_IP}.crt"
+	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-${POD_IP}.pem"
 
 	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
 	if err != nil {
@@ -483,8 +483,8 @@ func (c *Cassandra) EnvProvisionerConfigMapData (request reconcile.Request, clie
 	data := make(map[string]string)
 	data["SSL_ENABLE"] = "True"
 	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
-	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
-	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
+	data["SERVER_CERTFILE"] = "/etc/certificates/server-${POD_IP}.crt"
+	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-${POD_IP}.pem"
 	
 	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
 	if err != nil {
