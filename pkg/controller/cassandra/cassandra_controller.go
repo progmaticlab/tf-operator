@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strconv"
 	"text/template"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
 	"github.com/Juniper/contrail-operator/pkg/certificates"
@@ -28,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -148,6 +150,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	srcConfig := &source.Kind{Type: &v1alpha1.Config{}}
+        configHandler := resourceHandler(mgr.GetClient())
+        predConfigSizeChange := utils.ConfigActiveChange()
+        if err = c.Watch(srcConfig, configHandler, predConfigSizeChange); err != nil {
+                return err
+        }
+
 	return nil
 }
 
@@ -194,6 +203,16 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 
 	configMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-configmap", r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	//envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nogemanager-env", r.Client, r.Scheme, request)
+	//if err != nil {
+	//	return reconcile.Result{}, err
+	//}
+
+	envProvisionerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-provisioner-env", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -379,37 +398,14 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			})
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 
-			envList := []corev1.EnvVar{}
-			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
-				envList = (&statefulSet.Spec.Template.Spec.Containers[idx]).Env
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{
+				{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: envProvisionerConfigMap.Name},
+					},
+				},
 			}
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SSL_ENABLE",
-				Value: "True",
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_CA_CERTFILE",
-				Value: certificates.SignerCAFilepath,
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_CERTFILE",
-				Value: "/etc/certificates/server-$(POD_IP).crt",
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_KEYFILE",
-				Value: "/etc/certificates/server-key-$(POD_IP).pem",
-			})
-			configNodesInformation, err := v1alpha1.NewConfigClusterConfiguration(instance.Labels["contrail_cluster"], request.Namespace, r.Client)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			configNodeList := configNodesInformation.APIServerIPList
-			envList = append(envList, corev1.EnvVar{
-				Name:  "CONFIG_NODES",
-				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
-			})
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).Env = envList
-
+			
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
@@ -595,13 +591,47 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		}
 	}
 
+	// Set environment configmaps
+	if err = instance.EnvironmentConfiguration(request, r.Client); err != nil {
+		reqLogger.Info("Reconcile: Cannot set environment configmaps.")
+		return reconcile.Result{}, err
+	}
+
+	provisionerEnvConfigMap := &corev1.ConfigMap{}
+	if err := r.Client.Get(context.TODO(),
+			types.NamespacedName{Name: envProvisionerConfigMap.Name, Namespace: request.Namespace},
+			provisionerEnvConfigMap); err != nil {
+		reqLogger.Info("Reconcile: Cannot get provisioner environment configmap.")
+		return reconcile.Result{}, err
+	}
+	provisionerEnvConfigHash := EncryptString(fmt.Sprint(provisionerEnvConfigMap))
+
+	// Restart reconcile if environment in configmap different from needed environment
+	if  provisionerEnvConfigHash != EncryptString(fmt.Sprint(instance.EnvProvisionerConfigMapData(request, r.Client))) {
+		return reconcile.Result{Requeue: true}, nil
+	}
+
+	// Create statefulset if it doesn't exist
 	if err = instance.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
 		return reconcile.Result{}, err
 	}
 
+	// Force update statefulSet if environment changed
+	if provisionerEnvConfigHash != instance.Status.ProvisionerEnvHash {
+		reqLogger.Info("Reconcile: Updating statefulset when environment changed.")
+		if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
+			reqLogger.Info("Reconcile: Cannot force update statefulset when environment changed.")
+			return reconcile.Result{}, err
+		}
+		instance.Status.ProvisionerEnvHash = provisionerEnvConfigHash
+	}
+	
+	// Update statefulset if replicas or images changed
 	if err = instance.UpdateSTS(statefulSet, instanceType, request, r.Client, "rolling"); err != nil {
 		return reconcile.Result{}, err
 	}
+
+	// Restart on status
 
 	podIPList, podIPMap, err := instance.PodIPListAndIPMapFromInstance(instanceType, request, r.Client)
 	if err != nil {
@@ -656,4 +686,12 @@ func (r *ReconcileCassandra) ensureCertificatesExist(cassandra *v1alpha1.Cassand
 	subjects := cassandra.PodsCertSubjects(pods, serviceIP)
 	crt := certificates.NewCertificate(r.Client, r.Scheme, cassandra, subjects, instanceType)
 	return crt.EnsureExistsAndIsSigned()
+}
+
+func EncryptString(str string) string {
+	h := sha1.New()
+	io.WriteString(h, str)
+	key := hex.EncodeToString(h.Sum(nil))
+
+	return string(key)
 }

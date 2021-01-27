@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,10 +61,12 @@ type CassandraConfiguration struct {
 // CassandraStatus defines the status of the cassandra object.
 // +k8s:openapi-gen=true
 type CassandraStatus struct {
-	Active    *bool                `json:"active,omitempty"`
-	Nodes     map[string]string    `json:"nodes,omitempty"`
-	Ports     CassandraStatusPorts `json:"ports,omitempty"`
-	ClusterIP string               `json:"clusterIP,omitempty"`
+	Active             *bool                `json:"active,omitempty"`
+	Nodes              map[string]string    `json:"nodes,omitempty"`
+	Ports              CassandraStatusPorts `json:"ports,omitempty"`
+	ClusterIP          string               `json:"clusterIP,omitempty"`
+	NodemanagerEnvHash string               `json:"nodemanagerEnvHash,omitempty"`
+	ProvisionerEnvHash string               `json:"provisionerEnvHash,omitempty"`
 }
 
 // CassandraStatusPorts defines the status of the ports of the cassandra object.
@@ -410,4 +413,44 @@ func (c *Cassandra) seeds(podList *corev1.PodList) []string {
 	}
 
 	return seeds
+}
+
+func (c *Cassandra) EnvironmentConfiguration (request reconcile.Request, client client.Client) error {
+	provisionerEnvConfigMap := &corev1.ConfigMap{}
+	if err := client.Get(context.TODO(),
+			types.NamespacedName{Name: request.Name+"-cassandra-provisioner-env", Namespace: request.Namespace},
+			provisionerEnvConfigMap); err != nil {
+		return err
+	}
+
+	data, err := c.EnvProvisionerConfigMapData(request, client)
+	if err != nil {
+		return err
+	}
+
+	if !reflect.DeepEqual(provisionerEnvConfigMap.Data, data) {
+		provisionerEnvConfigMap.Data = data
+
+		if err := client.Update(context.TODO(), provisionerEnvConfigMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Cassandra) EnvProvisionerConfigMapData (request reconcile.Request, clnt client.Client) (map[string]string, error) {
+	data := make(map[string]string)
+	data["SSL_ENABLE"] = "True"
+	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
+	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
+	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
+	
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, clnt)
+	if err != nil {
+		return nil, err
+	}
+	configNodeList := configNodesInformation.APIServerIPList
+	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodeList, ",")
+
+	return data, nil
 }
