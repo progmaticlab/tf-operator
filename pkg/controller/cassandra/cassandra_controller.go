@@ -209,10 +209,10 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
-	//envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nogemanager-env", r.Client, r.Scheme, request)
-	//if err != nil {
-	//	return reconcile.Result{}, err
-	//}
+	envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nogemanager-env", r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	envProvisionerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-provisioner-env", r.Client, r.Scheme, request)
 	if err != nil {
@@ -348,15 +348,20 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 
 		}
 		if container.Name == "nodemanager" {
-			command := []string{"bash", "-c",
-				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-database-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-database",
-			}
+			//command := []string{"bash", "-c",
+			//	"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-database-nodemgr.conf; /usr/bin/contrail-nodemgr --nodetype=contrail-database",
+			//}
+
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer.Command == nil {
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
-			} else {
+			if instanceContainer.Command != nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
+
+			//if instanceContainer.Command == nil {
+			//	(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			//} else {
+			//	(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			//}
 
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
@@ -378,6 +383,15 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{
+				{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: envNodemanagerConfigMap.Name},
+					},
+				},
+			}
+
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "provisioner" {
@@ -608,14 +622,30 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 	provisionerEnvConfigHash := EncryptMap(provisionerEnvConfigMap.Data)
 
-	// Restart reconcile if environment in configmap different from needed environment
+	nodemanagerEnvConfigMap := &corev1.ConfigMap{}
+        if err := r.Client.Get(context.TODO(),
+                        types.NamespacedName{Name: envNodemanagerConfigMap.Name, Namespace: request.Namespace},
+                        nodemanagerEnvConfigMap); err != nil {
+                reqLogger.Info("Reconcile: Cannot get nodemanager environment configmap.")
+                return reconcile.Result{}, err
+        }
+        nodemanagerEnvConfigHash := EncryptMap(nodemanagerEnvConfigMap.Data)
+
+	// Restart reconcile if environment in configmaps different from needed environment
 	provisionerEnvMap, err := instance.EnvProvisionerConfigMapData(request, r.Client)
 	if err != nil {
 		reqLogger.Info("Reconcile: Cannot get data for provisioner environment configmap.")
 		return reconcile.Result{}, err
 	}
-	if  provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) {
-		reqLogger.Info(fmt.Sprintf("Here: %s %s", MapToString(provisionerEnvConfigMap.Data), MapToString(provisionerEnvMap)))
+	
+	nodemanagerEnvMap, err := instance.EnvNodemanagerConfigMapData(request, r.Client)
+        if err != nil {
+                reqLogger.Info("Reconcile: Cannot get data for nodemanager environment configmap.")
+                return reconcile.Result{}, err
+        }
+
+	if  provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) || nodemanagerEnvConfigHash != EncryptMap(nodemanagerEnvMap) {
+		reqLogger.Info("Here: ")
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -626,13 +656,14 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 
 	// Force update statefulSet if environment changed
-	if provisionerEnvConfigHash != instance.Status.ProvisionerEnvHash {
+	if provisionerEnvConfigHash != instance.Status.ProvisionerEnvHash || nodemanagerEnvConfigHash != instance.Status.NodemanagerEnvHash {
 		reqLogger.Info("Reconcile: Updating statefulset when environment changed.")
 		if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
 			reqLogger.Info("Reconcile: Cannot force update statefulset when environment changed.")
 			return reconcile.Result{}, err
 		}
 		instance.Status.ProvisionerEnvHash = provisionerEnvConfigHash
+		instance.Status.NodemanagerEnvHash = nodemanagerEnvConfigHash
 	}
 	
 	// Update statefulset if replicas or images changed
