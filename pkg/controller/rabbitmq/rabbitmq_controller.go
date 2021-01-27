@@ -267,11 +267,6 @@ func (r *ReconcileRabbitmq) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	}
 
-	//err = r.Client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: instance.Namespace}, secret)
-	//if err != nil && errors.IsNotFound(err) {
-	//	return reconcile.Result{}, err
-	//}
-
 	var password string
 	var user string
 	var vhost string

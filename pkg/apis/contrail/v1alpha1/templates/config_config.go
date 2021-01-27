@@ -155,7 +155,7 @@ sandesh_certfile=/etc/certificates/server-{{ .HostIP }}.crt
 sandesh_ca_cert={{ .CAFilePath }}`))
 
 // ConfigDNSMasqBaseConfig is the template of the DNSMasq service configuration.
-var ConfigDNSMasqBaseConfig = `log-facility=/dev/stdout
+var ConfigDNSMasqBaseConfig = `log-facility=/var/log/contrail/dnsmasq.log
 bogus-priv
 log-dhcp
 enable-tftp

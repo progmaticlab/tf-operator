@@ -82,10 +82,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: CONTROLLER_NODES
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail

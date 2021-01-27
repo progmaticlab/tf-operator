@@ -352,18 +352,20 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		case "dnsmasq":
 			container := &statefulSet.Spec.Template.Spec.Containers[idx]
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
-			if instanceContainer.Command != nil {
+			if instanceContainer.Command == nil {
 				// exec dnsmasq is important because dm does process
 				// management by names and search in cmd line
 				// (to avoid wrong trigger of search on bash cmd)
-				container.Command = []string{"bash", "-c",
+				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini ; " +
 						"mkdir -p /var/lib/dnsmasq ; " +
 						"rm -f /var/lib/dnsmasq/base.conf ; " +
 						"cp /etc/contrailconfigmaps/dnsmasq_base.${POD_IP} /var/lib/dnsmasq/base.conf ; " +
 						"exec dnsmasq -k -p0 --conf-file=/etc/contrailconfigmaps/dnsmasq.${POD_IP}",
 				}
-				container.Command = instanceContainer.Command
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
 			container.SecurityContext = &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
