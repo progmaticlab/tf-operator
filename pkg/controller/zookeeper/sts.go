@@ -77,6 +77,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: NODE_TYPE
+          value: config-database
         image: tungstenfabric/contrail-external-zookeeper:latest
         imagePullPolicy: Always
         resources:

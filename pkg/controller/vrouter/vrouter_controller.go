@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	appsv1 "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -448,13 +449,14 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
 		}
+
 		if container.Name == "nodeinit" && instance.Spec.ServiceConfiguration.ContrailStatusImage != "" {
-			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Env = []corev1.EnvVar{
-				{
+			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Env = append((&daemonSet.Spec.Template.Spec.InitContainers[idx]).Env,
+				core.EnvVar{
 					Name:  "CONTRAIL_STATUS_IMAGE",
 					Value: instance.Spec.ServiceConfiguration.ContrailStatusImage,
 				},
-			}
+			)
 		}
 	}
 

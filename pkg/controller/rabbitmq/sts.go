@@ -6,16 +6,31 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// GetSTS create default StatefulSet Rabbitmq object
 func GetSTS() *apps.StatefulSet {
 	var replicas = int32(1)
 	var labelsMountPermission int32 = 0644
 
-	var podIPEnv = core.EnvVar{
-		Name: "POD_IP",
-		ValueFrom: &core.EnvVarSource{
-			FieldRef: &core.ObjectFieldSelector{
-				FieldPath: "status.podIP",
+	var nodeEnv = []core.EnvVar{
+		{
+			Name: "POD_IP",
+			ValueFrom: &core.EnvVarSource{
+				FieldRef: &core.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
 			},
+		},
+		{
+			Name: "POD_NAME",
+			ValueFrom: &core.EnvVarSource{
+				FieldRef: &core.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		{
+			Name:  "NODE_TYPE",
+			Value: "config-database",
 		},
 	}
 
@@ -28,9 +43,7 @@ func GetSTS() *apps.StatefulSet {
 				"-c",
 				"until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done",
 			},
-			Env: []core.EnvVar{
-				podIPEnv,
-			},
+			Env: nodeEnv,
 			VolumeMounts: []core.VolumeMount{
 				{
 					Name:      "status",
@@ -57,24 +70,7 @@ func GetSTS() *apps.StatefulSet {
 					MountPath: "/var/log/rabbitmq",
 				},
 			},
-			Env: []core.EnvVar{
-				{
-					Name: "POD_IP",
-					ValueFrom: &core.EnvVarSource{
-						FieldRef: &core.ObjectFieldSelector{
-							FieldPath: "status.podIP",
-						},
-					},
-				},
-				{
-					Name: "POD_NAME",
-					ValueFrom: &core.EnvVarSource{
-						FieldRef: &core.ObjectFieldSelector{
-							FieldPath: "metadata.name",
-						},
-					},
-				},
-			},
+			Env: nodeEnv,
 			ReadinessProbe: &core.Probe{
 				InitialDelaySeconds: 15,
 				TimeoutSeconds:      5,
