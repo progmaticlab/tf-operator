@@ -106,7 +106,7 @@ spec:
               name: control-logs
             - mountPath: /var/crashes
               name: crashes
-            - mountPath: /var/run
+            - mountPath: /mnt
               name: var-run
         - name: provisioner
           image: tungstenfabric/contrail-provisioner:latest

@@ -166,7 +166,7 @@ func GetDaemonset() *apps.DaemonSet {
 				},
 				{
 					Name:      "var-run",
-					MountPath: "/var/run",
+					MountPath: "/mnt",
 				},
 			},
 			ImagePullPolicy: "Always",

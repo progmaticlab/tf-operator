@@ -89,7 +89,7 @@ spec:
           name: cassandra-logs
         - mountPath: /var/crashes
           name: crashes
-        - mountPath: /var/run
+        - mountPath: /mnt
           name: var-run
       - name: provisioner
         image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1

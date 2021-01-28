@@ -173,7 +173,7 @@ spec:
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
-            - mountPath: /var/run
+            - mountPath: /mnt
               name: var-run
             - mountPath: /var/crashes
               name: crashes
@@ -192,7 +192,7 @@ spec:
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
-            - mountPath: /var/run
+            - mountPath: /mnt
               name: var-run
             - mountPath: /var/crashes
               name: crashes
