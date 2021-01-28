@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"text/template"
 
@@ -147,6 +148,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	srcConfig := &source.Kind{Type: &v1alpha1.Config{}}
+	configHandler := resourceHandler(mgr.GetClient())
+	predConfigSizeChange := utils.ConfigActiveChange()
+	if err = c.Watch(srcConfig, configHandler, predConfigSizeChange); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -197,6 +205,11 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
+	envProvisionerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-provisioner-env", r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	secretCertificates, err := instance.CreateSecret(request.Name+"-secret-certificates", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -217,7 +230,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	instance.Status.ClusterIP = clusterIP
 
 	statefulSet := GetSTS()
-	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
+	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -273,16 +286,22 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"/docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///mydata/${POD_IP}.yaml",
+					"ln -sf /etc/contrailconfigmaps/cqlshrc.${POD_IP} /root/.cqlshrc ; " +
+						"exec /docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///etc/contrailconfigmaps/cassandra.${POD_IP}.yaml",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
+
 			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+
 			volumeMount := corev1.VolumeMount{
 				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/mydata",
+				MountPath: "/etc/contrailconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 
@@ -325,6 +344,74 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Env = envVars
 			}
 
+		}
+		if container.Name == "nodemanager" {
+			command := []string{"bash", "-c",
+				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-database-nodemgr.conf; " +
+					"exec /usr/bin/contrail-nodemgr --nodetype=contrail-database",
+			}
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command == nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			} else {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMount := corev1.VolumeMount{
+				Name:      request.Name + "-" + instanceType + "-volume",
+				MountPath: "/etc/contrailconfigmaps",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			volumeMount = corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			}
+			volumeMountList = append(volumeMountList, volumeMount)
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+		}
+		if container.Name == "provisioner" {
+			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			if instanceContainer.Command != nil {
+				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			}
+
+			volumeMountList := []corev1.VolumeMount{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts) > 0 {
+				volumeMountList = (&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts
+			}
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name:      request.Name + "-secret-certificates",
+				MountPath: "/etc/certificates",
+			})
+			volumeMountList = append(volumeMountList, corev1.VolumeMount{
+				Name:      csrSignerCaVolumeName,
+				MountPath: certificates.SignerCAMountPath,
+			})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			envFromSource := []corev1.EnvFromSource{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom) > 0 {
+				envFromSource = (&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom
+			}
+			envFromSource = append(envFromSource,
+				corev1.EnvFromSource{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: envProvisionerConfigMap.Name},
+					},
+				})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom = envFromSource
+
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 	}
 	initHostPathType := corev1.HostPathType("DirectoryOrCreate")
@@ -509,12 +596,61 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		}
 	}
 
-	if err = instance.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
+	// Set environment configmaps
+	newProvisionerConfigMapData, err := instance.EnvProvisionerConfigMapData(request, r.Client)
+	if err != nil {
+		reqLogger.Error(err, "EnvProvisionerConfigMapData failed")
 		return reconcile.Result{}, err
 	}
 
-	if err = instance.UpdateSTS(statefulSet, instanceType, request, r.Client, "rolling"); err != nil {
+	configMapChanged := false
+	if !reflect.DeepEqual(envProvisionerConfigMap.Data, newProvisionerConfigMapData) {
+		envProvisionerConfigMap.Data = newProvisionerConfigMapData
+
+		if err = r.Client.Update(context.TODO(), envProvisionerConfigMap); err != nil {
+			reqLogger.Error(err, "Update of envProvisionerConfigMap failed")
+			return reconcile.Result{Requeue: true}, err
+		}
+		configMapChanged = true
+	}
+
+	// Restart reconcile if environment in configmap different from needed environment
+	// provisionerEnvConfigHash := EncryptMap(envProvisionerConfigMap.Data)
+	// if provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) {
+	// 	reqLogger.Info(fmt.Sprintf("Here: %s %s", MapToString(provisionerEnvConfigMap.Data), MapToString(provisionerEnvMap)))
+	// 	return reconcile.Result{Requeue: true}, nil
+	// }
+
+	// Create statefulset if it doesn't exist
+	if err = instance.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
+		reqLogger.Error(err, "Cannot create statefulset.")
 		return reconcile.Result{}, err
+	}
+
+	// Force update statefulSet if environment changed
+	// if provisionerEnvConfigHash != instance.Status.ProvisionerEnvHash {
+	// 	reqLogger.Info("Reconcile: Updating statefulset when environment changed.")
+	// 	if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
+	// 		reqLogger.Info("Reconcile: Cannot force update statefulset when environment changed.")
+	// 		return reconcile.Result{}, err
+	// 	}
+	// 	instance.Status.ProvisionerEnvHash = provisionerEnvConfigHash
+	// }
+
+	// TODO: have universal update that checks related configmaps
+	if configMapChanged {
+		reqLogger.Info("configMapChanged, update sts")
+		if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
+			reqLogger.Error(err, "Update statefulset failed")
+			return reconcile.Result{}, err
+		}
+	} else {
+		reqLogger.Info("configMapChanged is not changed", "current", envProvisionerConfigMap.Data, "new", newProvisionerConfigMapData)
+		// Update statefulset if replicas or images changed
+		if err = instance.UpdateSTS(statefulSet, instanceType, request, r.Client, "rolling"); err != nil {
+			reqLogger.Error(err, "Update statefulset failed")
+			return reconcile.Result{}, err
+		}
 	}
 
 	podIPList, podIPMap, err := instance.PodIPListAndIPMapFromInstance(instanceType, request, r.Client)
@@ -571,3 +707,25 @@ func (r *ReconcileCassandra) ensureCertificatesExist(cassandra *v1alpha1.Cassand
 	crt := certificates.NewCertificate(r.Client, r.Scheme, cassandra, subjects, instanceType)
 	return crt.EnsureExistsAndIsSigned()
 }
+
+// func MapToString(m map[string]string) string {
+// 	list := make([]string, 0, len(m))
+// 	for key, value := range m {
+// 		list = append(list, fmt.Sprintf("%s=%s", key, value))
+// 	}
+// 	sort.Strings(list)
+
+// 	return strings.Join(list, " ")
+// }
+
+// func EncryptString(str string) string {
+// 	h := sha1.New()
+// 	io.WriteString(h, str)
+// 	key := hex.EncodeToString(h.Sum(nil))
+
+// 	return string(key)
+// }
+
+// func EncryptMap(m map[string]string) string {
+// 	return EncryptString(MapToString(m))
+// }

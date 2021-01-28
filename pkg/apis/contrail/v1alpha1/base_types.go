@@ -368,10 +368,9 @@ func PrepareSTS(sts *appsv1.StatefulSet,
 	request reconcile.Request,
 	scheme *runtime.Scheme,
 	object v1.Object,
-	client client.Client,
-	waitForInit bool) error {
+	usePralallePodManagementPolicy bool) error {
 	SetSTSCommonConfiguration(sts, commonConfiguration)
-	if waitForInit {
+	if usePralallePodManagementPolicy {
 		sts.Spec.PodManagementPolicy = appsv1.PodManagementPolicyType("Parallel")
 	} else {
 		sts.Spec.PodManagementPolicy = appsv1.PodManagementPolicyType("OrderedReady")
@@ -514,13 +513,9 @@ func AddSecretVolumesToIntendedDS(ds *appsv1.DaemonSet, volumeSecretMap map[stri
 func CreateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.Request, reconcileClient client.Client) error {
 	foundSTS := &appsv1.StatefulSet{}
 	err := reconcileClient.Get(context.TODO(), types.NamespacedName{Name: request.Name + "-" + instanceType + "-statefulset", Namespace: request.Namespace}, foundSTS)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			sts.Spec.Template.ObjectMeta.Labels["version"] = "1"
-			if err = reconcileClient.Create(context.TODO(), sts); err != nil {
-				return err
-			}
-		}
+	if err != nil && k8serrors.IsNotFound(err) {
+		sts.Spec.Template.ObjectMeta.Labels["version"] = "1"
+		err = reconcileClient.Create(context.TODO(), sts)
 	}
 	return nil
 }
@@ -528,13 +523,14 @@ func CreateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.R
 // UpdateSTS updates the STS.
 func UpdateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.Request, reconcileClient client.Client, strategy string) error {
 	currentSTS := &appsv1.StatefulSet{}
-	err := reconcileClient.Get(context.TODO(), types.NamespacedName{Name: request.Name + "-" + instanceType + "-statefulset", Namespace: request.Namespace}, currentSTS)
-	if err != nil {
+	selector := types.NamespacedName{Name: request.Name + "-" + instanceType + "-statefulset", Namespace: request.Namespace}
+	if err := reconcileClient.Get(context.TODO(), selector, currentSTS); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
+
 	replicasChanged := false
 	replicas := int32(1)
 	if sts.Spec.Replicas != nil {
@@ -553,19 +549,20 @@ func UpdateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.R
 			}
 		}
 	}
-	if imagesChanged || replicasChanged {
-		if strategy == "deleteFirst" {
-			versionInt, _ := strconv.Atoi(currentSTS.Spec.Template.ObjectMeta.Labels["version"])
-			newVersion := versionInt + 1
-			sts.Spec.Template.ObjectMeta.Labels["version"] = strconv.Itoa(newVersion)
-		} else {
-			sts.Spec.Template.ObjectMeta.Labels["version"] = currentSTS.Spec.Template.ObjectMeta.Labels["version"]
-		}
-		if err = reconcileClient.Update(context.TODO(), sts); err != nil {
-			return err
-		}
+	if !imagesChanged && !replicasChanged {
+		return nil
 	}
-	return nil
+
+	log.Info("Statefulset changed, update", "strategy", strategy)
+
+	if strategy == "deleteFirst" {
+		versionInt, _ := strconv.Atoi(currentSTS.Spec.Template.ObjectMeta.Labels["version"])
+		newVersion := versionInt + 1
+		sts.Spec.Template.ObjectMeta.Labels["version"] = strconv.Itoa(newVersion)
+	} else {
+		sts.Spec.Template.ObjectMeta.Labels["version"] = currentSTS.Spec.Template.ObjectMeta.Labels["version"]
+	}
+	return reconcileClient.Update(context.TODO(), sts)
 }
 
 // SetInstanceActive sets the instance to active.

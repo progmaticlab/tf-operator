@@ -214,7 +214,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	statefulSet := GetSTS()
-	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
+	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 

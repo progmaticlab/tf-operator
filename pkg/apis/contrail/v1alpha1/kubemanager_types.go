@@ -322,8 +322,8 @@ func (c *Kubemanager) CreateSecret(secretName string,
 }
 
 // PrepareSTS prepares the intended deployment for the Kubemanager object.
-func (c *Kubemanager) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme, client client.Client) error {
-	return PrepareSTS(sts, commonConfiguration, "kubemanager", request, scheme, c, client, true)
+func (c *Kubemanager) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme) error {
+	return PrepareSTS(sts, commonConfiguration, "kubemanager", request, scheme, c, true)
 }
 
 // AddVolumesToIntendedSTS adds volumes to the Kubemanager deployment.

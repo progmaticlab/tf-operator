@@ -250,8 +250,8 @@ func (c *Webui) AuthParameters(client client.Client) (*ConfigAuthParameters, err
 }
 
 // PrepareSTS prepares the intended deployment for the Webui object.
-func (c *Webui) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme, client client.Client) error {
-	return PrepareSTS(sts, commonConfiguration, "webui", request, scheme, c, client, true)
+func (c *Webui) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme) error {
+	return PrepareSTS(sts, commonConfiguration, "webui", request, scheme, c, true)
 }
 
 // AddVolumesToIntendedSTS adds volumes to the Webui deployment.

@@ -246,7 +246,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 	trueVal := true
 	statefulSet.Spec.Template.Spec.ShareProcessNamespace = &trueVal
 
-	if err = config.PrepareSTS(statefulSet, &config.Spec.CommonConfiguration, request, r.Scheme, r.Client); err != nil {
+	if err = config.PrepareSTS(statefulSet, &config.Spec.CommonConfiguration, request, r.Scheme); err != nil {
 		reqLogger.Error(err, "Failed to prepare stateful set")
 		return reconcile.Result{}, err
 	}

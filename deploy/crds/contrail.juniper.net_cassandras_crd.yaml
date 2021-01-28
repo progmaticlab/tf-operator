@@ -172,6 +172,8 @@ spec:
               type: boolean
             clusterIP:
               type: string
+            nodemanagerEnvHash:
+              type: string
             nodes:
               additionalProperties:
                 type: string
@@ -187,6 +189,8 @@ spec:
                 port:
                   type: string
               type: object
+            provisionerEnvHash:
+              type: string
           type: object
       type: object
   version: v1alpha1

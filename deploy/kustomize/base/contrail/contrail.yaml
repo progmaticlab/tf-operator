@@ -26,6 +26,10 @@ spec:
             image: cassandra
           - name: cassandra
             image: cassandra
+          - name: nodemanager
+            image: contrail-nodemgr
+          - name: provisioner
+            image: contrail-provisioner
     config:
       metadata:
         labels:

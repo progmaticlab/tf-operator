@@ -640,8 +640,8 @@ func (c *Config) CreateSecret(secretName string,
 }
 
 // PrepareSTS prepares the intented statefulset for the config object
-func (c *Config) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme, client client.Client) error {
-	return PrepareSTS(sts, commonConfiguration, "config", request, scheme, c, client, true)
+func (c *Config) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme) error {
+	return PrepareSTS(sts, commonConfiguration, "config", request, scheme, c, true)
 }
 
 // AddVolumesToIntendedSTS adds volumes to the config statefulset

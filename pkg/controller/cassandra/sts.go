@@ -23,7 +23,7 @@ spec:
         cassandra_cr: cassandra
         contrail_manager: cassandra
     spec:
-      terminationGracePeriodSeconds: 1800
+      terminationGracePeriodSeconds: 10
       containers:
       - image: cassandra:3.11.4
         imagePullPolicy: Always
@@ -32,6 +32,17 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: VENDOR_DOMAIN
+          value: tungsten.io
+        # TODO: move do go code for flexibility
+        - name: NODE_TYPE
+          value: database
+        # TODO: not needed for TF containers
+        label:
+        - name: tungsten.io.container.name
+          value: contrail-external-cassandra
+        - name: tungsten.io.service
+          value: cassandra
         lifecycle:
           preStop:
             exec:
@@ -53,6 +64,7 @@ spec:
           capabilities:
             add:
               - IPC_LOCK
+              - SYS_NICE
           privileged: false
           procMount: Default
         terminationMessagePath: /dev/termination-log
@@ -62,6 +74,42 @@ spec:
         #  name: cassandra-logs
         #- mountPath: /var/lib/cassandra
         #  name: cassandra-data
+      - name: nodemanager
+        image: tungstenfabric/contrail-nodemgr:latest
+        env:
+        - name: VENDOR_DOMAIN
+          value: tungsten.io
+        - name: NODE_TYPE
+          value: database
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        securityContext:
+          privileged: true
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /var/log/contrail
+          name: cassandra-logs
+        - mountPath: /var/crashes
+          name: crashes
+        - mountPath: /var/run
+          name: var-run
+      - name: provisioner
+        image: tungstenfabric/contrail-provisioner:latest
+        env:
+        - name: NODE_TYPE
+          value: database
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        imagePullPolicy: Always
+        volumeMounts:
+            - mountPath: /var/log/contrail
+              name: cassandra-logs
+            - mountPath: /var/crashes
+              name: crashes
       dnsPolicy: ClusterFirst
       hostNetwork: true
       initContainers:
@@ -117,6 +165,18 @@ spec:
       - effect: NoExecute
         operator: Exists
       volumes:
+      - hostPath:
+          path: /var/log/contrail/cassandra
+          type: ""
+        name: cassandra-logs
+      - hostPath:
+          path: /var/run
+          type: ""
+        name: var-run
+      - hostPath:
+          path: /var/contrail/crashes
+          type: ""
+        name: crashes
       - downwardAPI:
           defaultMode: 420
           items:

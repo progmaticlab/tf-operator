@@ -169,8 +169,8 @@ func (c *Zookeeper) IsUpgrading(name string, namespace string, client client.Cli
 }
 
 // PrepareSTS prepares the intended deployment for the Zookeeper object.
-func (c *Zookeeper) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme, client client.Client) error {
-	return PrepareSTS(sts, commonConfiguration, "zookeeper", request, scheme, c, client, false)
+func (c *Zookeeper) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme) error {
+	return PrepareSTS(sts, commonConfiguration, "zookeeper", request, scheme, c, false)
 }
 
 // AddVolumesToIntendedSTS adds volumes to the Zookeeper deployment.

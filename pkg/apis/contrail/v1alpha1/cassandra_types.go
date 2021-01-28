@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"bytes"
 	"context"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -60,10 +61,12 @@ type CassandraConfiguration struct {
 // CassandraStatus defines the status of the cassandra object.
 // +k8s:openapi-gen=true
 type CassandraStatus struct {
-	Active    *bool                `json:"active,omitempty"`
-	Nodes     map[string]string    `json:"nodes,omitempty"`
-	Ports     CassandraStatusPorts `json:"ports,omitempty"`
-	ClusterIP string               `json:"clusterIP,omitempty"`
+	Active             *bool                `json:"active,omitempty"`
+	Nodes              map[string]string    `json:"nodes,omitempty"`
+	Ports              CassandraStatusPorts `json:"ports,omitempty"`
+	ClusterIP          string               `json:"clusterIP,omitempty"`
+	NodemanagerEnvHash string               `json:"nodemanagerEnvHash,omitempty"`
+	ProvisionerEnvHash string               `json:"provisionerEnvHash,omitempty"`
 }
 
 // CassandraStatusPorts defines the status of the ports of the cassandra object.
@@ -125,6 +128,11 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 
 	seedsListString := strings.Join(c.seeds(podList), ",")
 
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
+	if err != nil {
+		return err
+	}
+
 	for idx := range podList.Items {
 		var cassandraConfigBuffer bytes.Buffer
 		configtemplates.CassandraConfig.Execute(&cassandraConfigBuffer, struct {
@@ -158,12 +166,40 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 		})
 		cassandraConfigString := cassandraConfigBuffer.String()
 
+		var cassandraCqlShrcBuffer bytes.Buffer
+		configtemplates.CassandraCqlShrc.Execute(&cassandraCqlShrcBuffer, struct {
+			CAFilePath string
+		}{
+			CAFilePath: certificates.SignerCAFilepath,
+		})
+		cassandraCqlShrcConfigString := cassandraCqlShrcBuffer.String()
+
+		collectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
+		collectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(collectorEndpointList, " ")
+		var nodeManagerConfigBuffer bytes.Buffer
+		configtemplates.CassandraNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
+			ListenAddress       string
+			Hostname            string
+			CollectorServerList string
+			CassandraPort       string
+			CassandraJmxPort    string
+			CAFilePath          string
+		}{
+			ListenAddress:       podList.Items[idx].Status.PodIP,
+			Hostname:            podList.Items[idx].Annotations["hostname"],
+			CollectorServerList: collectorEndpointListSpaceSeparated,
+			CassandraPort:       strconv.Itoa(*cassandraConfig.CqlPort),
+			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
+			CAFilePath:          certificates.SignerCAFilepath,
+		})
+		nodemanagerConfigString := nodeManagerConfigBuffer.String()
 		if configMapInstanceDynamicConfig.Data == nil {
-			data := map[string]string{podList.Items[idx].Status.PodIP + ".yaml": cassandraConfigString}
-			configMapInstanceDynamicConfig.Data = data
-		} else {
-			configMapInstanceDynamicConfig.Data[podList.Items[idx].Status.PodIP+".yaml"] = cassandraConfigString
+			configMapInstanceDynamicConfig.Data = map[string]string{}
 		}
+		configMapInstanceDynamicConfig.Data["cassandra."+podList.Items[idx].Status.PodIP+".yaml"] = cassandraConfigString
+		configMapInstanceDynamicConfig.Data["cqlshrc."+podList.Items[idx].Status.PodIP] = cassandraCqlShrcConfigString
+		configMapInstanceDynamicConfig.Data["nodemanager."+podList.Items[idx].Status.PodIP] = nodemanagerConfigString
+
 		err = client.Update(context.TODO(), configMapInstanceDynamicConfig)
 		if err != nil {
 			return err
@@ -199,8 +235,8 @@ func (c *Cassandra) CreateSecret(secretName string,
 }
 
 // PrepareSTS prepares the intended deployment for the Cassandra object.
-func (c *Cassandra) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme, client client.Client) error {
-	return PrepareSTS(sts, commonConfiguration, "cassandra", request, scheme, c, client, false)
+func (c *Cassandra) PrepareSTS(sts *appsv1.StatefulSet, commonConfiguration *PodConfiguration, request reconcile.Request, scheme *runtime.Scheme) error {
+	return PrepareSTS(sts, commonConfiguration, "cassandra", request, scheme, c, false)
 }
 
 // AddVolumesToIntendedSTS adds volumes to the Cassandra deployment.
@@ -382,4 +418,46 @@ func (c *Cassandra) seeds(podList *corev1.PodList) []string {
 	}
 
 	return seeds
+}
+
+// EnvironmentConfiguration ensures provsioner configmap
+func (c *Cassandra) EnvironmentConfiguration(request reconcile.Request, client client.Client) error {
+	provisionerEnvConfigMap := &corev1.ConfigMap{}
+	if err := client.Get(context.TODO(),
+		types.NamespacedName{Name: request.Name + "-cassandra-provisioner-env", Namespace: request.Namespace},
+		provisionerEnvConfigMap); err != nil {
+		return err
+	}
+
+	data, err := c.EnvProvisionerConfigMapData(request, client)
+	if err != nil {
+		return err
+	}
+
+	if !reflect.DeepEqual(provisionerEnvConfigMap.Data, data) {
+		provisionerEnvConfigMap.Data = data
+
+		if err := client.Update(context.TODO(), provisionerEnvConfigMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// EnvProvisionerConfigMapData creates provision configmap
+func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt client.Client) (map[string]string, error) {
+	data := make(map[string]string)
+	data["SSL_ENABLE"] = "True"
+	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
+	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
+	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
+
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, clnt)
+	if err != nil {
+		return nil, err
+	}
+	configNodeList := configNodesInformation.APIServerIPList
+	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodeList, ",")
+
+	return data, nil
 }
