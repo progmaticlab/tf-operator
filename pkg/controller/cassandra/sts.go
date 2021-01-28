@@ -23,11 +23,13 @@ spec:
         cassandra_cr: cassandra
         contrail_manager: cassandra
     spec:
-      terminationGracePeriodSeconds: 1800
+      #terminationGracePeriodSeconds: 1800
       containers:
       - image: cassandra:3.11.4
         imagePullPolicy: Always
         env:
+        - name: NODE_TYPE
+          value: database
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -64,6 +66,8 @@ spec:
         #  name: cassandra-data
       - name: nodemanager
         image: docker.io/michaelhenkel/contrail-nodemgr:5.2.0-dev1
+        securityContext:
+          privileged: true
         env:
         - name: VENDOR_DOMAIN
           value: tungsten.io
@@ -89,6 +93,8 @@ spec:
           name: var-run
       - name: provisioner
         image: docker.io/michaelhenkel/contrail-provisioner:5.2.0-dev1
+        securityContext:
+          privileged: true
         env:
         - name: NODE_TYPE
           value: database

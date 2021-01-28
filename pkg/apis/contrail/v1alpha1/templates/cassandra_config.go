@@ -122,6 +122,10 @@ transparent_data_encryption_options:
 auto_bootstrap: true
 `))
 
+var CassandraCqlshConfig = template.Must(template.New("").Parse(`[ssl]
+certfile={{ .CassandraSslCaCertfile }}
+`))
+
 // CassandraNodemanagerConfig is a template for nodemanager.{$POD_IP} file
 var CassandraNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0

@@ -650,15 +650,13 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				Name:  "SERVER_KEYFILE",
 				Value: "/etc/certificates/server-key-$(POD_IP).pem",
 			})
-			configNodesInformation, err := v1alpha1.NewConfigClusterConfiguration(config.Labels["contrail_cluster"], request.Namespace, r.Client)
+			configNodesIPs, err := r.getConfigNodesIPs()
 			if err != nil {
-				reqLogger.Error(err, "Failed to create ConfigClusterConfiguration")
 				return reconcile.Result{}, err
 			}
-			configNodeList := configNodesInformation.APIServerIPList
 			envList = append(envList, corev1.EnvVar{
 				Name:  "CONFIG_NODES",
-				Value: configtemplates.JoinListWithSeparator(configNodeList, ","),
+				Value: configtemplates.JoinListWithSeparator(configNodesIPs, ","),
 			})
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Env = envList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
@@ -759,4 +757,23 @@ func (r *ReconcileConfig) ensureCertificatesExist(config *v1alpha1.Config, pods 
 	subjects := config.PodsCertSubjects(pods)
 	crt := certificates.NewCertificate(r.Client, r.Scheme, config, subjects, instanceType)
 	return crt.EnsureExistsAndIsSigned()
+}
+
+func (r *ReconcileConfig) getConfigNodesIPs() ([]string, error) {
+	nodeList := &corev1.NodeList{}
+	labels := client.MatchingLabels{"node-role.kubernetes.io/master": ""}
+	if err := r.Client.List(context.Background(), nodeList, labels); err != nil {
+		return nil, err
+	}
+
+	addresses := []string{}
+	for _, node := range nodeList.Items {
+		for _, address := range node.Status.Addresses {
+			if address.Type == corev1.NodeInternalIP {
+				addresses = append(addresses, address.Address)
+			}
+		}
+	}
+
+	return addresses, nil
 }

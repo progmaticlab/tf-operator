@@ -127,12 +127,6 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 	}
 
 	seedsListString := strings.Join(c.seeds(podList), ",")
-
-	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
-	if err != nil {
-		return err
-	}
-
 	for idx := range podList.Items {
 		var cassandraConfigBuffer bytes.Buffer
 		configtemplates.CassandraConfig.Execute(&cassandraConfigBuffer, struct {
@@ -166,34 +160,23 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 		})
 		cassandraConfigString := cassandraConfigBuffer.String()
 
-		collectorEndpointList := configtemplates.EndpointList(configNodesInformation.CollectorServerIPList, configNodesInformation.CollectorPort)
-		collectorEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(collectorEndpointList, " ")
-		var nodeManagerConfigBuffer bytes.Buffer
-		configtemplates.CassandraNodemanagerConfig.Execute(&nodeManagerConfigBuffer, struct {
-			ListenAddress       string
-			Hostname            string
-			CollectorServerList string
-			CassandraPort       string
-			CassandraJmxPort    string
-			CAFilePath          string
+		var cqlshConfigBuffer bytes.Buffer
+		configtemplates.CassandraCqlshConfig.Execute(&cqlshConfigBuffer, struct {
+			CassandraSslCaCertfile string
 		}{
-			ListenAddress:       podList.Items[idx].Status.PodIP,
-			Hostname:            podList.Items[idx].Annotations["hostname"],
-			CollectorServerList: collectorEndpointListSpaceSeparated,
-			CassandraPort:       strconv.Itoa(*cassandraConfig.CqlPort),
-			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
-			CAFilePath:          certificates.SignerCAFilepath,
+			CassandraSslCaCertfile: certificates.SignerCAFilepath,
 		})
-		nodemanagerConfigString := nodeManagerConfigBuffer.String()
+		cqlshConfigString := cqlshConfigBuffer.String()
+
 		if configMapInstanceDynamicConfig.Data == nil {
 			data := map[string]string{
-				podList.Items[idx].Status.PodIP + ".yaml":        cassandraConfigString,
-				"nodemanager." + podList.Items[idx].Status.PodIP: nodemanagerConfigString,
+				podList.Items[idx].Status.PodIP + ".yaml":  cassandraConfigString,
+				"cqlsh." + podList.Items[idx].Status.PodIP: cqlshConfigString,
 			}
 			configMapInstanceDynamicConfig.Data = data
 		} else {
 			configMapInstanceDynamicConfig.Data[podList.Items[idx].Status.PodIP+".yaml"] = cassandraConfigString
-			configMapInstanceDynamicConfig.Data["nodemanager."+podList.Items[idx].Status.PodIP] = nodemanagerConfigString
+			configMapInstanceDynamicConfig.Data["cqlsh."+podList.Items[idx].Status.PodIP] = cqlshConfigString
 		}
 		err = client.Update(context.TODO(), configMapInstanceDynamicConfig)
 		if err != nil {
@@ -464,6 +447,7 @@ func (c *Cassandra) EnvironmentConfiguration (request reconcile.Request, client 
 func (c *Cassandra) EnvNodemanagerConfigMapData (request reconcile.Request, client client.Client) (map[string]string, error) {
 	data := make(map[string]string)
 	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
+	data["CASSANDRA_SSL_ENABLE"] = "True"
 
 	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
 	if err != nil {
