@@ -73,6 +73,12 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: SSL_ENABLE
+          value: True
+        - name: SERVER_CERTFILE
+          value: /etc/certificates/server-$(POD_IP).crt
+        - name: SERVER_KEYFILE
+          value: /etc/certificates/server-key-$(POD_IP).pem
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /var/log/contrail
@@ -90,6 +96,12 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: SSL_ENABLE
+          value: True
+        - name: SERVER_CERTFILE
+          value: /etc/certificates/server-$(POD_IP).crt
+        - name: SERVER_KEYFILE
+          value: /etc/certificates/server-key-$(POD_IP).pem
         imagePullPolicy: Always
         volumeMounts:
             - mountPath: /var/log/contrail
