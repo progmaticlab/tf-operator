@@ -559,14 +559,27 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			probe := corev1.Probe{
+			readinessProbe := corev1.Probe{
+				FailureThreshold: 3,
+				PeriodSeconds:    3,
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
 						Command: []string{"sh", "-c", "redis-cli -h ${POD_IP} -p 6379 ping"},
 					},
 				},
 			}
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &probe
+			startupProbe := corev1.Probe{
+				FailureThreshold: 30,
+				PeriodSeconds:    3,
+				Handler: corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{"sh", "-c", "redis-cli -h ${POD_IP} -p 6379 ping"},
+					},
+				},
+			}
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &readinessProbe
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).StartupProbe = &startupProbe
+
 		case "nodemanagerconfig":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {

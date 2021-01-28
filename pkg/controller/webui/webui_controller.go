@@ -240,10 +240,9 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 		if container.Name == "webuiweb" {
 			command := []string{"bash", "-c",
 				"until ss -tulwn | grep LISTEN | grep 6380; do sleep 2; done; " +
-					"/usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_gile /etc/contrailconfigmaps/contrail-webui-userauth.js.${POD_IP}",
+					"exec /usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_gile /etc/contrailconfigmaps/contrail-webui-userauth.js.${POD_IP}",
 			}
 
-			//"/certs-init.sh && /usr/bin/node /usr/src/contrail/contrail-web-core/webServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -271,7 +270,9 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			probe := corev1.Probe{
+			readinessProbe := corev1.Probe{
+				FailureThreshold: 3,
+				PeriodSeconds:    3,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Scheme: corev1.URISchemeHTTPS,
@@ -280,15 +281,26 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 					},
 				},
 			}
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &probe
+			startUpProbe := corev1.Probe{
+				FailureThreshold: 30,
+				PeriodSeconds:    3,
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Scheme: corev1.URISchemeHTTPS,
+						Path:   "/",
+						Port:   intstr.IntOrString{IntVal: int32(v1alpha1.WebuiHttpsListenPort)},
+					},
+				},
+			}
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &readinessProbe
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).StartupProbe = &startUpProbe
 		}
 		if container.Name == "webuijob" {
 			command := []string{"bash", "-c",
 				"until ss -tulwn |grep LISTEN |grep 6380; do sleep 2; done; " +
-					"/usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-webui-userauth.js.${POD_IP}",
+					"exec /usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-webui-userauth.js.${POD_IP}",
 			}
 
-			//"/certs-init.sh && sleep 10;/usr/bin/node /usr/src/contrail/contrail-web-core/jobServerStart.js --conf_file /etc/contrailconfigmaps/config.global.js.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -338,14 +350,26 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
-			probe := corev1.Probe{
+			readinessProbe := corev1.Probe{
+				FailureThreshold: 3,
+				PeriodSeconds:    3,
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
 						Command: []string{"sh", "-c", "redis-cli -h 127.0.0.1 -p 6380 ping"},
 					},
 				},
 			}
-			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &probe
+			startUpProbe := corev1.Probe{
+				FailureThreshold: 30,
+				PeriodSeconds:    3,
+				Handler: corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{"sh", "-c", "redis-cli -h 127.0.0.1 -p 6380 ping"},
+					},
+				},
+			}
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).ReadinessProbe = &readinessProbe
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).StartupProbe = &startUpProbe
 		}
 	}
 

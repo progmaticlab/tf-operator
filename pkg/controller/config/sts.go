@@ -52,7 +52,16 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           imagePullPolicy: Always
+          startupProbe:
+            failureThreshold: 30
+            periodSeconds: 5
+            httpGet:
+              scheme: HTTPS
+              path: /
+              port: 8082
           readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 3
             httpGet:
               scheme: HTTPS
               path: /
@@ -169,6 +178,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
@@ -188,6 +201,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
@@ -205,6 +222,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
@@ -220,6 +241,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail

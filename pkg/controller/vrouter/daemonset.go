@@ -40,8 +40,18 @@ func GetDaemonset() *apps.DaemonSet {
 		},
 	}
 
+	// TODO: remove after tf-container-builder support PROVISION_HOSTNAME
 	var vrouterHostnameEnv = core.EnvVar{
 		Name: "VROUTER_HOSTNAME",
+		ValueFrom: &core.EnvVarSource{
+			FieldRef: &core.ObjectFieldSelector{
+				FieldPath: "metadata.annotations['hostname']",
+			},
+		},
+	}
+
+	var provisionHostnameEnv = core.EnvVar{
+		Name: "PROVISION_HOSTNAME",
 		ValueFrom: &core.EnvVarSource{
 			FieldRef: &core.ObjectFieldSelector{
 				FieldPath: "metadata.annotations['hostname']",
@@ -140,6 +150,7 @@ func GetDaemonset() *apps.DaemonSet {
 			Env: []core.EnvVar{
 				podIPEnv,
 				vrouterHostnameEnv,
+				provisionHostnameEnv,
 				nodeTypeEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
@@ -157,6 +168,7 @@ func GetDaemonset() *apps.DaemonSet {
 				vendorDomainEnv,
 				podIPEnv,
 				vrouterHostnameEnv,
+				provisionHostnameEnv,
 				nodeTypeEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
@@ -178,6 +190,7 @@ func GetDaemonset() *apps.DaemonSet {
 				physicalInterfaceEnv,
 				podIPEnv,
 				vrouterHostnameEnv,
+				provisionHostnameEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
 				{

@@ -954,6 +954,7 @@ func AuthParameters(namespace string, secretName string, client client.Client) (
 		AdminUsername:     KeystoneAuthAdminUser,
 		AdminPassword:     KeystoneAuthAdminPassword,
 		AdminTenant:       KeystoneAuthAdminTenant,
+		Address:           KeystoneAuthHost,
 		Port:              KeystoneAuthPort,
 		AuthProtocol:      KeystoneAuthProto,
 		UserDomainName:    KeystoneAuthUserDomainName,

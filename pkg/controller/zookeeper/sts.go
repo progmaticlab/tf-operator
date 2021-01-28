@@ -84,23 +84,23 @@ spec:
         resources:
           requests:
             memory: "1Gi"
+        startupProbe:
+          periodSeconds: 3
+          failureThreshold: 30
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "OK=$(echo ruok | nc ${POD_IP} 2181); if [[ ${OK} == \"imok\" ]]; then exit 0; else exit 1;fi"
         readinessProbe:
-          exec:
-            command:
-            - /bin/bash
-            - -c
-            - "OK=$(echo ruok | nc ${POD_IP} 2181); if [[ ${OK} == \"imok\" ]]; then exit 0; else exit 1;fi"
-          initialDelaySeconds: 15
-          timeoutSeconds: 5
-        livenessProbe:
-          exec:
-            command:
-            - /bin/bash
-            - -c
-            - "OK=$(echo ruok | nc ${POD_IP} 2181); if [[ ${OK} == \"imok\" ]]; then exit 0; else exit 1;fi"
           initialDelaySeconds: 30
-          timeoutSeconds: 5
+          timeoutSeconds: 3
           failureThreshold: 3
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "OK=$(echo ruok | nc ${POD_IP} 2181); if [[ ${OK} == \"imok\" ]]; then exit 0; else exit 1;fi"
         volumeMounts:
         - mountPath: /tmp/conf
           name: conf

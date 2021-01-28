@@ -96,6 +96,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
+            # TODO: remove after PROVISION_HOSTNAME be supported in tf-container-builder
             - name: CONTROL_HOSTNAME
               valueFrom:
                 fieldRef:
@@ -117,6 +122,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PROVISION_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['hostname']
+            # TODO: remove after tf-container-builder supports PROVISION_HOSTNAME
             - name: CONTROL_HOSTNAME
               valueFrom:
                 fieldRef:

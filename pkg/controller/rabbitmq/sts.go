@@ -71,9 +71,22 @@ func GetSTS() *apps.StatefulSet {
 				},
 			},
 			Env: nodeEnv,
+			StartupProbe: &core.Probe{
+				FailureThreshold: 30,
+				PeriodSeconds:    3,
+				Handler: core.Handler{
+					Exec: &core.ExecAction{
+						Command: []string{
+							"/bin/bash",
+							"-c",
+							"export RABBITMQ_NODENAME=rabbit@$POD_IP; cluster_status=$(rabbitmqctl cluster_status);nodes=$(echo $cluster_status | sed -e 's/.*disc,\\[\\(.*\\)]}]}, {.*/\\1/' | grep -oP \"(?<=rabbit@).*?(?=')\"); for node in $(cat /etc/rabbitmq/rabbitmq.nodes); do echo ${nodes} |grep ${node}; if [[ $? -ne 0 ]]; then exit -1; fi; done",
+						},
+					},
+				},
+			},
 			ReadinessProbe: &core.Probe{
-				InitialDelaySeconds: 15,
-				TimeoutSeconds:      5,
+				FailureThreshold: 3,
+				PeriodSeconds:    3,
 				Handler: core.Handler{
 					Exec: &core.ExecAction{
 						Command: []string{

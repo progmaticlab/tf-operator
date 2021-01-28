@@ -146,7 +146,7 @@ const (
 	KeystoneAuthAdminTenant                     string = "admin"
 	KeystoneAuthAdminUser                       string = "admin"
 	KeystoneAuthAdminPassword                   string = "contrail123"
-	KeystoneAuthUserDomainName                  string = "default"
+	KeystoneAuthUserDomainName                  string = "Default"
 	KeystoneAuthProjectDomainName               string = "Default"
 	KeystoneAuthRegionName                      string = "RegionOne"
 	KeystoneAuthUrlVersion                      string = "/v3"

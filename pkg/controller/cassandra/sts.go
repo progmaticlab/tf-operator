@@ -51,14 +51,23 @@ spec:
               - -c
               - nodetool drain
               #- nodetool decommission
-        readinessProbe:
+        startupProbe:
+          failureThreshold: 30
+          periodSeconds: 5
           exec:
             command:
             - /bin/bash
             - -c
             - "if [[ $(nodetool status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
-          initialDelaySeconds: 15
-          timeoutSeconds: 15
+        readinessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "if [[ $(nodetool status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
         name: cassandra
         securityContext:
           capabilities:
@@ -85,6 +94,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: PROVISION_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['hostname']
         securityContext:
           privileged: true
         imagePullPolicy: Always
@@ -104,6 +117,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: PROVISION_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['hostname']
         imagePullPolicy: Always
         volumeMounts:
             - mountPath: /var/log/contrail

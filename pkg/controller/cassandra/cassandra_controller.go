@@ -639,7 +639,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 
 	// TODO: have universal update that checks related configmaps
 	if configMapChanged {
-		reqLogger.Info("configMapChanged, update sts")
+		reqLogger.Info("configMapChanged changed", "current", envProvisionerConfigMap.Data, "new", newProvisionerConfigMapData)
 		if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
 			reqLogger.Error(err, "Update statefulset failed")
 			return reconcile.Result{}, err
