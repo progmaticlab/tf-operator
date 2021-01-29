@@ -221,8 +221,6 @@ spec:
                       items:
                         type: string
                       type: array
-                    sslPort:
-                      type: integer
                   type: object
                 rabbitmqPassword:
                   type: string

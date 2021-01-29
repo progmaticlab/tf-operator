@@ -184,7 +184,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 		rabbitmqSecretVhost = controlConfig.RabbitmqVhost
 	}
 
-	rabbitMqSSLEndpointList := configtemplates.EndpointList(rabbitmqNodesInformation.ServerIPList, rabbitmqNodesInformation.SSLPort)
+	rabbitMqSSLEndpointList := configtemplates.EndpointList(rabbitmqNodesInformation.ServerIPList, rabbitmqNodesInformation.Port)
 	rabbitmqSSLEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(rabbitMqSSLEndpointList, " ")
 	cassandraCQLEndpointList := configtemplates.EndpointList(cassandraNodesInformation.ServerIPList, cassandraNodesInformation.CQLPort)
 	cassandraCQLEndpointListSpaceSeparated := configtemplates.JoinListWithSeparator(cassandraCQLEndpointList, " ")
@@ -226,7 +226,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			APIServerPort:       strconv.Itoa(configNodesInformation.APIServerPort),
 			CassandraServerList: cassandraCQLEndpointListSpaceSeparated,
 			RabbitmqServerList:  rabbitmqSSLEndpointListSpaceSeparated,
-			RabbitmqServerPort:  strconv.Itoa(rabbitmqNodesInformation.SSLPort),
+			RabbitmqServerPort:  strconv.Itoa(rabbitmqNodesInformation.Port),
 			CollectorServerList: configCollectorEndpointListSpaceSeparated,
 			RabbitmqUser:        rabbitmqSecretUser,
 			RabbitmqPassword:    rabbitmqSecretPassword,
@@ -263,7 +263,7 @@ func (c *Control) InstanceConfiguration(request reconcile.Request,
 			APIServerPort:       strconv.Itoa(configNodesInformation.APIServerPort),
 			CassandraServerList: cassandraCQLEndpointListSpaceSeparated,
 			RabbitmqServerList:  rabbitmqSSLEndpointListSpaceSeparated,
-			RabbitmqServerPort:  strconv.Itoa(rabbitmqNodesInformation.SSLPort),
+			RabbitmqServerPort:  strconv.Itoa(rabbitmqNodesInformation.Port),
 			CollectorServerList: configCollectorEndpointListSpaceSeparated,
 			RabbitmqUser:        rabbitmqSecretUser,
 			RabbitmqPassword:    rabbitmqSecretPassword,

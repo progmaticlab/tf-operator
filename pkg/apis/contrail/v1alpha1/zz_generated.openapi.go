@@ -1609,12 +1609,6 @@ func schema_pkg_apis_contrail_v1alpha1_RabbitmqConfiguration(ref common.Referenc
 							Format: "int32",
 						},
 					},
-					"sslPort": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 					"erlangCookie": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -1706,11 +1700,6 @@ func schema_pkg_apis_contrail_v1alpha1_RabbitmqStatus(ref common.ReferenceCallba
 							},
 						},
 					},
-					"ports": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1.RabbitmqStatusPorts"),
-						},
-					},
 					"secret": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -1720,8 +1709,6 @@ func schema_pkg_apis_contrail_v1alpha1_RabbitmqStatus(ref common.ReferenceCallba
 				},
 			},
 		},
-		Dependencies: []string{
-			"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1.RabbitmqStatusPorts"},
 	}
 }
 

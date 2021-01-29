@@ -890,7 +890,6 @@ func NewRabbitmqClusterConfiguration(name string, namespace string, myclient cli
 	sort.SliceStable(rabbitmqNodes, func(i, j int) bool { return rabbitmqNodes[i] < rabbitmqNodes[j] })
 	rabbitmqCluster = RabbitmqClusterConfiguration{
 		Port:         *rabbitmqConfig.Port,
-		SSLPort:      *rabbitmqConfig.SSLPort,
 		ServerIPList: rabbitmqNodes,
 		Secret:       secret,
 	}
@@ -1050,7 +1049,6 @@ func (c *ZookeeperClusterConfiguration) FillWithDefaultValues() {
 // RabbitmqClusterConfiguration stores all information about Rabbitmq's endpoints.
 type RabbitmqClusterConfiguration struct {
 	Port         int      `json:"port,omitempty"`
-	SSLPort      int      `json:"sslPort,omitempty"`
 	ServerIPList []string `json:"serverIPList,omitempty"`
 	Secret       string   `json:"secret,omitempty"`
 }
@@ -1059,9 +1057,6 @@ type RabbitmqClusterConfiguration struct {
 func (c *RabbitmqClusterConfiguration) FillWithDefaultValues() {
 	if c.Port == 0 {
 		c.Port = RabbitmqNodePort
-	}
-	if c.SSLPort == 0 {
-		c.SSLPort = RabbitmqNodePortSSL
 	}
 }
 

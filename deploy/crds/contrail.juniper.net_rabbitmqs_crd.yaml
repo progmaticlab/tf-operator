@@ -141,8 +141,6 @@ spec:
                   type: integer
                 secret:
                   type: string
-                sslPort:
-                  type: integer
                 user:
                   type: string
                 vhost:
@@ -152,6 +150,7 @@ spec:
           - serviceConfiguration
           type: object
         status:
+          description: RabbitmqStatus +k8s:openapi-gen=true
           properties:
             active:
               description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
@@ -162,13 +161,6 @@ spec:
             nodes:
               additionalProperties:
                 type: string
-              type: object
-            ports:
-              properties:
-                port:
-                  type: string
-                sslPort:
-                  type: string
               type: object
             secret:
               type: string

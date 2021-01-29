@@ -52,7 +52,6 @@ type RabbitmqSpec struct {
 type RabbitmqConfiguration struct {
 	Containers   []*Container `json:"containers,omitempty"`
 	Port         *int         `json:"port,omitempty"`
-	SSLPort      *int         `json:"sslPort,omitempty"`
 	ErlangCookie string       `json:"erlangCookie,omitempty"`
 	Vhost        string       `json:"vhost,omitempty"`
 	User         string       `json:"user,omitempty"`
@@ -60,20 +59,14 @@ type RabbitmqConfiguration struct {
 	Secret       string       `json:"secret,omitempty"`
 }
 
-// +k8s:openapi-gen=true
+// RabbitmqStatus +k8s:openapi-gen=true
 type RabbitmqStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Active *bool               `json:"active,omitempty"`
-	Nodes  map[string]string   `json:"nodes,omitempty"`
-	Ports  RabbitmqStatusPorts `json:"ports,omitempty"`
-	Secret string              `json:"secret,omitempty"`
-}
-
-type RabbitmqStatusPorts struct {
-	Port    string `json:"port,omitempty"`
-	SSLPort string `json:"sslPort,omitempty"`
+	Active *bool             `json:"active,omitempty"`
+	Nodes  map[string]string `json:"nodes,omitempty"`
+	Secret string            `json:"secret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -114,8 +107,7 @@ func (c *Rabbitmq) InstanceConfiguration(request reconcile.Request,
 	var data = make(map[string]string)
 	for _, pod := range podList.Items {
 		rabbitmqConfigString := fmt.Sprintf("listeners.tcp.default = %d\n", *rabbitmqConfig.Port)
-		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("listeners.ssl.default = %d\n", *rabbitmqConfig.SSLPort)
-
+		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("listeners.ssl.default = %d\n", *rabbitmqConfig.Port)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("loopback_users = none\n")
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.tcp.port = 15671\n")
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.load_definitions = /etc/rabbitmq/definitions.json\n")
@@ -329,8 +321,6 @@ func (c *Rabbitmq) ManageNodeStatus(podNameIPMap map[string]string,
 	client client.Client) error {
 	c.Status.Nodes = podNameIPMap
 	rabbitmqConfig := c.ConfigurationParameters()
-	c.Status.Ports.Port = strconv.Itoa(*rabbitmqConfig.Port)
-	c.Status.Ports.SSLPort = strconv.Itoa(*rabbitmqConfig.SSLPort)
 	c.Status.Secret = rabbitmqConfig.Secret
 	err := client.Status().Update(context.TODO(), c)
 	if err != nil {
@@ -342,7 +332,6 @@ func (c *Rabbitmq) ManageNodeStatus(podNameIPMap map[string]string,
 func (c *Rabbitmq) ConfigurationParameters() RabbitmqConfiguration {
 	rabbitmqConfiguration := RabbitmqConfiguration{}
 	var port int
-	var sslPort int
 	var erlangCookie string
 	var vhost string
 	var user string
@@ -352,11 +341,6 @@ func (c *Rabbitmq) ConfigurationParameters() RabbitmqConfiguration {
 		port = *c.Spec.ServiceConfiguration.Port
 	} else {
 		port = RabbitmqNodePort
-	}
-	if c.Spec.ServiceConfiguration.SSLPort != nil {
-		sslPort = *c.Spec.ServiceConfiguration.SSLPort
-	} else {
-		sslPort = RabbitmqNodePortSSL
 	}
 	if c.Spec.ServiceConfiguration.ErlangCookie != "" {
 		erlangCookie = c.Spec.ServiceConfiguration.ErlangCookie
@@ -384,7 +368,6 @@ func (c *Rabbitmq) ConfigurationParameters() RabbitmqConfiguration {
 		secret = c.GetName() + "-secret"
 	}
 	rabbitmqConfiguration.Port = &port
-	rabbitmqConfiguration.SSLPort = &sslPort
 	rabbitmqConfiguration.ErlangCookie = erlangCookie
 	rabbitmqConfiguration.Vhost = vhost
 	rabbitmqConfiguration.User = user
