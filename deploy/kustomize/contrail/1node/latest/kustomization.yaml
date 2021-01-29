@@ -22,14 +22,25 @@ images:
   newTag: latest
   newName: busybox
 - name: cassandra
-  newTag: "3.11.4"
-  newName: cassandra
+  # newTag: "3.11.4"
+  # newName: cassandra
+  newTag: latest
+  newName: tungstenfabric/contrail-external-cassandra
 - name: zookeeper
-  newTag: "3.5.5"
-  newName: zookeeper
+  # newTag: "3.5.5"
+  # newName: zookeeper
+  newTag: latest
+  newName: tungstenfabric/contrail-external-zookeeper
 - name: rabbitmq
-  newTag: "3.7"
-  newName: rabbitmq
+  # newTag: "3.7"
+  # newName: rabbitmq
+  newTag: latest
+  newName: tungstenfabric/contrail-external-rabbitmq
+- name: redis
+  # newTag: "4.0.14"
+  # newName: redis
+  newTag: latest
+  newName: tungstenfabric/contrail-external-redis
 - name: contrail-analytics-api
   newTag: latest
   newName: tungstenfabric/contrail-analytics-api
@@ -45,9 +56,6 @@ images:
 - name: contrail-controller-config-dnsmasq
   newTag: latest
   newName: tungstenfabric/contrail-controller-config-dnsmasq
-- name: redis
-  newTag: "4.0.14"
-  newName: redis
 - name: contrail-controller-config-schema
   newTag: latest
   newName: tungstenfabric/contrail-controller-config-schema
