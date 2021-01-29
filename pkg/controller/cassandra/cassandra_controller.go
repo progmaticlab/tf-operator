@@ -3,9 +3,14 @@ package cassandra
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
@@ -210,6 +215,11 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
+	envNodemanagerConfigMap, err := instance.CreateConfigMap(request.Name+"-"+instanceType+"-nodemanager-env", r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	secretCertificates, err := instance.CreateSecret(request.Name+"-secret-certificates", r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -346,14 +356,19 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 
 		}
 		if container.Name == "nodemanager" {
-			command := []string{"bash", "-c",
-				"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-database-nodemgr.conf; " +
-					"exec /usr/bin/contrail-nodemgr --nodetype=contrail-database",
-			}
+			//command := []string{"bash", "-c",
+			//	"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-database-nodemgr.conf; " +
+			//		"exec /usr/bin/contrail-nodemgr --nodetype=contrail-database",
+			//}
+			//instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
+			//if instanceContainer.Command == nil {
+			//	(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
+			//} else {
+			//	(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
+			//}
+
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer.Command == nil {
-				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
-			} else {
+			if instanceContainer.Command != nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command
 			}
 
@@ -377,6 +392,19 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
+			envFromSource := []corev1.EnvFromSource{}
+			if len((&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom) > 0 {
+				envFromSource = (&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom
+			}
+			envFromSource = append(envFromSource,
+				corev1.EnvFromSource{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: envNodemanagerConfigMap.Name},
+					},
+				})
+			(&statefulSet.Spec.Template.Spec.Containers[idx]).EnvFrom = envFromSource
+
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 		}
 		if container.Name == "provisioner" {
@@ -602,18 +630,32 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		reqLogger.Error(err, "EnvProvisionerConfigMapData failed")
 		return reconcile.Result{}, err
 	}
-
-	configMapChanged := false
-	if !reflect.DeepEqual(envProvisionerConfigMap.Data, newProvisionerConfigMapData) {
-		envProvisionerConfigMap.Data = newProvisionerConfigMapData
-
-		if err = r.Client.Update(context.TODO(), envProvisionerConfigMap); err != nil {
-			reqLogger.Error(err, "Update of envProvisionerConfigMap failed")
-			return reconcile.Result{Requeue: true}, err
-		}
-		configMapChanged = true
+	newNodemanagerConfigMapData, err := instance.EnvNodemanagerConfigMapData(request, r.Client)
+	if err != nil {
+		reqLogger.Error(err, "EnvNodemanagerConfigMapData failed")
+		return reconcile.Result{}, err
 	}
 
+	if !reflect.DeepEqual(envProvisionerConfigMap.Data, newProvisionerConfigMapData) ||
+		!reflect.DeepEqual(envNodemanagerConfigMap.Data, newNodemanagerConfigMapData) {
+		envProvisionerConfigMap.Data = newProvisionerConfigMapData
+		if err = r.Client.Update(context.TODO(), envProvisionerConfigMap); err != nil {
+			reqLogger.Error(err, "Update of envProvisionerConfigMap failed")
+			return reconcile.Result{}, err
+		}
+
+		envNodemanagerConfigMap.Data = newNodemanagerConfigMapData
+		if err = r.Client.Update(context.TODO(), envNodemanagerConfigMap); err != nil {
+			reqLogger.Error(err, "Update of envNodemanagerConfigMap failed")
+			return reconcile.Result{}, err
+		}
+
+		// Wait until environment in configmap equal to needed environment
+		reqLogger.Info("Wait until environment in configmap equal to needed environment")
+		return reconcile.Result{Requeue: true}, nil
+	}
+
+	// Wait
 	// Restart reconcile if environment in configmap different from needed environment
 	// provisionerEnvConfigHash := EncryptMap(envProvisionerConfigMap.Data)
 	// if provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) {
@@ -638,12 +680,16 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	// }
 
 	// TODO: have universal update that checks related configmaps
-	if configMapChanged {
-		reqLogger.Info("configMapChanged changed", "current", envProvisionerConfigMap.Data, "new", newProvisionerConfigMapData)
+	envProvisionerConfigHash := EncryptMap(envProvisionerConfigMap.Data)
+	envNodemanagerConfigHash := EncryptMap(envNodemanagerConfigMap.Data)
+	if instance.Status.ProvisionerEnvHash != envProvisionerConfigHash || instance.Status.NodemanagerEnvHash != envNodemanagerConfigHash {
+		reqLogger.Info("configMapChanged changed")
 		if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
 			reqLogger.Error(err, "Update statefulset failed")
 			return reconcile.Result{}, err
 		}
+		instance.Status.ProvisionerEnvHash = envProvisionerConfigHash
+		instance.Status.NodemanagerEnvHash = envNodemanagerConfigHash
 	} else {
 		reqLogger.Info("configMapChanged is not changed", "current", envProvisionerConfigMap.Data, "new", newProvisionerConfigMapData)
 		// Update statefulset if replicas or images changed
@@ -708,24 +754,24 @@ func (r *ReconcileCassandra) ensureCertificatesExist(cassandra *v1alpha1.Cassand
 	return crt.EnsureExistsAndIsSigned()
 }
 
-// func MapToString(m map[string]string) string {
-// 	list := make([]string, 0, len(m))
-// 	for key, value := range m {
-// 		list = append(list, fmt.Sprintf("%s=%s", key, value))
-// 	}
-// 	sort.Strings(list)
+func MapToString(m map[string]string) string {
+	list := make([]string, 0, len(m))
+	for key, value := range m {
+		list = append(list, fmt.Sprintf("%s=%s", key, value))
+	}
+	sort.Strings(list)
 
-// 	return strings.Join(list, " ")
-// }
+	return strings.Join(list, " ")
+}
 
-// func EncryptString(str string) string {
-// 	h := sha1.New()
-// 	io.WriteString(h, str)
-// 	key := hex.EncodeToString(h.Sum(nil))
+func EncryptString(str string) string {
+	h := sha1.New()
+	io.WriteString(h, str)
+	key := hex.EncodeToString(h.Sum(nil))
 
-// 	return string(key)
-// }
+	return string(key)
+}
 
-// func EncryptMap(m map[string]string) string {
-// 	return EncryptString(MapToString(m))
-// }
+func EncryptMap(m map[string]string) string {
+	return EncryptString(MapToString(m))
+}
