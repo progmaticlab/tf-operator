@@ -109,7 +109,7 @@ func (c *Rabbitmq) InstanceConfiguration(request reconcile.Request,
 		rabbitmqConfigString := fmt.Sprintf("listeners.tcp.default = %d\n", *rabbitmqConfig.Port)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("listeners.ssl.default = %d\n", *rabbitmqConfig.Port)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("loopback_users = none\n")
-		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.tcp.port = 15671\n")
+		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.tcp.port = %d\n", *rabbitmqConfig.Port+10000)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.load_definitions = /etc/rabbitmq/definitions.json\n")
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("ssl_options.cacertfile = %s\n", certificates.SignerCAFilepath)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("ssl_options.keyfile = /etc/certificates/server-key-"+pod.Status.PodIP+".pem\n")
@@ -124,15 +124,20 @@ func (c *Rabbitmq) InstanceConfiguration(request reconcile.Request,
 				rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("cluster_formation.classic_config.nodes."+strconv.Itoa(podIndex+1)+" = rabbit@"+pod.Status.PodIP+"\n")
 			}
 		}
-		data["rabbitmq-"+pod.Status.PodIP+".conf"] = rabbitmqConfigString
+		data["rabbitmq.conf"] = rabbitmqConfigString
+		rabbitmqEnvConfigString := fmt.Sprintf("HOME=/var/lib/rabbitmq\n")
+		// TODO: tmp disable, because inet_dist_listen_min must be set correctly
+		// rabbitmqEnvConfigString = rabbitmqEnvConfigString + fmt.Sprintf("CTL_ERL_ARGS=\"-proto_dist inet_tls\"\n")
+		rabbitmqEnvConfigString = rabbitmqEnvConfigString + fmt.Sprintf("NODENAME=rabbit@%s\n", pod.Status.PodIP)
+		data["rabbitmq-env.conf"] = rabbitmqEnvConfigString
 	}
 
 	data["RABBITMQ_ERLANG_COOKIE"] = rabbitmqConfig.ErlangCookie
-	data["RABBITMQ_USE_LONGNAME"] = "true"
-	data["RABBITMQ_CONFIG_FILE"] = "/etc/rabbitmq/rabbitmq-${POD_IP}.conf"
-	data["RABBITMQ_PID_FILE"] = "/var/run/rabbitmq.pid"
-	data["RABBITMQ_CONF_ENV_FILE"] = "/var/lib/rabbitmq/rabbitmq.env"
+	data["RABBITMQ_CONFIG_FILE"] = "/etc/rabbitmq/rabbitmq.conf"
+	data["RABBITMQ_CONF_ENV_FILE"] = "/etc/rabbitmq/rabbitmq-env.conf"
 	data["RABBITMQ_ENABLED_PLUGINS_FILE"] = "/etc/rabbitmq/plugins.conf"
+	data["RABBITMQ_USE_LONGNAME"] = "true"
+	data["RABBITMQ_PID_FILE"] = "/var/run/rabbitmq.pid"
 
 	configMapInstanceDynamicConfig.Data = data
 	var rabbitmqNodes string
