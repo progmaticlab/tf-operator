@@ -15,21 +15,28 @@ patchesJson6902:
     path: contrail-status.json
 
 images:
+# Public containers
+# TODO: use tf mirrors
 - name: python
   newTag: 3.8.2-alpine
   newName: python
 - name: busybox
   newTag: latest
   newName: busybox
+# Contrail externals
 - name: cassandra
-  newTag: "3.11.4"
-  newName: cassandra
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-external-cassandra
 - name: zookeeper
-  newTag: "3.5.5"
-  newName: zookeeper
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-external-zookeeper
 - name: rabbitmq
-  newTag: "3.7"
-  newName: rabbitmq
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-external-rabbitmq
+- name: redis
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-external-redis
+# Contrail
 - name: contrail-analytics-api
   newTag: nightly
   newName: tf-nexus.progmaticlab.com:5102/contrail-analytics-api
@@ -45,9 +52,6 @@ images:
 - name: contrail-controller-config-dnsmasq
   newTag: nightly
   newName: tf-nexus.progmaticlab.com:5102/contrail-controller-config-dnsmasq
-- name: redis
-  newTag: "4.0.14"
-  newName: redis
 - name: contrail-controller-config-schema
   newTag: nightly
   newName: tf-nexus.progmaticlab.com:5102/contrail-controller-config-schema
