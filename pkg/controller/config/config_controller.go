@@ -135,10 +135,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	srcCassandra := &source.Kind{Type: &v1alpha1.Cassandra{}}
-	cassandraHandler := resourceHandler(mgr.GetClient())
-	predCassandraSizeChange := utils.CassandraActiveChange()
-	if err = c.Watch(srcCassandra, cassandraHandler, predCassandraSizeChange); err != nil {
+	// srcCassandra := &source.Kind{Type: &v1alpha1.Cassandra{}}
+	// cassandraHandler := resourceHandler(mgr.GetClient())
+	// predCassandraSizeChange := utils.CassandraActiveChange()
+	// if err = c.Watch(srcCassandra, cassandraHandler, predCassandraSizeChange); err != nil {
+	// 	return err
+	// }
+	cassandraServiceMap := map[string]string{"contrail_manager": "cassandra"}
+	predCassandraPodIPChange := utils.PodIPChange(cassandraServiceMap)
+	if err = c.Watch(srcPod, podHandler, predCassandraPodIPChange); err != nil {
 		return err
 	}
 
@@ -202,12 +207,10 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		reqLogger.Info("Config is deleting, skip reconcile")
 		return reconcile.Result{}, nil
 	}
-	cassandraActive := cassandraInstance.IsActive(config.Spec.ServiceConfiguration.CassandraInstance,
-		request.Namespace, r.Client)
-	zookeeperActive := zookeeperInstance.IsActive(config.Spec.ServiceConfiguration.ZookeeperInstance,
-		request.Namespace, r.Client)
-	rabbitmqActive := rabbitmqInstance.IsActive(config.Labels["contrail_cluster"],
-		request.Namespace, r.Client)
+	// cassandraActive := cassandraInstance.IsActive(config.Spec.ServiceConfiguration.CassandraInstance, request.Namespace, r.Client)
+	cassandraActive := cassandraInstance.IsScheduled(config.Spec.ServiceConfiguration.CassandraInstance, request.Namespace, r.Client)
+	zookeeperActive := zookeeperInstance.IsActive(config.Spec.ServiceConfiguration.ZookeeperInstance, request.Namespace, r.Client)
+	rabbitmqActive := rabbitmqInstance.IsActive(config.Labels["contrail_cluster"], request.Namespace, r.Client)
 
 	if !cassandraActive || !rabbitmqActive || !zookeeperActive {
 		reqLogger.Info("Config DB is not ready", "cassandraActive", cassandraActive,
@@ -611,6 +614,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
 		case "nodemanageranalytics":
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {

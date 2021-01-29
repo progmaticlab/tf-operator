@@ -61,7 +61,7 @@ type CassandraConfiguration struct {
 // CassandraStatus defines the status of the cassandra object.
 // +k8s:openapi-gen=true
 type CassandraStatus struct {
-	Active             *bool                `json:"active,omitempty"`
+	Status             `json:",inline"`
 	Nodes              map[string]string    `json:"nodes,omitempty"`
 	Ports              CassandraStatusPorts `json:"ports,omitempty"`
 	ClusterIP          string               `json:"clusterIP,omitempty"`
@@ -276,17 +276,12 @@ func (c *Cassandra) PodsCertSubjects(podList *corev1.PodList, serviceIP string) 
 }
 
 // SetInstanceActive sets the Cassandra instance to active.
-func (c *Cassandra) SetInstanceActive(client client.Client, activeStatus *bool, sts *appsv1.StatefulSet, request reconcile.Request) error {
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: request.Namespace},
-		sts); err != nil {
+func (c *Cassandra) SetInstanceActive(sts *appsv1.StatefulSet, request reconcile.Request, client client.Client) error {
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: request.Namespace}, sts); err != nil {
 		return err
 	}
-	*activeStatus = false
-	var acceptableReadyReplicaCnt = *sts.Spec.Replicas/2 + 1
-	if sts.Status.ReadyReplicas >= acceptableReadyReplicaCnt {
-		*activeStatus = true
-	}
-
+	acceptableReadyReplicaCnt := *sts.Spec.Replicas/2 + 1
+	c.Status.Active = sts.Status.ReadyReplicas >= acceptableReadyReplicaCnt
 	return client.Status().Update(context.TODO(), c)
 }
 
@@ -305,6 +300,19 @@ func (c *Cassandra) ManageNodeStatus(podNameIPMap map[string]string,
 	return nil
 }
 
+// QuerySTS queries the Cassandra STS
+func (c *Cassandra) QuerySTS(name string, namespace string, reconcileClient client.Client) (*appsv1.StatefulSet, error) {
+	return QuerySTS(name, namespace, reconcileClient)
+}
+
+// IsScheduled returns true if instance is scheduled on all pods.
+func (c *Cassandra) IsScheduled(name string, namespace string, client client.Client) bool {
+	if sts, _ := c.QuerySTS(name, namespace, client); sts != nil && sts.Spec.Replicas != nil {
+		return sts.Status.ReadyReplicas == *sts.Spec.Replicas
+	}
+	return false
+}
+
 // IsActive returns true if instance is active.
 func (c *Cassandra) IsActive(name string, namespace string, client client.Client) bool {
 	instance := &Cassandra{}
@@ -312,12 +320,8 @@ func (c *Cassandra) IsActive(name string, namespace string, client client.Client
 	if err != nil {
 		return false
 	}
-	if instance.Status.Active != nil {
-		if *instance.Status.Active {
-			return true
-		}
-	}
-	return false
+
+	return instance.Status.Active
 }
 
 // IsUpgrading returns true if instance is upgrading.

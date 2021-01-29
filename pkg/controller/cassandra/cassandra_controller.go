@@ -690,12 +690,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		}
 	}
 
-	if instance.Status.Active == nil {
-		active := false
-		instance.Status.Active = &active
-	}
-
-	if err = instance.SetInstanceActive(r.Client, instance.Status.Active, statefulSet, request); err != nil {
+	if err = instance.SetInstanceActive(statefulSet, request, r.Client); err != nil {
 		return reconcile.Result{}, err
 	}
 

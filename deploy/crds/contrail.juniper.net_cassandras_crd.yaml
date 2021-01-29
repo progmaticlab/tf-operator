@@ -191,6 +191,12 @@ spec:
               type: object
             provisionerEnvHash:
               type: string
+            readyReplicas:
+              format: int32
+              type: integer
+            replicas:
+              format: int32
+              type: integer
           type: object
       type: object
   version: v1alpha1

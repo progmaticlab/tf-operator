@@ -40,6 +40,8 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          logLevel: SYS_DEBUG
+          zookeeperInstance: zookeeper1
           cassandraInstance: cassandra1
           containers:
           - name: init
@@ -72,8 +74,6 @@ spec:
             image: contrail-nodemgr
           - name: provisioneranalytics
             image: contrail-provisioner
-          logLevel: SYS_DEBUG
-          zookeeperInstance: zookeeper1
     controls:
     - metadata:
         labels:
@@ -110,6 +110,8 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          logLevel: SYS_DEBUG
+          zookeeperInstance: zookeeper1
           cassandraInstance: cassandra1
           containers:
           - name: init
@@ -120,8 +122,6 @@ spec:
           ipFabricSnat: true
           kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
           useKubeadmConfig: true
-          zookeeperInstance: zookeeper1
-          logLevel: SYS_DEBUG
     rabbitmq:
       metadata:
         labels:

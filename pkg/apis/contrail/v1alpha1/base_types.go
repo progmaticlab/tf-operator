@@ -369,6 +369,7 @@ func PrepareSTS(sts *appsv1.StatefulSet,
 	scheme *runtime.Scheme,
 	object v1.Object,
 	usePralallePodManagementPolicy bool) error {
+
 	SetSTSCommonConfiguration(sts, commonConfiguration)
 	if usePralallePodManagementPolicy {
 		sts.Spec.PodManagementPolicy = appsv1.PodManagementPolicyType("Parallel")
@@ -509,28 +510,32 @@ func AddSecretVolumesToIntendedDS(ds *appsv1.DaemonSet, volumeSecretMap map[stri
 	ds.Spec.Template.Spec.Volumes = volumeList
 }
 
+// QuerySTS queries the STS
+func QuerySTS(name string, namespace string, reconcileClient client.Client) (*appsv1.StatefulSet, error) {
+	sts := &appsv1.StatefulSet{}
+	err := reconcileClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, sts)
+	if err != nil && k8serrors.IsNotFound(err) {
+		return nil, nil
+	}
+	return sts, err
+}
+
 // CreateSTS creates the STS.
 func CreateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.Request, reconcileClient client.Client) error {
-	foundSTS := &appsv1.StatefulSet{}
-	err := reconcileClient.Get(context.TODO(), types.NamespacedName{Name: request.Name + "-" + instanceType + "-statefulset", Namespace: request.Namespace}, foundSTS)
-	if err != nil && k8serrors.IsNotFound(err) {
+	foundSTS, err := QuerySTS(request.Name+"-"+instanceType+"-statefulset", request.Namespace, reconcileClient)
+	if err == nil && foundSTS == nil {
 		sts.Spec.Template.ObjectMeta.Labels["version"] = "1"
 		err = reconcileClient.Create(context.TODO(), sts)
 	}
-	return nil
+	return err
 }
 
 // UpdateSTS updates the STS.
 func UpdateSTS(sts *appsv1.StatefulSet, instanceType string, request reconcile.Request, reconcileClient client.Client, strategy string) error {
-	currentSTS := &appsv1.StatefulSet{}
-	selector := types.NamespacedName{Name: request.Name + "-" + instanceType + "-statefulset", Namespace: request.Namespace}
-	if err := reconcileClient.Get(context.TODO(), selector, currentSTS); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
+	currentSTS, err := QuerySTS(request.Name+"-"+instanceType+"-statefulset", request.Namespace, reconcileClient)
+	if currentSTS == nil {
 		return err
 	}
-
 	replicasChanged := false
 	replicas := int32(1)
 	if sts.Spec.Replicas != nil {

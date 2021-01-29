@@ -357,7 +357,7 @@ func (r *ReconcileManager) processCassandras(manager *v1alpha1.Manager, replicas
 		}
 		status := &v1alpha1.ServiceStatus{}
 		status.Name = &cassandra.Name
-		status.Active = cassandra.Status.Active
+		status.Active = &cassandra.Status.Active
 		cassandraStatusList = append(cassandraStatusList, status)
 	}
 
