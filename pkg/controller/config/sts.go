@@ -52,20 +52,20 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           imagePullPolicy: Always
-          startupProbe:
-            failureThreshold: 30
-            periodSeconds: 5
-            httpGet:
-              scheme: HTTPS
-              path: /
-              port: 8082
-          readinessProbe:
-            failureThreshold: 3
-            periodSeconds: 3
-            httpGet:
-              scheme: HTTPS
-              path: /
-              port: 8082
+          #startupProbe:
+          #  failureThreshold: 30
+          #  periodSeconds: 5
+          #  httpGet:
+          #    scheme: HTTPS
+          #    path: /
+          #    port: 8082
+          #readinessProbe:
+          #  failureThreshold: 3
+          #  periodSeconds: 3
+          #  httpGet:
+          #    scheme: HTTPS
+          #    path: /
+          #    port: 8082
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
