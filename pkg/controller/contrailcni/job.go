@@ -55,7 +55,6 @@ func GetJob(cniDirs string, requestName, instanceType string, replicas *int32) *
 				MountPath: "/var/run/multus",
 			},
 		},
-		ImagePullPolicy: "Always",
 	}
 
 	var podVolumes = []core.Volume{

@@ -26,7 +26,6 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - image: cassandra:3.11.4
-        imagePullPolicy: Always
         env:
         - name: POD_IP
           valueFrom:
@@ -100,7 +99,6 @@ spec:
               fieldPath: metadata.annotations['hostname']
         securityContext:
           privileged: true
-        imagePullPolicy: Always
         volumeMounts:
         - mountPath: /var/log/contrail
           name: cassandra-logs
@@ -121,7 +119,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.annotations['hostname']
-        imagePullPolicy: Always
         volumeMounts:
             - mountPath: /var/log/contrail
               name: cassandra-logs
@@ -140,7 +137,6 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         image: busybox:latest
-        imagePullPolicy: Always
         name: init
         resources: {}
         securityContext:
@@ -161,7 +157,6 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         image: busybox:latest
-        imagePullPolicy: Always
         name: init2
         resources: {}
         securityContext:

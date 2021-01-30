@@ -43,7 +43,6 @@ func GetSTS() *apps.StatefulSet {
 					MountPath: "/tmp/podinfo",
 				},
 			},
-			ImagePullPolicy: "Always",
 		},
 	}
 
@@ -57,7 +56,6 @@ func GetSTS() *apps.StatefulSet {
 			Env: []core.EnvVar{
 				podIPEnv,
 			},
-			ImagePullPolicy: "Always",
 		},
 	}
 

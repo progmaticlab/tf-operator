@@ -36,7 +36,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /tmp/podinfo
               name: status
@@ -48,7 +47,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs
@@ -59,7 +57,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs
@@ -74,7 +71,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           securityContext:
             privileged: true
             runAsGroup: 1999
@@ -105,7 +101,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: control-logs
@@ -131,7 +126,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           lifecycle:
             preStop:
               exec:

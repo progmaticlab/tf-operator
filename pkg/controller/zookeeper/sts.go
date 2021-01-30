@@ -37,7 +37,6 @@ spec:
         - -c
         - until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done
         image: busybox
-        imagePullPolicy: Always
         name: init
         resources: {}
         securityContext:
@@ -58,7 +57,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        imagePullPolicy: Always
         name: conf-init
         resources: {}
         securityContext:
@@ -80,7 +78,6 @@ spec:
         - name: NODE_TYPE
           value: config-database
         image: tungstenfabric/contrail-external-zookeeper:latest
-        imagePullPolicy: Always
         resources:
           requests:
             memory: "1Gi"

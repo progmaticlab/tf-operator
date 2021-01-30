@@ -50,7 +50,6 @@ func GetSTS() *apps.StatefulSet {
 					MountPath: "/tmp/podinfo",
 				},
 			},
-			ImagePullPolicy:          "Always",
 			TerminationMessagePath:   "/dev/termination-log",
 			TerminationMessagePolicy: core.TerminationMessageReadFile,
 		},

@@ -34,7 +34,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /tmp/podinfo
               name: status
@@ -50,11 +49,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            # TODO: xxx_ENABLE below must be configurable
             - name: ANALYTICSDB_ENABLE
               value: "true"
             - name: ANALYTICS_SNMP_ENABLE
-              value: "true"
-          imagePullPolicy: Always
+              value: false
+            - name: ANALYTICS_ALARM_ENABLE
+              value: false
           volumeMounts:
             - mountPath: /var/log/contrail
               name: webui-logs
@@ -69,7 +70,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: webui-logs
@@ -80,7 +80,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: webui-logs

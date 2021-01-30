@@ -308,7 +308,7 @@ func (c *Cassandra) QuerySTS(name string, namespace string, reconcileClient clie
 // IsScheduled returns true if instance is scheduled on all pods.
 func (c *Cassandra) IsScheduled(name string, namespace string, client client.Client) bool {
 	if sts, _ := c.QuerySTS(name+"-"+"cassandra"+"-statefulset", namespace, client); sts != nil && sts.Spec.Replicas != nil {
-		log.WithName("Cassandra").Info("IsScheduled", "sts.Spec.Replicas", sts.Spec.Replicas, "sts.Status.ReadyReplicas", sts.Status.ReadyReplicas)
+		log.WithName("Cassandra").Info("IsScheduled", "sts.Spec.Replicas", sts.Spec.Replicas, "sts.Status", sts.Status)
 		return sts.Status.ReadyReplicas == *sts.Spec.Replicas
 	}
 	return false

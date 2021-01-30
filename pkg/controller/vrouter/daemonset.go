@@ -86,7 +86,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/tmp/podinfo",
 				},
 			},
-			ImagePullPolicy: "Always",
 		},
 		{
 			Name:  "nodeinit",
@@ -103,7 +102,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/host/usr/bin",
 				},
 			},
-			ImagePullPolicy: "Always",
 			SecurityContext: &core.SecurityContext{
 				Privileged: &trueVal,
 			},
@@ -136,7 +134,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/lib/modules",
 				},
 			},
-			ImagePullPolicy: "Always",
 			SecurityContext: &core.SecurityContext{
 				Privileged: &trueVal,
 			},
@@ -159,7 +156,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/var/log/contrail",
 				},
 			},
-			ImagePullPolicy: "Always",
 		},
 		{
 			Name:  "nodemanager",
@@ -181,7 +177,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/var/run",
 				},
 			},
-			ImagePullPolicy: "Always",
 		},
 		{
 			Name:  "vrouteragent",
@@ -234,7 +229,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/etc/resolv.conf",
 				},
 			},
-			ImagePullPolicy: "Always",
 			SecurityContext: &core.SecurityContext{
 				Privileged: &trueVal,
 			},

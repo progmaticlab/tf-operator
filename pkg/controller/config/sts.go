@@ -29,7 +29,6 @@ spec:
             - sh
             - -c
             - until grep ready /tmp/podinfo/pod_labels > /dev/null 2>&1; do sleep 1; done
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /tmp/podinfo
               name: status
@@ -39,7 +38,6 @@ spec:
             - sh
             - -c
             - until grep true /tmp/podinfo/peers_ready > /dev/null 2>&1; do sleep 1; done
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /tmp/podinfo
               name: status
@@ -51,7 +49,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           #startupProbe:
           #  failureThreshold: 30
           #  periodSeconds: 5
@@ -78,7 +75,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -91,7 +87,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -102,7 +97,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -113,7 +107,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -128,7 +121,6 @@ spec:
               value: "true"
             - name: ANALYTICS_ALARM_ENABLE
               value: "true"
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -139,7 +131,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -150,7 +141,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -161,7 +151,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -182,7 +171,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -205,7 +193,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -226,7 +213,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs
@@ -245,7 +231,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['hostname']
-          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/log/contrail
               name: config-logs

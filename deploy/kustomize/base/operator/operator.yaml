@@ -186,11 +186,9 @@ spec:
       initContainers:
       - name: init
         image: tf-crdsloader
-        imagePullPolicy: Always
       containers:
         - name: tf-operator
           image: tf-operator
-          imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
