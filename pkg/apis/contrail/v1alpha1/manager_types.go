@@ -51,7 +51,6 @@ type VrouterServiceSpec struct {
 // VrouterManagerServiceConfiguration defines service confgiuration for vRouter
 // +k8s:openapi-gen=true
 type VrouterManagerServiceConfiguration struct {
-	ControlInstance      string `json:"controlInstance,omitempty"`
 	VrouterConfiguration `json:",inline"`
 }
 

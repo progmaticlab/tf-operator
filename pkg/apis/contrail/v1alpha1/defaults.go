@@ -6,9 +6,7 @@ const (
 	LogLocal                                    int    = 1
 	EncapPriority                               string = "MPLSoUDP,MPLSoGRE,VXLAN"
 	DpdkUioDriver                               string = "uio_pci_generic"
-	CpuCoreMask                                 string = "0x01"
-	HugePages                                   string = ""
-	HugePagesDir                                string = "/dev/hugepages"
+	CpuCoreMask                                 string = "0x03"
 	DpdkMemPerSocket                            int    = 1024
 	DpdkCommandAdditionalArgs                   string = ""
 	NicOffloadEnable                            bool   = false

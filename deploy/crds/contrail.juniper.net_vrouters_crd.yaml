@@ -166,6 +166,8 @@ spec:
                   type: array
                 contrailStatusImage:
                   type: string
+                controlInstance:
+                  type: string
                 controlNodesConfiguration:
                   description: ControlClusterConfiguration stores all information
                     about services' endpoints under the Contrail Control
@@ -191,6 +193,8 @@ spec:
                   type: object
                 gateway:
                   type: string
+                hugepages2M:
+                  type: integer
                 metaDataSecret:
                   type: string
                 physicalInterface:

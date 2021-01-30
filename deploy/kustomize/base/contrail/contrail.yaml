@@ -148,8 +148,11 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          logLevel: SYS_DEBUG
           cassandraInstance: cassandra1
+          controlInstance: control1
           contrailStatusImage: contrail-status
+          hugepages2M: 128
           containers:
           - name: init
             image: python:alpine
@@ -167,8 +170,6 @@ spec:
             image: contrail-vrouter-agent
           - name: vroutercni
             image: contrail-kubernetes-cni-init
-          controlInstance: control1
-          logLevel: SYS_DEBUG
     - metadata:
         labels:
           contrail_cluster: cluster1

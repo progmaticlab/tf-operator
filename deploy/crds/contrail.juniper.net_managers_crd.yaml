@@ -1427,6 +1427,8 @@ spec:
                                 type: object
                               gateway:
                                 type: string
+                              hugepages2M:
+                                type: integer
                               metaDataSecret:
                                 type: string
                               physicalInterface:

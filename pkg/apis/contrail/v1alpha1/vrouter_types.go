@@ -64,15 +64,17 @@ type VrouterServiceConfiguration struct {
 // VrouterConfiguration is the Spec for the vrouter API.
 // +k8s:openapi-gen=true
 type VrouterConfiguration struct {
+	CassandraInstance   string            `json:"cassandraInstance,omitempty"`
+	ControlInstance     string            `json:"controlInstance,omitempty"`
 	Containers          []*Container      `json:"containers,omitempty"`
+	ContrailStatusImage string            `json:"contrailStatusImage,omitempty"`
 	Gateway             string            `json:"gateway,omitempty"`
 	PhysicalInterface   string            `json:"physicalInterface,omitempty"`
 	MetaDataSecret      string            `json:"metaDataSecret,omitempty"`
 	Distribution        *Distribution     `json:"distribution,omitempty"`
 	VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
-	ContrailStatusImage string            `json:"contrailStatusImage,omitempty"`
 	EnvVariablesConfig  map[string]string `json:"envVariablesConfig,omitempty"`
-	CassandraInstance   string            `json:"cassandraInstance,omitempty"`
+	Hugepages2M         int               `json:"hugepages2M,omitempty"`
 }
 
 // VrouterNodesConfiguration is the static configuration for vrouter.
@@ -414,6 +416,7 @@ func (c *Vrouter) ConfigurationParameters() VrouterConfiguration {
 	vrouterConfiguration.Gateway = gateway
 	vrouterConfiguration.MetaDataSecret = metaDataSecret
 	vrouterConfiguration.EnvVariablesConfig = c.Spec.ServiceConfiguration.EnvVariablesConfig
+	vrouterConfiguration.Hugepages2M = c.Spec.ServiceConfiguration.Hugepages2M
 
 	return vrouterConfiguration
 }
@@ -427,6 +430,9 @@ func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 	// override the value from the annotations.
 	if vrouterConfig.PhysicalInterface != "" {
 		envVariables["PHYSICAL_INTERFACE"] = vrouterConfig.PhysicalInterface
+	}
+	if vrouterConfig.Hugepages2M > 0 {
+		envVariables["HUGE_PAGES_2MB"] = strconv.Itoa(vrouterConfig.Hugepages2M)
 	}
 	if len(vrouterConfig.EnvVariablesConfig) != 0 {
 		for key, value := range vrouterConfig.EnvVariablesConfig {

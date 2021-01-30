@@ -254,13 +254,17 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 
-			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
+			envFromList := []corev1.EnvFromSource{}
+			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom) > 0 {
+				envFromList = (&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom
+			}
+			envFromList = append(envFromList, corev1.EnvFromSource{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: request.Name + "-" + instanceType + "-configmap-1",
 					},
 				},
-			}}
+			})
 		}
 		if container.Name == "nodemanager" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
