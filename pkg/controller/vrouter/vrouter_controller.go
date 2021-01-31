@@ -221,7 +221,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c",
-				"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; /entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
+				"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
+					"exec /entrypoint.sh /usr/bin/contrail-vrouter-agent --config_file /etc/contrailconfigmaps/vrouter.${POD_IP}"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultVrouter.Containers)
@@ -273,7 +274,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
 						"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf; " +
-						"/usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
+						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
 				}
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {

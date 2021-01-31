@@ -286,7 +286,10 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
+					// for cqlsh cmd tool
 					"ln -sf /etc/contrailconfigmaps/cqlshrc.${POD_IP} /root/.cqlshrc ; " +
+						// for nodemanager
+						"ln -sf /etc/contrailconfigmaps/cassandra.${POD_IP}.yaml /etc/cassandra/cassandra.yaml; " +
 						"exec /docker-entrypoint.sh cassandra -f -Dcassandra.config=file:///etc/contrailconfigmaps/cassandra.${POD_IP}.yaml",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command

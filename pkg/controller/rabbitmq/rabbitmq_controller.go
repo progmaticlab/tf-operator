@@ -216,7 +216,7 @@ func (r *ReconcileRabbitmq) Reconcile(request reconcile.Request) (reconcile.Resu
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 
 		if container.Name == "rabbitmq" {
-			command := []string{"bash", "/runner/run.sh"}
+			command := []string{"/runner/run.sh"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command

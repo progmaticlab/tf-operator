@@ -212,10 +212,9 @@ func (r *ReconcileZookeeper) Reconcile(request reconcile.Request) (reconcile.Res
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 
 		if container.Name == "zookeeper" {
-			command := []string{
-				"bash", "-c", "zkServer.sh --config /var/lib/zookeeper start-foreground"}
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
+				command := []string{"zkServer.sh", "--config", "/var/lib/zookeeper start-foreground"}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command

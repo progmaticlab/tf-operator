@@ -251,7 +251,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"/usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}",
+					"exec /usr/bin/contrail-control --conf_file /etc/contrailconfigmaps/control.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -287,7 +287,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 					"touch /var/log/contrail/contrail-named.log; " +
 						"chgrp contrail /var/log/contrail/contrail-named.log; " +
 						"chmod g+w /var/log/contrail/contrail-named.log; " +
-						"/usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}",
+						"exec /usr/bin/contrail-named -f -g -u contrail -c /etc/contrailconfigmaps/named.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -321,7 +321,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"/usr/bin/contrail-dns --conf_file /etc/contrailconfigmaps/dns.${POD_IP}",
+					"exec /usr/bin/contrail-dns --conf_file /etc/contrailconfigmaps/dns.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -355,7 +355,7 @@ func (r *ReconcileControl) Reconcile(request reconcile.Request) (reconcile.Resul
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/nodemanager.${POD_IP} /etc/contrail/contrail-control-nodemgr.conf; " +
-						"/usr/bin/contrail-nodemgr --nodetype=contrail-control",
+						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-control",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {

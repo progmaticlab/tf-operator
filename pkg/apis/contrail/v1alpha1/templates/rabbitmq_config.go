@@ -9,7 +9,7 @@ chmod 0600 /var/lib/rabbitmq/.erlang.cookie
 touch /var/run/rabbitmq.pid
 chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/run/rabbitmq.pid
 if [[ $(grep $POD_IP /etc/rabbitmq/0) ]] ; then
-  rabbitmq-server
+  exec rabbitmq-server
 else
   rabbitmqctl --node rabbit@${POD_IP} forget_cluster_node rabbit@${POD_IP}
   rabbitmqctl --node rabbit@$(cat /etc/rabbitmq/0) ping
@@ -25,7 +25,7 @@ else
   sleep 2
   rabbitmqctl join_cluster rabbit@$(cat /etc/rabbitmq/0)
   rabbitmqctl shutdown
-  rabbitmq-server
+  exec rabbitmq-server
 fi
 `))
 

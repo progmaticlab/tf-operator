@@ -251,6 +251,8 @@ spec:
                                 type: string
                               minHeapSize:
                                 type: string
+                              minimumDiskGB:
+                                type: integer
                               port:
                                 type: integer
                               sslStoragePort:
