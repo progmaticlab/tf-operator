@@ -265,6 +265,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 					},
 				},
 			})
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = envFromList
 		}
 		if container.Name == "nodemanager" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
