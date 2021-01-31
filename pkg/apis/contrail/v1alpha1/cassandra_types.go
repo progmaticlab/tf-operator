@@ -307,7 +307,7 @@ func (c *Cassandra) QuerySTS(name string, namespace string, reconcileClient clie
 
 // IsScheduled returns true if instance is scheduled on all pods.
 func (c *Cassandra) IsScheduled(name string, namespace string, client client.Client) bool {
-	if sts, _ := c.QuerySTS(name+"-"+"cassandra"+"-statefulset", namespace, client); sts != nil && sts.Spec.Replicas != nil {
+	if sts, _ := c.QuerySTS(name+"-"+"cassandra"+"-statefulset", namespace, client); sts != nil {
 		log.WithName("Cassandra").Info("IsScheduled", "sts.Spec.Replicas", sts.Spec.Replicas, "sts.Status", sts.Status)
 		return sts.Status.ReadyReplicas == *sts.Spec.Replicas
 	}
@@ -321,7 +321,6 @@ func (c *Cassandra) IsActive(name string, namespace string, client client.Client
 	if err != nil {
 		return false
 	}
-
 	return instance.Status.Active
 }
 
@@ -461,8 +460,6 @@ func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt 
 	if err != nil {
 		return nil, err
 	}
-	configNodeList := configNodesInformation.APIServerIPList
-	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodeList, ",")
-
+	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
 	return data, nil
 }

@@ -59,6 +59,16 @@ func GetDaemonset() *apps.DaemonSet {
 		},
 	}
 
+	var provRetriesEnv = core.EnvVar{
+		Name:  "PROVISION_RETRIES",
+		Value: "1000",
+	}
+
+	var provDelayEnv = core.EnvVar{
+		Name:  "PROVISION_DELAY",
+		Value: "5",
+	}
+
 	var physicalInterfaceEnv = core.EnvVar{
 		Name: "PHYSICAL_INTERFACE",
 		ValueFrom: &core.EnvVarSource{
@@ -149,6 +159,8 @@ func GetDaemonset() *apps.DaemonSet {
 				vrouterHostnameEnv,
 				provisionHostnameEnv,
 				nodeTypeEnv,
+				provDelayEnv,
+				provRetriesEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
 				core.VolumeMount{

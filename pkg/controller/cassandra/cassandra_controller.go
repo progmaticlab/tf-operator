@@ -658,9 +658,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 	if len(podIPList.Items) > 0 {
-		if err = instance.InstanceConfiguration(request,
-			podIPList,
-			r.Client); err != nil {
+		if err = instance.InstanceConfiguration(request, podIPList, r.Client); err != nil {
 			return reconcile.Result{}, err
 		}
 		if err := r.ensureCertificatesExist(instance, podIPList, clusterIP, instanceType); err != nil {

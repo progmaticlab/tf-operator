@@ -208,12 +208,12 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 		return reconcile.Result{}, nil
 	}
 	// cassandraActive := cassandraInstance.IsActive(config.Spec.ServiceConfiguration.CassandraInstance, request.Namespace, r.Client)
-	cassandraActive := cassandraInstance.IsScheduled(config.Spec.ServiceConfiguration.CassandraInstance, request.Namespace, r.Client)
+	cassandraScheduled := cassandraInstance.IsScheduled(config.Spec.ServiceConfiguration.CassandraInstance, request.Namespace, r.Client)
 	zookeeperActive := zookeeperInstance.IsActive(config.Spec.ServiceConfiguration.ZookeeperInstance, request.Namespace, r.Client)
 	rabbitmqActive := rabbitmqInstance.IsActive(config.Labels["contrail_cluster"], request.Namespace, r.Client)
 
-	if !cassandraActive || !rabbitmqActive || !zookeeperActive {
-		reqLogger.Info("Config DB is not ready", "cassandraActive", cassandraActive,
+	if !cassandraScheduled || !rabbitmqActive || !zookeeperActive {
+		reqLogger.Info("Config DB is not ready", "cassandraScheduled", cassandraScheduled,
 			"zookeeperActive", zookeeperActive, "rabbitmqActive", rabbitmqActive)
 		return reconcile.Result{}, nil
 	}
