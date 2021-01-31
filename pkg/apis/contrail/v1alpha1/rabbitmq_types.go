@@ -106,7 +106,7 @@ func (c *Rabbitmq) InstanceConfiguration(request reconcile.Request,
 
 	var data = make(map[string]string)
 	for _, pod := range podList.Items {
-		rabbitmqConfigString := fmt.Sprintf("listeners.tcp.default = %d\n", *rabbitmqConfig.Port)
+		rabbitmqConfigString := fmt.Sprintf("listeners.tcp = none\n")
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("listeners.ssl.default = %d\n", *rabbitmqConfig.Port)
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("loopback_users = none\n")
 		rabbitmqConfigString = rabbitmqConfigString + fmt.Sprintf("management.tcp.port = %d\n", *rabbitmqConfig.Port+10000)
