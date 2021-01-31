@@ -36,12 +36,6 @@ spec:
         # TODO: move do go code for flexibility
         - name: NODE_TYPE
           value: database
-        # TODO: not needed for TF containers
-        label:
-        - name: tungsten.io.container.name
-          value: contrail-external-cassandra
-        - name: tungsten.io.service
-          value: cassandra
         lifecycle:
           preStop:
             exec:

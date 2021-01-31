@@ -291,8 +291,8 @@ func (r *ReconcileKubemanager) Reconcile(request reconcile.Request) (reconcile.R
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"/usr/bin/rm -f /etc/contrail/vnc_api_lib.ini; ln -s /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-kube-manager -c /etc/contrailconfigmaps/kubemanager.${POD_IP}"}
+					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
+						"exec /usr/bin/contrail-kube-manager -c /etc/contrailconfigmaps/kubemanager.${POD_IP}"}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = instanceContainer.Command

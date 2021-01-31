@@ -212,6 +212,12 @@ func schema_pkg_apis_contrail_v1alpha1_CassandraConfiguration(ref common.Referen
 							Ref: ref("github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1.Storage"),
 						},
 					},
+					"minimumDiskGB": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
 				},
 			},
 		},

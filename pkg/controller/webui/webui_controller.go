@@ -333,7 +333,7 @@ func (r *ReconcileWebui) Reconcile(request reconcile.Request) (reconcile.Result,
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 --port 6380",
+					"exec redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 --port 6380",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {

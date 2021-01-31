@@ -179,6 +179,11 @@ func (in *CassandraConfiguration) DeepCopyInto(out *CassandraConfiguration) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.MinimumDiskGB != nil {
+		in, out := &in.MinimumDiskGB, &out.MinimumDiskGB
+		*out = new(int)
+		**out = **in
+	}
 	out.Storage = in.Storage
 	return
 }

@@ -56,6 +56,7 @@ type CassandraConfiguration struct {
 	MinHeapSize    string       `json:"minHeapSize,omitempty"`
 	StartRPC       *bool        `json:"startRPC,omitempty"`
 	Storage        Storage      `json:"storage,omitempty"`
+	MinimumDiskGB  *int         `json:"minimumDiskGB,omitempty"`
 }
 
 // CassandraStatus defines the status of the cassandra object.
@@ -184,6 +185,7 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			CassandraPort       string
 			CassandraJmxPort    string
 			CAFilePath          string
+			MinimumDiskGB       int
 		}{
 			ListenAddress:       podList.Items[idx].Status.PodIP,
 			Hostname:            podList.Items[idx].Annotations["hostname"],
@@ -191,6 +193,7 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			CassandraPort:       strconv.Itoa(*cassandraConfig.CqlPort),
 			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
 			CAFilePath:          certificates.SignerCAFilepath,
+			MinimumDiskGB:       *cassandraConfig.MinimumDiskGB,
 		})
 		nodemanagerConfigString := nodeManagerConfigBuffer.String()
 		if configMapInstanceDynamicConfig.Data == nil {
@@ -350,6 +353,8 @@ func (c *Cassandra) ConfigurationParameters() CassandraConfiguration {
 	var jmxPort int
 	var storagePort int
 	var sslStoragePort int
+	var minimumDiskGB int
+
 	if c.Spec.ServiceConfiguration.Storage.Path == "" {
 		cassandraConfiguration.Storage.Path = "/mnt/cassandra"
 	} else {
@@ -396,6 +401,13 @@ func (c *Cassandra) ConfigurationParameters() CassandraConfiguration {
 	if cassandraConfiguration.ListenAddress == "" {
 		cassandraConfiguration.ListenAddress = "auto"
 	}
+	if c.Spec.ServiceConfiguration.MinimumDiskGB != nil {
+		minimumDiskGB = *c.Spec.ServiceConfiguration.MinimumDiskGB
+	} else {
+		minimumDiskGB = CassandraMinimumDiskGB
+	}
+	cassandraConfiguration.MinimumDiskGB = &minimumDiskGB
+
 	return cassandraConfiguration
 }
 

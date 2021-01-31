@@ -5,6 +5,7 @@ import "text/template"
 // VRouterConfig is the template of the Kubemanager service configuration.
 var VRouterConfig = template.Must(template.New("").Parse(`[CONTROL-NODE]
 servers={{ .ControlServerList }}
+
 [DEFAULT]
 http_server_ip=0.0.0.0
 collectors={{ .CollectorServerList }}
@@ -20,6 +21,7 @@ xmpp_server_key=/etc/certificates/server-key-{{ .ListenAddress }}.pem
 xmpp_ca_cert={{ .CAFilePath }}
 physical_interface_mac = {{ .PhysicalInterfaceMac }}
 tsn_servers = []
+
 [SANDESH]
 introspect_ssl_enable=True
 introspect_ssl_insecure=True
@@ -27,28 +29,37 @@ sandesh_ssl_enable=True
 sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
 sandesh_ca_cert={{ .CAFilePath }}
+
 [NETWORKS]
 control_network_ip={{ .ListenAddress }}
+
 [DNS]
 servers={{ .DNSServerList }}
+
 [METADATA]
 metadata_proxy_secret={{ .MetaDataSecret }}
+
 [VIRTUAL-HOST-INTERFACE]
 name=vhost0
 ip={{ .ListenAddress }}/{{ .PrefixLength }}
 physical_interface={{ .PhysicalInterface }}
 compute_node_address={{ .ListenAddress }}
 gateway={{ .Gateway }}
+
 [SERVICE-INSTANCE]
 netns_command=/usr/bin/opencontrail-vrouter-netns
 docker_command=/usr/bin/opencontrail-vrouter-docker
+
 [HYPERVISOR]
 type = kvm
+
 [FLOWS]
 fabric_snat_hash_table_size = 4096
+
 [SESSION]
 slo_destination = collector
-sample_destination = collector`))
+sample_destination = collector
+`))
 
 var VRouterVncApiLibIni = template.Must(template.New("").Parse(`
 [global]
@@ -59,7 +70,8 @@ use_ssl = "True"
 cafile = {{ .CAFilePath }}
 
 [auth]
-AUTHN_TYPE = noauth`))
+AUTHN_TYPE = noauth
+`))
 
 //VrouterNodemanagerConfig is the template of the Vrouter Nodemanager service configuration
 var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
@@ -80,4 +92,5 @@ introspect_ssl_insecure=True
 sandesh_ssl_enable=True
 sandesh_keyfile=/etc/certificates/server-key-{{ .ListenAddress }}.pem
 sandesh_certfile=/etc/certificates/server-{{ .ListenAddress }}.crt
-sandesh_ca_cert={{ .CAFilePath }}`))
+sandesh_ca_cert={{ .CAFilePath }}
+`))

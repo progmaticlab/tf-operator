@@ -64,6 +64,7 @@ const (
 	CassandraSslStoragePort                     int    = 7001
 	CassandraStoragePort                        int    = 7000
 	CassandraJmxLocalPort                       int    = 7200
+	CassandraMinimumDiskGB                      int    = 4
 	ConfigNodes                                 string = ""
 	ConfigdbNodes                               string = ""
 	ConfigApiPort                               int    = 8082

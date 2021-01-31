@@ -283,7 +283,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-api --conf_file /etc/contrailconfigmaps/api.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP} --worker_id 0",
+						"exec /usr/bin/contrail-api --conf_file /etc/contrailconfigmaps/api.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP} --worker_id 0",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -407,7 +407,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-svc-monitor --conf_file /etc/contrailconfigmaps/servicemonitor.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
+						"exec /usr/bin/contrail-svc-monitor --conf_file /etc/contrailconfigmaps/servicemonitor.${POD_IP} --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -436,7 +436,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-schema --conf_file /etc/contrailconfigmaps/schematransformer.${POD_IP}  --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
+						"exec /usr/bin/contrail-schema --conf_file /etc/contrailconfigmaps/schematransformer.${POD_IP}  --conf_file /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -464,7 +464,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-analytics-api -c /etc/contrailconfigmaps/analyticsapi.${POD_IP} -c /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
+						"exec /usr/bin/contrail-analytics-api -c /etc/contrailconfigmaps/analyticsapi.${POD_IP} -c /etc/contrailconfigmaps/contrail-keystone-auth.conf.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -492,7 +492,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-query-engine --conf_file /etc/contrailconfigmaps/queryengine.${POD_IP}",
+						"exec /usr/bin/contrail-query-engine --conf_file /etc/contrailconfigmaps/queryengine.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -520,7 +520,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
-						"/usr/bin/contrail-collector --conf_file /etc/contrailconfigmaps/collector.${POD_IP}",
+						"exec /usr/bin/contrail-collector --conf_file /etc/contrailconfigmaps/collector.${POD_IP}",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -547,7 +547,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 			instanceContainer := utils.GetContainerFromList(container.Name, config.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 ${POD_IP} --port 6379",
+					"exec redis-server --lua-time-limit 15000 --dbfilename '' --bind 127.0.0.1 ${POD_IP} --port 6379",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -589,7 +589,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
 						"ln -sf /etc/contrailconfigmaps/nodemanagerconfig.${POD_IP} /etc/contrail/contrail-config-nodemgr.conf; " +
-						"/usr/bin/contrail-nodemgr --nodetype=contrail-config",
+						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-config",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
@@ -621,7 +621,7 @@ func (r *ReconcileConfig) Reconcile(request reconcile.Request) (reconcile.Result
 				command := []string{"bash", "-c",
 					"ln -sf /etc/contrailconfigmaps/vnc.${POD_IP} /etc/contrail/vnc_api_lib.ini; " +
 						"ln -sf /etc/contrailconfigmaps/nodemanageranalytics.${POD_IP} /etc/contrail/contrail-analytics-nodemgr.conf; " +
-						"/usr/bin/contrail-nodemgr --nodetype=contrail-analytics",
+						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-analytics",
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
