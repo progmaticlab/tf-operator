@@ -309,7 +309,7 @@ func (c *Cassandra) QuerySTS(name string, namespace string, reconcileClient clie
 func (c *Cassandra) IsScheduled(name string, namespace string, client client.Client) bool {
 	if sts, _ := c.QuerySTS(name+"-"+"cassandra"+"-statefulset", namespace, client); sts != nil {
 		log.WithName("Cassandra").Info("IsScheduled", "sts.Spec.Replicas", sts.Spec.Replicas, "sts.Status", sts.Status)
-		return sts.Status.ReadyReplicas == *sts.Spec.Replicas
+		return sts.Status.CurrentReplicas == *sts.Spec.Replicas
 	}
 	return false
 }
