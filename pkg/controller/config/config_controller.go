@@ -141,9 +141,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// if err = c.Watch(srcCassandra, cassandraHandler, predCassandraSizeChange); err != nil {
 	// 	return err
 	// }
-	cassandraServiceMap := map[string]string{"contrail_manager": "cassandra"}
-	predCassandraPodIPChange := utils.PodIPChange(cassandraServiceMap)
-	if err = c.Watch(srcPod, podHandler, predCassandraPodIPChange); err != nil {
+	if err = c.Watch(
+		&source.Kind{Type: &appsv1.StatefulSet{}},
+		resourceHandler(mgr.GetClient()),
+		utils.STSStatusChange(utils.CassandraGroupKind())); err != nil {
+
 		return err
 	}
 
