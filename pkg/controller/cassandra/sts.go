@@ -24,6 +24,16 @@ spec:
         contrail_manager: cassandra
     spec:
       terminationGracePeriodSeconds: 10
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists
       containers:
       - image: cassandra:3.11.4
         env:
@@ -118,12 +128,10 @@ spec:
             fieldRef:
               fieldPath: metadata.annotations['hostname']
         volumeMounts:
-            - mountPath: /var/log/contrail
-              name: cassandra-logs
-            - mountPath: /var/crashes
-              name: crashes
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
+        - mountPath: /var/log/contrail
+          name: cassandra-logs
+        - mountPath: /var/crashes
+          name: crashes
       initContainers:
       - command:
         - sh
@@ -165,15 +173,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp/podinfo
           name: status
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      tolerations:
-      - effect: NoSchedule
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
       volumes:
       - hostPath:
           path: /var/log/contrail/cassandra

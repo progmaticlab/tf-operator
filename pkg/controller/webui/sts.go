@@ -22,6 +22,16 @@ spec:
         app: webui
         contrail_manager: webui
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      restartPolicy: Always
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
       initContainers:
         - name: init
           image: busybox:latest
@@ -85,16 +95,6 @@ spec:
               name: webui-logs
             - mountPath: /var/lib/redis
               name: webui-data
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-      restartPolicy: Always
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
       volumes:
         - hostPath:
             path: /var/lib/contrail/webui

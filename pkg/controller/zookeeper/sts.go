@@ -23,6 +23,9 @@ spec:
         zookeeper_cr: zookeeper
         contrail_manager: zookeeper
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
       nodeSelector:
         node-role.kubernetes.io/master: ''
       tolerations:
@@ -30,8 +33,6 @@ spec:
         effect: NoSchedule
       - operator: Exists
         effect: NoExecute
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
       initContainers:
       - command:
         - sh

@@ -24,6 +24,16 @@ spec:
     spec:
       securityContext:
         fsGroup: 1999
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
       initContainers:
         - name: init
           image: busybox:latest
@@ -142,16 +152,6 @@ spec:
               name: crashes
             - mountPath: /var/run
               name: var-run
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-      restartPolicy: Always
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
       volumes:
         - hostPath:
             path: /var/log/contrail/control

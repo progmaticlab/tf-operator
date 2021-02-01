@@ -22,6 +22,16 @@ spec:
         app: config
         contrail_manager: config
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
       initContainers:
         - name: init
           image: busybox:latest
@@ -244,15 +254,6 @@ spec:
               name: config-logs
             - mountPath: /var/crashes
               name: crashes
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
       volumes:
         - hostPath:
             path: /var/lib/tftp
