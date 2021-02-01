@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"bytes"
 	"context"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -437,38 +436,52 @@ func (c *Cassandra) seeds(podList *corev1.PodList) []string {
 }
 
 // EnvironmentConfiguration ensures provsioner configmap
-func (c *Cassandra) EnvironmentConfiguration(request reconcile.Request, client client.Client) error {
-	provisionerEnvConfigMap := &corev1.ConfigMap{}
-	if err := client.Get(context.TODO(),
-		types.NamespacedName{Name: request.Name + "-cassandra-provisioner-env", Namespace: request.Namespace},
-		provisionerEnvConfigMap); err != nil {
-		return err
-	}
+//func (c *Cassandra) EnvironmentConfiguration(request reconcile.Request, client client.Client) error {
+//	provisionerEnvConfigMap := &corev1.ConfigMap{}
+//	if err := client.Get(context.TODO(),
+//		types.NamespacedName{Name: request.Name + "-cassandra-provisioner-env", Namespace: request.Namespace},
+//		provisionerEnvConfigMap); err != nil {
+//		return err
+//	}
+//
+//	data, err := c.EnvProvisionerConfigMapData(request, client)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if !reflect.DeepEqual(provisionerEnvConfigMap.Data, data) {
+//		provisionerEnvConfigMap.Data = data
+//
+//		if err := client.Update(context.TODO(), provisionerEnvConfigMap); err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
-	data, err := c.EnvProvisionerConfigMapData(request, client)
+// EnvNodemanagerConfigMapData creates nodemanager configmap
+func (c *Cassandra) EnvNodemanagerConfigMapData(request reconcile.Request, client client.Client) (map[string]string, error) {
+	data := make(map[string]string)
+	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
+	data["CASSANDRA_SSL_ENABLE"] = "True"
+
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	configNodeList := configNodesInformation.APIServerIPList
+	data["CONTROLLER_NODES"] = configtemplates.JoinListWithSeparator(configNodeList, ",")
+	data["ANALYTICSDB_NODES"] = configtemplates.JoinListWithSeparator(configNodeList, ",")
 
-	if !reflect.DeepEqual(provisionerEnvConfigMap.Data, data) {
-		provisionerEnvConfigMap.Data = data
-
-		if err := client.Update(context.TODO(), provisionerEnvConfigMap); err != nil {
-			return err
-		}
-	}
-	return nil
+	return data, nil
 }
 
 // EnvProvisionerConfigMapData creates provision configmap
-func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt client.Client) (map[string]string, error) {
+func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, client client.Client) (map[string]string, error) {
 	data := make(map[string]string)
-	data["SSL_ENABLE"] = "True"
 	data["SERVER_CA_CERTFILE"] = certificates.SignerCAFilepath
-	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
-	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
 
-	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, clnt)
+	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, client)
 	if err != nil {
 		return nil, err
 	}
