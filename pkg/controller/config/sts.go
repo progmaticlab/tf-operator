@@ -244,7 +244,7 @@ spec:
               name: config-logs
             - mountPath: /var/crashes
               name: crashes
-      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       nodeSelector:
         node-role.kubernetes.io/master: ""

@@ -156,7 +156,7 @@ func GetJob(cniDirs string, requestName, instanceType string, replicas *int32) *
 		Volumes:       podVolumes,
 		Containers:    []core.Container{cniContainer},
 		RestartPolicy: "OnFailure",
-		DNSPolicy:     "ClusterFirst",
+		DNSPolicy:     "ClusterFirstWithHostNet",
 		HostNetwork:   true,
 		Tolerations:   podTolerations,
 		Affinity:      &jobAffinity,

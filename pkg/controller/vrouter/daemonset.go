@@ -377,7 +377,7 @@ func GetDaemonset() *apps.DaemonSet {
 		InitContainers: podInitContainers,
 		Containers:     podContainers,
 		RestartPolicy:  "Always",
-		DNSPolicy:      "ClusterFirst",
+		DNSPolicy:      "ClusterFirstWithHostNet",
 		HostNetwork:    true,
 		Tolerations:    podTolerations,
 	}

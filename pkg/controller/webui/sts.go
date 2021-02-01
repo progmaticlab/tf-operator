@@ -85,7 +85,7 @@ spec:
               name: webui-logs
             - mountPath: /var/lib/redis
               name: webui-data
-      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       nodeSelector:
         node-role.kubernetes.io/master: ""

@@ -30,6 +30,7 @@ spec:
         effect: NoSchedule
       - operator: Exists
         effect: NoExecute
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:
       - command:
@@ -75,8 +76,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: NODE_TYPE
-          value: config-database
+        # TODO: dont provide till 2 DBs be supported
+        #- name: NODE_TYPE
+        #  value: config-database
         image: tungstenfabric/contrail-external-zookeeper:latest
         resources:
           requests:

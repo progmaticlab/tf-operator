@@ -28,10 +28,11 @@ func GetSTS() *apps.StatefulSet {
 				},
 			},
 		},
-		{
-			Name:  "NODE_TYPE",
-			Value: "config-database",
-		},
+		// TODO: dont provide till 2 DBs be supported
+		// {
+		// 	Name:  "NODE_TYPE",
+		// 	Value: "config-database",
+		// },
 	}
 
 	var podInitContainers = []core.Container{
@@ -158,7 +159,7 @@ func GetSTS() *apps.StatefulSet {
 		InitContainers: podInitContainers,
 		Containers:     podContainers,
 		RestartPolicy:  "Always",
-		DNSPolicy:      "ClusterFirst",
+		DNSPolicy:      "ClusterFirstWithHostNet",
 		HostNetwork:    true,
 		Tolerations:    podTolerations,
 		NodeSelector:   map[string]string{"node-role.kubernetes.io/master": ""},

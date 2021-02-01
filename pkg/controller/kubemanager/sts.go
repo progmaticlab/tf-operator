@@ -118,7 +118,7 @@ func GetSTS() *apps.StatefulSet {
 		InitContainers: podInitContainers,
 		Containers:     podContainers,
 		RestartPolicy:  "Always",
-		DNSPolicy:      "ClusterFirst",
+		DNSPolicy:      "ClusterFirstWithHostNet",
 		HostNetwork:    true,
 		Tolerations:    podTolerations,
 		NodeSelector:   map[string]string{"node-role.kubernetes.io/master": ""},

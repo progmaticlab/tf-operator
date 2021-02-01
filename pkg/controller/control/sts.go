@@ -142,7 +142,7 @@ spec:
               name: crashes
             - mountPath: /var/run
               name: var-run
-      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       nodeSelector:
         node-role.kubernetes.io/master: ""

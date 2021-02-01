@@ -122,7 +122,7 @@ spec:
               name: cassandra-logs
             - mountPath: /var/crashes
               name: crashes
-      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:
       - command:
