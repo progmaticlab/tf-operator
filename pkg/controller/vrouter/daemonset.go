@@ -148,6 +148,44 @@ func GetDaemonset() *apps.DaemonSet {
 				Privileged: &trueVal,
 			},
 		},
+		{
+			Name:  "vroutercni",
+			Image: "tungstenfabric/contrail-kubernetes-cni-init:latest",
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "var-lib-contrail",
+					MountPath: "/var/lib/contrail",
+				},
+				{
+					Name:      "vrouter-logs",
+					MountPath: "/var/log/contrail",
+				},
+				{
+					Name:      "configmap-volume",
+					MountPath: "/etc/contrailconfigmaps",
+				},
+				{
+					Name:      "cni-config-files",
+					MountPath: "/host/etc_cni",
+				},
+				{
+					Name:      "etc-kubernetes-cni",
+					MountPath: "/etc/kubernetes/cni",
+				},
+				{
+					Name:      "cni-bin",
+					MountPath: "/host/opt_cni_bin",
+				},
+				{
+					Name:      "var-log-contrail-cni",
+					MountPath: "/host/log_cni",
+				},
+				{
+					Name:      "multus-cni",
+					MountPath: "/var/run/multus",
+				},
+			},
+		},
 	}
 
 	var podContainers = []core.Container{
@@ -163,7 +201,7 @@ func GetDaemonset() *apps.DaemonSet {
 				provRetriesEnv,
 			},
 			VolumeMounts: []core.VolumeMount{
-				core.VolumeMount{
+				{
 					Name:      "vrouter-logs",
 					MountPath: "/var/log/contrail",
 				},
@@ -187,6 +225,10 @@ func GetDaemonset() *apps.DaemonSet {
 				{
 					Name:      "var-run",
 					MountPath: "/var/run",
+				},
+				{
+					Name:      "var-crashes",
+					MountPath: "/var/crashes",
 				},
 			},
 		},
@@ -332,6 +374,47 @@ func GetDaemonset() *apps.DaemonSet {
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
 					Path: "/etc/resolv.conf",
+				},
+			},
+		},
+		{
+			Name: "cni-config-files",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/etc/cni",
+				},
+			},
+		},
+		{
+			Name: "cni-bin",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					// TODO: allow to overwrite via params
+					Path: "/opt/cni/bin",
+				},
+			},
+		},
+		{
+			Name: "etc-kubernetes-cni",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/etc/kubernetes/cni",
+				},
+			},
+		},
+		{
+			Name: "multus-cni",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/var/run/multus",
+				},
+			},
+		},
+		{
+			Name: "var-log-contrail-cni",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/var/log/contrail/cni",
 				},
 			},
 		},

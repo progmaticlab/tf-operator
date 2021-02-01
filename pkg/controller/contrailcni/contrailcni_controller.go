@@ -82,9 +82,9 @@ var _ reconcile.Reconciler = &ReconcileContrailCNI{}
 type ReconcileContrailCNI struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	Client      client.Client
-	Scheme      *runtime.Scheme
-	kubernetes  *k8s.Kubernetes
+	Client     client.Client
+	Scheme     *runtime.Scheme
+	kubernetes *k8s.Kubernetes
 }
 
 // Reconcile reads that state of the cluster for a ContrailCNI object and makes changes based on the state read
@@ -105,33 +105,6 @@ func (r *ReconcileContrailCNI) Reconcile(request reconcile.Request) (reconcile.R
 
 	if !instance.GetDeletionTimestamp().IsZero() {
 		return reconcile.Result{}, nil
-	}
-
-	if instance.Spec.ServiceConfiguration.ControlInstance != "" {
-		controlInstance := v1alpha1.Control{}
-		configInstance := v1alpha1.Config{}
-		configActive := configInstance.IsActive(instance.Labels["contrail_cluster"],
-			request.Namespace, r.Client)
-
-		controlActive := controlInstance.IsActive(instance.Spec.ServiceConfiguration.ControlInstance,
-			request.Namespace, r.Client)
-
-		if !configActive || !controlActive {
-			return reconcile.Result{}, nil
-		}
-	}
-
-	clusterName := instance.Spec.ServiceConfiguration.KubernetesClusterName
-	if *instance.Spec.ServiceConfiguration.UseKubeadmConfig {
-		clientset, err := v1alpha1.GetClientset()
-		if err != nil {
-			return reconcile.Result{},err
-		}
-		config := k8s.ClusterConfig{Client: clientset.CoreV1()}
-		clusterName, err = config.KubernetesClusterName()
-		if err != nil {
-			return reconcile.Result{},err
-		}
 	}
 
 	contrailCNIConfigName := request.Name + "-" + instanceType + "-configuration"

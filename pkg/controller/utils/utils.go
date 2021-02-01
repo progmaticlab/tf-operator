@@ -519,3 +519,30 @@ func GetContainerFromList(containerName string, containerList []*v1alpha1.Contai
 	}
 	return nil
 }
+
+// Check if some labeled pods switch to Running or from Running to another phase
+func PodPhaseChanges(podLabels map[string]string ) predicate.Funcs{
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// TODO Select our pods using labels
+			for key, value := range e.MetaOld.GetLabels(){
+				if podLabels[key] == value {
+					oldPod, ok := e.ObjectOld.(*corev1.Pod)
+					if !ok {
+						reqLogger.Info("type conversion mismatch")
+					}
+					newPod, ok := e.ObjectNew.(*corev1.Pod)
+					if !ok {
+						reqLogger.Info("type conversion mismatch")
+					}
+					if ( newPod.Status.Phase == "Running" && oldPod.Status.Phase != "Running" ) ||
+					( newPod.Status.Phase != "Running" && oldPod.Status.Phase == "Running" ) {
+							return true
+						}
+				}
+			}
+			return false
+		},
+	}
+}
+

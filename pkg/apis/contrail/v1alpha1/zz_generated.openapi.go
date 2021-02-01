@@ -2083,6 +2083,12 @@ func schema_pkg_apis_contrail_v1alpha1_VrouterStatus(ref common.ReferenceCallbac
 							Format: "",
 						},
 					},
+					"activeOnControllers": {
+						SchemaProps: spec.SchemaProps{
+                                                        Type:   []string{"boolean"},
+                                                        Format: "",
+                                                },
+                                        },
 				},
 			},
 		},

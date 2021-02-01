@@ -132,15 +132,17 @@ certfile = {{ .CAFilePath }}
 var CassandraNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip=0.0.0.0
 log_file=/var/log/contrail/cassandra-nodemgr.log
-log_level=SYS_INFO
+log_level={{ .LogLevel }}
 log_local=1
 hostip={{ .ListenAddress }}
 db_port={{ .CassandraPort }}
 db_jmx_port={{ .CassandraJmxPort }}
 db_use_ssl=True
 minimum_diskGB={{ .MinimumDiskGB }}
+
 [COLLECTOR]
 server_list={{ .CollectorServerList }}
+
 [SANDESH]
 introspect_ssl_enable=True
 introspect_ssl_insecure=True

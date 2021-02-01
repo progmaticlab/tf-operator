@@ -86,6 +86,7 @@ spec:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
           cassandraInstance: cassandra1
+          logLevel: SYS_DEBUG
           containers:
           - name: init
             image: python:alpine
@@ -99,7 +100,6 @@ spec:
             image: contrail-nodemgr
           - name: provisioner
             image: contrail-provisioner
-          logLevel: SYS_DEBUG
     kubemanagers:
     - metadata:
         labels:
@@ -113,15 +113,15 @@ spec:
           logLevel: SYS_DEBUG
           zookeeperInstance: zookeeper1
           cassandraInstance: cassandra1
+          ipFabricForwarding: false
+          ipFabricSnat: true
+          kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+          useKubeadmConfig: true
           containers:
           - name: init
             image: python:alpine
           - name: kubemanager
             image: contrail-kubernetes-kube-manager
-          ipFabricForwarding: false
-          ipFabricSnat: true
-          kubernetesTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-          useKubeadmConfig: true
     rabbitmq:
       metadata:
         labels:
@@ -132,12 +132,12 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          logLevel: SYS_DEBUG
           containers:
           - name: init
             image: python:alpine
           - name: rabbitmq
             image: rabbitmq:3.7
-          logLevel: SYS_DEBUG
     vrouters:
     - metadata:
         labels:
@@ -179,8 +179,11 @@ spec:
           nodeSelector:
             node-role.opencontrail.org: vrouter
         serviceConfiguration:
+          logLevel: SYS_DEBUG
           cassandraInstance: cassandra1
+          controlInstance: control1
           contrailStatusImage: contrail-status
+          hugepages2M: 128
           containers:
           - name: init
             image: python:alpine
@@ -198,8 +201,6 @@ spec:
             image: contrail-vrouter-agent
           - name: vroutercni
             image: contrail-kubernetes-cni-init
-          controlInstance: control1
-          logLevel: SYS_DEBUG
     webui:
       metadata:
         labels:
@@ -211,6 +212,7 @@ spec:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
           cassandraInstance: cassandra1
+          logLevel: SYS_DEBUG
           containers:
           - name: init
             image: python:alpine
@@ -220,7 +222,6 @@ spec:
             image: contrail-controller-webui-job
           - name: webuiweb
             image: contrail-controller-webui-web
-          logLevel: SYS_DEBUG
     zookeepers:
     - metadata:
         labels:
@@ -231,6 +232,7 @@ spec:
           nodeSelector:
             node-role.kubernetes.io/master: ""
         serviceConfiguration:
+          logLevel: SYS_DEBUG
           containers:
             - name: init
               image: python
@@ -238,37 +240,3 @@ spec:
               image: python
             - name: zookeeper
               image: zookeeper
-          logLevel: SYS_DEBUG
-    contrailCNIs:
-    - metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: cnimasternodes
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.kubernetes.io/master: ""
-        serviceConfiguration:
-          useKubeadmConfig: true
-          controlInstance: control1
-          containers:
-            - name: vroutercni
-              image: contrail-kubernetes-cni-init
-            - name: multusconfig
-              image: busybox
-    - metadata:
-        labels:
-          contrail_cluster: cluster1
-        name: cniworkernodes
-      spec:
-        commonConfiguration:
-          nodeSelector:
-            node-role.opencontrail.org: vrouter
-        serviceConfiguration:
-          useKubeadmConfig: true
-          controlInstance: control1
-          containers:
-            - name: vroutercni
-              image: contrail-kubernetes-cni-init
-            - name: multusconfig
-              image: busybox

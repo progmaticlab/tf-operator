@@ -147,7 +147,10 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	nodes, err := r.getNodes(labels.SelectorFromSet(instance.Spec.CommonConfiguration.NodeSelector))
+	/*
+		nodes, err := r.getNodes(labels.SelectorFromSet(instance.Spec.CommonConfiguration.NodeSelector))
+	*/
+	nodes, err := r.getControllerNodes()
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -213,6 +216,15 @@ func (r *ReconcileManager) setConditions(manager *v1alpha1.Manager) {
 		Type:   v1alpha1.ManagerReady,
 		Status: readyStatus,
 	}}
+}
+
+func (r *ReconcileManager) getControllerNodes() ([]corev1.Node, error) {
+	nodeList := &corev1.NodeList{}
+	labels := client.MatchingLabels{"node-role.kubernetes.io/master": ""}
+	if err := r.client.List(context.Background(), nodeList, labels); err != nil {
+		return nil, err
+	}
+	return nodeList.Items, nil
 }
 
 func (r *ReconcileManager) getNodes(selector labels.Selector) ([]corev1.Node, error) {
@@ -282,6 +294,10 @@ func (r *ReconcileManager) processZookeepers(manager *v1alpha1.Manager, replicas
 		}
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
+	}
+
 	var zookeeperServiceStatus []*v1alpha1.ServiceStatus
 	for _, zookeeperService := range manager.Spec.Services.Zookeepers {
 		zookeeper := &v1alpha1.Zookeeper{}
@@ -331,6 +347,10 @@ func (r *ReconcileManager) processCassandras(manager *v1alpha1.Manager, replicas
 				return err
 			}
 		}
+	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
 	}
 
 	var cassandraStatusList []*v1alpha1.ServiceStatus
@@ -385,6 +405,10 @@ func (r *ReconcileManager) processWebui(manager *v1alpha1.Manager, replicas int3
 		return nil
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
+	}
+
 	webui := &v1alpha1.Webui{}
 	webui.ObjectMeta = manager.Spec.Services.Webui.ObjectMeta
 	webui.ObjectMeta.Namespace = manager.Namespace
@@ -421,6 +445,10 @@ func (r *ReconcileManager) processConfig(manager *v1alpha1.Manager, replicas int
 			}
 			manager.Status.Config = nil
 		}
+		return nil
+	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
 		return nil
 	}
 
@@ -468,6 +496,10 @@ func (r *ReconcileManager) processKubemanagers(manager *v1alpha1.Manager, replic
 				return err
 			}
 		}
+	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
 	}
 
 	var kubemanagerServiceStatus []*v1alpha1.ServiceStatus
@@ -527,6 +559,10 @@ func (r *ReconcileManager) processControls(manager *v1alpha1.Manager, replicas i
 		}
 	}
 
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
+	}
+
 	var controlServiceStatus []*v1alpha1.ServiceStatus
 	for _, controlService := range manager.Spec.Services.Controls {
 		control := &v1alpha1.Control{}
@@ -572,6 +608,11 @@ func (r *ReconcileManager) processRabbitMQ(manager *v1alpha1.Manager, replicas i
 		}
 		return nil
 	}
+
+	if !manager.IsVrouterActiveOnControllers(r.client) {
+		return nil
+	}
+
 	rabbitMQ := &v1alpha1.Rabbitmq{}
 	rabbitMQ.ObjectMeta = manager.Spec.Services.Rabbitmq.ObjectMeta
 	rabbitMQ.ObjectMeta.Namespace = manager.Namespace
@@ -617,18 +658,14 @@ func (r *ReconcileManager) processVRouters(manager *v1alpha1.Manager, replicas i
 
 	var vRouterServiceStatus []*v1alpha1.ServiceStatus
 	for _, vRouterService := range manager.Spec.Services.Vrouters {
-		if !vrouterDependenciesReady(vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client) {
-			continue
-		}
+
 		vRouter := &v1alpha1.Vrouter{}
 		vRouter.ObjectMeta = vRouterService.ObjectMeta
 		vRouter.ObjectMeta.Namespace = manager.Namespace
 		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, vRouter, func() error {
-			vRouter.Spec.ServiceConfiguration.VrouterConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
+			vRouter.Spec.ServiceConfiguration = vRouterService.Spec.ServiceConfiguration.VrouterConfiguration
 			vRouter.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, vRouterService.Spec.CommonConfiguration)
-			if err := fillVrouterConfiguration(vRouter, vRouterService.Spec.ServiceConfiguration.ControlInstance, manager.ObjectMeta, r.client); err != nil {
-				return err
-			}
+
 			if vRouter.Spec.CommonConfiguration.Replicas == nil {
 				vRouter.Spec.CommonConfiguration.Replicas = &replicas
 			}
@@ -769,28 +806,5 @@ func fillKubemanagerConfiguration(kubemanager *v1alpha1.Kubemanager, cassandraNa
 		return err
 	}
 	(&kubemanager.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
-	return nil
-}
-
-func vrouterDependenciesReady(controlName string, managerMeta v1.ObjectMeta, client client.Client) bool {
-	controlInstance := v1alpha1.Control{}
-	configInstance := v1alpha1.Config{}
-	configInstanceActive := configInstance.IsActive(managerMeta.Name, managerMeta.Namespace, client)
-	controlInstanceActive := controlInstance.IsActive(controlName, managerMeta.Namespace, client)
-
-	return configInstanceActive && controlInstanceActive
-}
-
-func fillVrouterConfiguration(vrouter *v1alpha1.Vrouter, controlName string, managerMeta v1.ObjectMeta, client client.Client) error {
-	controlConfig, err := v1alpha1.NewControlClusterConfiguration(controlName, "", managerMeta.Namespace, client)
-	if err != nil {
-		return err
-	}
-	(&vrouter.Spec.ServiceConfiguration).ControlNodesConfiguration = &controlConfig
-	configConfig, err := v1alpha1.NewConfigClusterConfiguration(managerMeta.Name, managerMeta.Namespace, client)
-	if err != nil {
-		return err
-	}
-	(&vrouter.Spec.ServiceConfiguration).ConfigNodesConfiguration = &configConfig
 	return nil
 }

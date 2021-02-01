@@ -20,7 +20,6 @@ import (
 	"github.com/Juniper/contrail-operator/pkg/apis"
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
 	"github.com/Juniper/contrail-operator/pkg/controller"
-	"github.com/Juniper/contrail-operator/pkg/controller/contrailcni"
 	"github.com/Juniper/contrail-operator/pkg/controller/kubemanager"
 	"github.com/Juniper/contrail-operator/pkg/k8s"
 )
@@ -101,7 +100,6 @@ func main() {
 	config := k8s.ClusterConfig{Client: clientset.CoreV1()}
 	kubemanagerClusterInfo = config
 
-
 	// Setup all Controllers.
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Error(err, "")
@@ -113,10 +111,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := contrailcni.Add(mgr); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
+	// TODO: ? vrouter has cni init container
+	// if err := contrailcni.Add(mgr); err != nil {
+	// 	log.Error(err, "")
+	// 	os.Exit(1)
+	// }
 
 	log.Info("Starting the Cmd.")
 

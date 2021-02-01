@@ -117,39 +117,34 @@ spec:
                   type: array
               type: object
             serviceConfiguration:
-              description: VrouterServiceConfiguration defines all vRouter service
-                configuration
+              description: VrouterConfiguration is the Spec for the vrouter API.
               properties:
-                cassandraInstance:
+                agentMode:
+                  description: vRouter
                   type: string
-                configNodesConfiguration:
-                  description: ConfigClusterConfiguration  stores all information
-                    about service's endpoints under the Contrail Config
-                  properties:
-                    analyticsServerIPList:
-                      items:
-                        type: string
-                      type: array
-                    analyticsServerPort:
-                      type: integer
-                    apiServerIPList:
-                      items:
-                        type: string
-                      type: array
-                    apiServerPort:
-                      type: integer
-                    authMode:
-                      enum:
-                      - noauth
-                      - keystone
-                      type: string
-                    collectorPort:
-                      type: integer
-                    collectorServerIPList:
-                      items:
-                        type: string
-                      type: array
-                  type: object
+                barbicanPassword:
+                  type: string
+                barbicanTenantName:
+                  description: Openstack
+                  type: string
+                barbicanUser:
+                  type: string
+                cloudOrchestrator:
+                  description: New params for vrouter configuration
+                  type: string
+                clusterRole:
+                  type: string
+                clusterRoleBinding:
+                  type: string
+                collectorPort:
+                  type: string
+                configApiPort:
+                  description: Config
+                  type: string
+                configApiServerCaCertfile:
+                  type: string
+                configApiSslEnable:
+                  type: boolean
                 containers:
                   items:
                     description: Container defines name, image and command.
@@ -165,51 +160,208 @@ spec:
                     type: object
                   type: array
                 contrailStatusImage:
+                  description: What is it doing? VrouterEncryption   bool              `json:"vrouterEncryption,omitempty"`
+                    What is it doing?
                   type: string
-                controlInstance:
-                  type: string
-                controlNodesConfiguration:
-                  description: ControlClusterConfiguration stores all information
-                    about services' endpoints under the Contrail Control
-                  properties:
-                    bgpPort:
-                      type: integer
-                    controlServerIPList:
-                      items:
-                        type: string
-                      type: array
-                    dnsIntrospectPort:
-                      type: integer
-                    dnsPort:
-                      type: integer
-                    xmppPort:
-                      type: integer
-                  type: object
                 distribution:
+                  type: string
+                dnsServerPort:
+                  description: DNS
+                  type: string
+                dpdkUioDriver:
+                  description: Host
                   type: string
                 envVariablesConfig:
                   additionalProperties:
                     type: string
+                  description: What is it doing?
                   type: object
+                fabricSntHashTableSize:
+                  type: string
                 gateway:
                   type: string
-                hugepages2M:
+                hugePages1g:
                   type: integer
+                hugePages2m:
+                  description: HugePages
+                  type: integer
+                hypervisorType:
+                  type: string
+                introspectListenAll:
+                  description: Introspect
+                  type: boolean
+                introspectSslEnable:
+                  type: boolean
+                k8sToken:
+                  description: Kubernetes
+                  type: string
+                k8sTokenFile:
+                  type: string
+                keystoneAuthAdminPassword:
+                  type: string
+                keystoneAuthAdminPort:
+                  description: Keystone authentication
+                  type: string
+                keystoneAuthCaCertfile:
+                  type: string
+                keystoneAuthCertfile:
+                  type: string
+                keystoneAuthHost:
+                  type: string
+                keystoneAuthInsecure:
+                  type: boolean
+                keystoneAuthKeyfile:
+                  type: string
+                keystoneAuthProjectDomainName:
+                  type: string
+                keystoneAuthProto:
+                  type: string
+                keystoneAuthRegionName:
+                  type: string
+                keystoneAuthUrlTokens:
+                  type: string
+                keystoneAuthUrlVersion:
+                  type: string
+                keystoneAuthUserDomainName:
+                  type: string
+                kubernetesApiPort:
+                  type: string
+                kubernetesApiSecurePort:
+                  type: string
+                kubernetesPodSubnets:
+                  type: string
+                logDir:
+                  description: Logging
+                  type: string
+                logLevel:
+                  type: string
+                logLocal:
+                  type: string
                 metaDataSecret:
+                  type: string
+                metadataProxySecret:
+                  description: Metadata
+                  type: string
+                metadataSslCaCertfile:
+                  type: string
+                metadataSslCertType:
+                  type: string
+                metadataSslCertfile:
+                  type: string
+                metadataSslEnable:
+                  type: string
+                metadataSslKeyfile:
                   type: string
                 physicalInterface:
                   type: string
+                priorityBandwidth:
+                  type: string
+                priorityId:
+                  type: string
+                priorityScheduling:
+                  type: string
+                priorityTagging:
+                  type: boolean
+                qosDefHwQueue:
+                  type: boolean
+                qosLogicalQueues:
+                  type: string
+                qosQueueId:
+                  type: string
+                requiredKernelVrouterEncryption:
+                  type: string
+                sampleDestination:
+                  type: string
+                sandeshCaCertfile:
+                  description: Sandesh
+                  type: string
+                sandeshCertfile:
+                  type: string
+                sandeshKeyfile:
+                  type: string
+                sandeshSslEnable:
+                  type: boolean
+                serverCaCertfile:
+                  description: Server SSL
+                  type: string
+                serverCertfile:
+                  type: string
+                serverKeyfile:
+                  type: string
+                serviceAccount:
+                  type: string
+                sloDestination:
+                  type: string
+                sriovPhysicalInterface:
+                  type: string
+                sriovPhysicalNetwork:
+                  type: string
+                sriovVf:
+                  type: string
+                sslEnable:
+                  type: boolean
+                sslInsecure:
+                  type: boolean
+                statsCollectorDestinationPath:
+                  description: Collector
+                  type: string
+                subclaster:
+                  description: XMPP
+                  type: string
+                tsnAgentMode:
+                  description: TSN
+                  type: string
+                vrouterCryptInterface:
+                  type: string
+                vrouterDecryptInterface:
+                  type: string
+                vrouterDecryptKey:
+                  type: string
                 vrouterEncryption:
                   type: boolean
+                vrouterGateway:
+                  type: string
+                xmmpSslEnable:
+                  type: boolean
+                xmppServerCaCertfile:
+                  type: string
+                xmppServerCertfile:
+                  type: string
+                xmppServerKeyfile:
+                  type: string
+                xmppServerPort:
+                  type: string
               type: object
           required:
           - serviceConfiguration
           type: object
         status:
-          description: VrouterStatus is the Status for vrouter API.
+          description: 'VrouterStatus is the Status for vrouter API. TODO: after update
+            to controllter-tool v0.4 rework AgentStatus to make it map instead of
+            [] for performance (https://github.com/operator-framework/operator-sdk/issues/2485
+            https://github.com/kubernetes-sigs/controller-tools/pull/317)'
           properties:
             active:
               type: boolean
+            activeOnControllers:
+              type: boolean
+            agents:
+              items:
+                description: AgentStatus is the Status of the agent.
+                properties:
+                  configNodes:
+                    type: string
+                  controlNodes:
+                    type: string
+                  encryptedParams:
+                    type: string
+                  name:
+                    type: string
+                  status:
+                    description: AgentServiceStatus is the status value.
+                    type: string
+                type: object
+              type: array
             nodes:
               additionalProperties:
                 type: string

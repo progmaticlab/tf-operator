@@ -185,6 +185,7 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			CassandraJmxPort    string
 			CAFilePath          string
 			MinimumDiskGB       int
+			LogLevel            string
 		}{
 			ListenAddress:       podList.Items[idx].Status.PodIP,
 			Hostname:            podList.Items[idx].Annotations["hostname"],
@@ -193,6 +194,8 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
 			CAFilePath:          certificates.SignerCAFilepath,
 			MinimumDiskGB:       *cassandraConfig.MinimumDiskGB,
+			// TODO: move to params
+			LogLevel: "SYS_DEBUG",
 		})
 		nodemanagerConfigString := nodeManagerConfigBuffer.String()
 		if configMapInstanceDynamicConfig.Data == nil {

@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // ManagerSpec defines the desired state of Manager.
@@ -271,6 +272,28 @@ func (m Manager) IsClusterReady() bool {
 		return false
 	}
 	return true
+}
+
+func (m* Manager) IsVrouterActiveOnControllers(clnt client.Client) bool {
+	if len(m.Spec.Services.Vrouters) == 0 {
+		return true
+	}
+	
+	vrouterFromSpec := m.Spec.Services.Vrouters[0]
+	vrouter := &Vrouter{}
+	//vrouter.ObjectMeta = v1.ObjectMeta{
+	//	Namespace: m.Namespace,
+	//	Name:      vrouterFromSpec.Name,
+	//}
+	if err := clnt.Get(context.TODO(), types.NamespacedName{Name: vrouterFromSpec.Name, Namespace: m.Namespace}, vrouter); err != nil {
+		return false
+	}
+	
+	if vrouter.Status.ActiveOnControllers != nil && *vrouter.Status.ActiveOnControllers {
+		return true
+	} else {
+		return false
+	}
 }
 
 func init() {
