@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	"bytes"
 	"context"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -436,30 +435,6 @@ func (c *Cassandra) seeds(podList *corev1.PodList) []string {
 	return seeds
 }
 
-// EnvironmentConfiguration ensures provsioner configmap
-func (c *Cassandra) EnvironmentConfiguration(request reconcile.Request, client client.Client) error {
-	provisionerEnvConfigMap := &corev1.ConfigMap{}
-	if err := client.Get(context.TODO(),
-		types.NamespacedName{Name: request.Name + "-cassandra-provisioner-env", Namespace: request.Namespace},
-		provisionerEnvConfigMap); err != nil {
-		return err
-	}
-
-	data, err := c.EnvProvisionerConfigMapData(request, client)
-	if err != nil {
-		return err
-	}
-
-	if !reflect.DeepEqual(provisionerEnvConfigMap.Data, data) {
-		provisionerEnvConfigMap.Data = data
-
-		if err := client.Update(context.TODO(), provisionerEnvConfigMap); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // EnvProvisionerConfigMapData creates provision configmap
 func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt client.Client) (map[string]string, error) {
 	data := make(map[string]string)
@@ -473,5 +448,8 @@ func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt 
 		return nil, err
 	}
 	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+	// TODO: till 2 DBs are not supported
+	data["ANALYTICSDB_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+	data["CONFIGDB_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
 	return data, nil
 }
