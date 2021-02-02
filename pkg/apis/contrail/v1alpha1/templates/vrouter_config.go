@@ -53,7 +53,7 @@ HYPERVISOR_TYPE="{{ .ServiceConfig.HypervisorType }}"
 # Config
 #CONFIG_API_PORT="{{ .ServiceConfig.ConfigApiPort }}"
 CONFIG_API_SERVER_CA_CERTFILE="{{ .ServiceConfig.ConfigApiServerCaCertfile }}
-CONFIG_API_SSL_ENABLE={{ bool2string .ServiceConfig.ConfigApiSslEnable }}
+CONFIG_API_SSL_ENABLE={{ .ServiceConfig.ConfigApiSslEnable }}
 
 # DNS
 #DNS_SERVER_PORT="{{ .ServiceConfig.DnsServerPort }}"
@@ -65,15 +65,15 @@ CONFIG_API_SSL_ENABLE={{ bool2string .ServiceConfig.ConfigApiSslEnable }}
 #SRIOV_VF="{{ .ServiceConfig.SriovVf }}"
 
 # Introspect
-#INTROSPECT_LISTEN_ALL="{{ bool2string .ServiceConfig.IntrospectListenAll }}"
-INTROSPECT_SSL_ENABLE="{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
+#INTROSPECT_LISTEN_ALL="{{ .ServiceConfig.IntrospectListenAll }}"
+INTROSPECT_SSL_ENABLE="{{ .ServiceConfig.IntrospectSslEnable }}"
 
 # Keystone authentication
 #KEYSTONE_AUTH_ADMIN_PORT="{{ .ServiceConfig.KeystoneAuthAdminPort }}"
 #KEYSTONE_AUTH_CA_CERTFILE="{{ .ServiceConfig.KeystoneAuthCaCertfile }}"
 #KEYSTONE_AUTH_CERTFILE="{{ .ServiceConfig.KeystoneAuthCertfile }}"
 #KEYSTONE_AUTH_HOST="{{ .ServiceConfig.KeystoneAuthHost }}"
-#KEYSTONE_AUTH_INSECURE="{{ bool2string .ServiceConfig.KeystoneAuthInsecure }}"
+#KEYSTONE_AUTH_INSECURE="{{ .ServiceConfig.KeystoneAuthInsecure }}"
 #KEYSTONE_AUTH_KEYFILE="{{ .ServiceConfig.KeystoneAuthKeyfile }}"
 #KEYSTONE_AUTH_PROJECT_DOMAIN_NAME="{{ .ServiceConfig.KeystoneAuthProjectDomainName }}"
 #KEYSTONE_AUTH_PROTO="{{ .ServiceConfig.KeystoneAuthProto }}"
@@ -112,14 +112,14 @@ INTROSPECT_SSL_ENABLE="{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
 SANDESH_CA_CERTFILE="{{ .ServiceConfig.SandeshCaCertfile }}"
 SANDESH_CERTFILE="{{ .ServiceConfig.SandeshCertfile }}"
 SANDESH_KEYFILE="{{ .ServiceConfig.SandeshKeyfile }}"
-SANDESH_SSL_ENABLE="{{ bool2string .ServiceConfig.SandeshSslEnable }}"
+SANDESH_SSL_ENABLE="{{ .ServiceConfig.SandeshSslEnable }}"
 
 # Server SSL
 SERVER_CA_CERTFILE="{{ .ServiceConfig.ServerCaCertfile }}"
 SERVER_CERTFILE="{{ .ServiceConfig.ServerCertfile }}"
 SERVER_KEYFILE="{{ .ServiceConfig.ServerKeyfile }}"
-SSL_ENABLE="{{ bool2string .ServiceConfig.SslEnable }}"
-#SSL_INSECURE="{{ bool2string .ServiceConfig.SslInsecure }}"
+SSL_ENABLE="{{ .ServiceConfig.SslEnable }}"
+#SSL_INSECURE="{{ .ServiceConfig.SslInsecure }}"
 
 # TSN
 #TSN_AGENT_MODE="{{ .ServiceConfig.TsnAgentMode }}"
@@ -130,8 +130,8 @@ SSL_ENABLE="{{ bool2string .ServiceConfig.SslEnable }}"
 #PRIORITY_BANDWIDTH="{{ .ServiceConfig.PriorityBandwidth }}"
 #PRIORITY_ID="{{ .ServiceConfig.PriorityId }}"
 #PRIORITY_SCHEDULING="{{ .ServiceConfig.PriorityScheduling }}"
-#PRIORITY_TAGGING="{{ bool2string .ServiceConfig.PriorityTagging }}"
-#QOS_DEF_HW_QUEUE="{{ bool2string .ServiceConfig.QosDefHwQueue }}"
+#PRIORITY_TAGGING="{{ .ServiceConfig.PriorityTagging }}"
+#QOS_DEF_HW_QUEUE="{{ .ServiceConfig.QosDefHwQueue }}"
 #QOS_LOGICAL_QUEUES="{{ .ServiceConfig.QosLogicalQueues }}"
 #QOS_QUEUE_ID="{{ .ServiceConfig.QosQueueId }}"
 #REQUIRED_KERNEL_VROUTER_ENCRYPTION="{{ .ServiceConfig.RequiredKernelVrouterEncryption }}"
@@ -140,7 +140,7 @@ SSL_ENABLE="{{ bool2string .ServiceConfig.SslEnable }}"
 #VROUTER_CRYPT_INTERFACE="{{ .ServiceConfig.VrouterCryptInterface }}"
 #VROUTER_DECRYPT_INTERFACE="{{ .ServiceConfig.VrouterDecryptInterface }}"
 #VROUTER_DECRYPT_KEY={{ .ServiceConfig.VrouterDecyptKey }}
-#VROUTER_ENCRYPTION={{ bool2string .ServiceConfig.VrouterEncryption }}"
+#VROUTER_ENCRYPTION={{ .ServiceConfig.VrouterEncryption }}"
 #VROUTER_GATEWAY="{{ .ServiceConfig.VrouterGateway }}"
 
 # XMPP
@@ -149,7 +149,7 @@ XMPP_SERVER_CA_CERTFILE="{{ .ServiceConfig.XmppServerCaCertfile }}"
 XMPP_SERVER_CERTFILE="{{ .ServiceConfig.XmppServerCertfile }}"
 XMPP_SERVER_KEYFILE="{{ .ServiceConfig.XmppServerKeyfile }}"
 #XMPP_SERVER_PORT="{{ .ServiceConfig.XmppServerPort }}"
-XMPP_SSL_ENABLE="{{ bool2string ServiceConfig.XmppSslEnable }}"
+XMPP_SSL_ENABLE="{{ ServiceConfig.XmppSslEnable }}"
 
 # HugePages
 {{ if .ServiceConfig.HugePages2M }}
