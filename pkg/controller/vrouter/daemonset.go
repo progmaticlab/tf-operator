@@ -161,10 +161,6 @@ func GetDaemonset() *apps.DaemonSet {
 					MountPath: "/var/log/contrail",
 				},
 				{
-					Name:      "configmap-volume",
-					MountPath: "/etc/contrailconfigmaps",
-				},
-				{
 					Name:      "cni-config-files",
 					MountPath: "/host/etc_cni",
 				},
@@ -175,10 +171,6 @@ func GetDaemonset() *apps.DaemonSet {
 				{
 					Name:      "cni-bin",
 					MountPath: "/host/opt_cni_bin",
-				},
-				{
-					Name:      "var-log-contrail-cni",
-					MountPath: "/host/log_cni",
 				},
 				{
 					Name:      "multus-cni",
@@ -278,10 +270,6 @@ func GetDaemonset() *apps.DaemonSet {
 					Name:      "var-crashes",
 					MountPath: "/var/crashes",
 				},
-				{
-					Name:      "resolv-conf",
-					MountPath: "/etc/resolv.conf",
-				},
 			},
 			SecurityContext: &core.SecurityContext{
 				Privileged: &trueVal,
@@ -370,14 +358,6 @@ func GetDaemonset() *apps.DaemonSet {
 			},
 		},
 		{
-			Name: "resolv-conf",
-			VolumeSource: core.VolumeSource{
-				HostPath: &core.HostPathVolumeSource{
-					Path: "/etc/resolv.conf",
-				},
-			},
-		},
-		{
 			Name: "cni-config-files",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
@@ -407,14 +387,6 @@ func GetDaemonset() *apps.DaemonSet {
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
 					Path: "/var/run/multus",
-				},
-			},
-		},
-		{
-			Name: "var-log-contrail-cni",
-			VolumeSource: core.VolumeSource{
-				HostPath: &core.HostPathVolumeSource{
-					Path: "/var/log/contrail/cni",
 				},
 			},
 		},

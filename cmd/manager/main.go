@@ -111,12 +111,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: ? vrouter has cni init container
-	// if err := contrailcni.Add(mgr); err != nil {
-	// 	log.Error(err, "")
-	// 	os.Exit(1)
-	// }
-
 	log.Info("Starting the Cmd.")
 
 	// Start the Cmd

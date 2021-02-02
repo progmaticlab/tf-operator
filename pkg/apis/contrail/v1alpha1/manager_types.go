@@ -5,9 +5,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // ManagerSpec defines the desired state of Manager.
@@ -32,7 +32,6 @@ type Services struct {
 	Cassandras   []*Cassandra          `json:"cassandras,omitempty"`
 	Zookeepers   []*Zookeeper          `json:"zookeepers,omitempty"`
 	Rabbitmq     *Rabbitmq             `json:"rabbitmq,omitempty"`
-	ContrailCNIs []*ContrailCNI        `json:"contrailCNIs,omitempty"`
 }
 
 // VrouterService defines desired confgiuration of vRouter
@@ -113,7 +112,6 @@ type ManagerStatus struct {
 	Zookeepers   []*ServiceStatus `json:"zookeepers,omitempty"`
 	Rabbitmq     *ServiceStatus   `json:"rabbitmq,omitempty"`
 	CrdStatus    []CrdStatus      `json:"crdStatus,omitempty"`
-	ContrailCNIs []*ServiceStatus `json:"contrailCNIs,omitempty"`
 	Replicas     int32            `json:"replicas,omitempty"`
 	// +optional
 	// +patchMergeKey=type
@@ -246,14 +244,6 @@ func (m Manager) IsClusterReady() bool {
 		}
 	}
 
-	for _, contrailCNIService := range m.Spec.Services.ContrailCNIs {
-		for _, contrailCNIStatus := range m.Status.ContrailCNIs {
-			if contrailCNIService.Name == *contrailCNIStatus.Name && !contrailCNIStatus.ready() {
-				return false
-			}
-		}
-	}
-
 	for _, kubemanagerService := range m.Spec.Services.Kubemanagers {
 		for _, kubemanagerStatus := range m.Status.Kubemanagers {
 			if kubemanagerService.Name == *kubemanagerStatus.Name && !kubemanagerStatus.ready() {
@@ -274,11 +264,11 @@ func (m Manager) IsClusterReady() bool {
 	return true
 }
 
-func (m* Manager) IsVrouterActiveOnControllers(clnt client.Client) bool {
+func (m *Manager) IsVrouterActiveOnControllers(clnt client.Client) bool {
 	if len(m.Spec.Services.Vrouters) == 0 {
 		return true
 	}
-	
+
 	vrouterFromSpec := m.Spec.Services.Vrouters[0]
 	vrouter := &Vrouter{}
 	//vrouter.ObjectMeta = v1.ObjectMeta{
@@ -288,7 +278,7 @@ func (m* Manager) IsVrouterActiveOnControllers(clnt client.Client) bool {
 	if err := clnt.Get(context.TODO(), types.NamespacedName{Name: vrouterFromSpec.Name, Namespace: m.Namespace}, vrouter); err != nil {
 		return false
 	}
-	
+
 	if vrouter.Status.ActiveOnControllers != nil && *vrouter.Status.ActiveOnControllers {
 		return true
 	} else {

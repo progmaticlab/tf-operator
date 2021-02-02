@@ -25,7 +25,6 @@ const (
 	VROUTER     = "Vrouter.contrail.juniper.net"
 	KUBEMANAGER = "Kubemanager.contrail.juniper.net"
 	MANAGER     = "Manager.contrail.juniper.net"
-	CONTRAILCNI = "ContrailCNI.contrail.juniper.net"
 	REPLICASET  = "ReplicaSet.apps"
 	DEPLOYMENT  = "Deployment.apps"
 )
@@ -521,11 +520,11 @@ func GetContainerFromList(containerName string, containerList []*v1alpha1.Contai
 }
 
 // Check if some labeled pods switch to Running or from Running to another phase
-func PodPhaseChanges(podLabels map[string]string ) predicate.Funcs{
+func PodPhaseChanges(podLabels map[string]string) predicate.Funcs {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// TODO Select our pods using labels
-			for key, value := range e.MetaOld.GetLabels(){
+			for key, value := range e.MetaOld.GetLabels() {
 				if podLabels[key] == value {
 					oldPod, ok := e.ObjectOld.(*corev1.Pod)
 					if !ok {
@@ -535,14 +534,13 @@ func PodPhaseChanges(podLabels map[string]string ) predicate.Funcs{
 					if !ok {
 						reqLogger.Info("type conversion mismatch")
 					}
-					if ( newPod.Status.Phase == "Running" && oldPod.Status.Phase != "Running" ) ||
-					( newPod.Status.Phase != "Running" && oldPod.Status.Phase == "Running" ) {
-							return true
-						}
+					if (newPod.Status.Phase == "Running" && oldPod.Status.Phase != "Running") ||
+						(newPod.Status.Phase != "Running" && oldPod.Status.Phase == "Running") {
+						return true
+					}
 				}
 			}
 			return false
 		},
 	}
 }
-

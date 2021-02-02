@@ -37,7 +37,6 @@ var resourcesList = []runtime.Object{
 	&v1alpha1.Rabbitmq{},
 	&v1alpha1.Vrouter{},
 	&v1alpha1.Kubemanager{},
-	&v1alpha1.ContrailCNI{},
 	&corev1.ConfigMap{},
 }
 
@@ -190,10 +189,6 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	if err := r.processVRouters(instance, replicas); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err := r.processContrailCNIs(instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -684,53 +679,6 @@ func (r *ReconcileManager) processVRouters(manager *v1alpha1.Manager, replicas i
 	return nil
 }
 
-func (r *ReconcileManager) processContrailCNIs(manager *v1alpha1.Manager) error {
-	for _, existingContrailCNI := range manager.Status.ContrailCNIs {
-		found := false
-		for _, intendedContrailCNI := range manager.Spec.Services.ContrailCNIs {
-			if *existingContrailCNI.Name == intendedContrailCNI.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			oldContrailCNI := &v1alpha1.ContrailCNI{}
-			oldContrailCNI.ObjectMeta = v1.ObjectMeta{
-				Namespace: manager.Namespace,
-				Name:      *existingContrailCNI.Name,
-				Labels: map[string]string{
-					"contrail_cluster": manager.Name,
-				},
-			}
-			err := r.client.Delete(context.TODO(), oldContrailCNI)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-		}
-	}
-
-	var ContrailCNIServiceStatus []*v1alpha1.ServiceStatus
-	for _, ContrailCNIService := range manager.Spec.Services.ContrailCNIs {
-		ContrailCNI := &v1alpha1.ContrailCNI{}
-		ContrailCNI.ObjectMeta = ContrailCNIService.ObjectMeta
-		ContrailCNI.ObjectMeta.Namespace = manager.Namespace
-		_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, ContrailCNI, func() error {
-			modifyContrailCNI(ContrailCNI, ContrailCNIService, manager)
-			return controllerutil.SetControllerReference(manager, ContrailCNI, r.scheme)
-		})
-		if err != nil {
-			return err
-		}
-		status := &v1alpha1.ServiceStatus{}
-		status.Name = &ContrailCNI.Name
-		status.Active = &ContrailCNI.Status.Active
-		ContrailCNIServiceStatus = append(ContrailCNIServiceStatus, status)
-	}
-
-	manager.Status.ContrailCNIs = ContrailCNIServiceStatus
-	return nil
-}
-
 func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager) error {
 	caCertificate := certificates.NewCACertificate(r.client, r.scheme, manager, "manager")
 	if err := caCertificate.EnsureExists(); err != nil {
@@ -751,22 +699,6 @@ func (r *ReconcileManager) processCSRSignerCaConfigMap(manager *v1alpha1.Manager
 	})
 
 	return err
-}
-
-func modifyContrailCNI(ContrailCNI, ContrailCNIService *v1alpha1.ContrailCNI, manager *v1alpha1.Manager) {
-	ContrailCNI.Spec = ContrailCNIService.Spec
-	if len(ContrailCNI.Spec.CommonConfiguration.NodeSelector) == 0 && len(manager.Spec.CommonConfiguration.NodeSelector) > 0 {
-		(&ContrailCNI.Spec.CommonConfiguration).NodeSelector = manager.Spec.CommonConfiguration.NodeSelector
-	}
-	if ContrailCNI.Spec.CommonConfiguration.HostNetwork == nil && manager.Spec.CommonConfiguration.HostNetwork != nil {
-		(&ContrailCNI.Spec.CommonConfiguration).HostNetwork = manager.Spec.CommonConfiguration.HostNetwork
-	}
-	if len(ContrailCNI.Spec.CommonConfiguration.ImagePullSecrets) == 0 && len(manager.Spec.CommonConfiguration.ImagePullSecrets) > 0 {
-		(&ContrailCNI.Spec.CommonConfiguration).ImagePullSecrets = manager.Spec.CommonConfiguration.ImagePullSecrets
-	}
-	if len(ContrailCNI.Spec.CommonConfiguration.Tolerations) == 0 && len(manager.Spec.CommonConfiguration.Tolerations) > 0 {
-		(&ContrailCNI.Spec.CommonConfiguration).Tolerations = manager.Spec.CommonConfiguration.Tolerations
-	}
 }
 
 func kubemanagerDependenciesReady(cassandraName, zookeeperName string, managerMeta v1.ObjectMeta, client client.Client) bool {
