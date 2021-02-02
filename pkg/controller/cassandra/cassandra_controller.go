@@ -171,13 +171,14 @@ type ReconcileCassandra struct {
 	Kubernetes *k8s.Kubernetes
 }
 
-var cassandraInit2CommandTemplate = template.Must(template.New("").Parse(
-	"keytool -keystore /etc/keystore/server-truststore.jks -keypass {{ .KeystorePassword }} -storepass {{ .TruststorePassword }} -list -alias CARoot -noprompt;" +
+var cassandraInitKeystoreCommandTemplate = template.Must(template.New("").Parse(
+	"rm -f /etc/keystore/server-truststore.jks /etc/keystore/server-keystore.jks ; " +
+		"keytool -keystore /etc/keystore/server-truststore.jks -keypass {{ .KeystorePassword }} -storepass {{ .TruststorePassword }} -list -alias CARoot -noprompt;" +
 		"if [ $? -ne 0 ]; then keytool -keystore /etc/keystore/server-truststore.jks -keypass {{ .KeystorePassword }} -storepass {{ .TruststorePassword }} -noprompt -alias CARoot -import -file {{ .CAFilePath }}; fi && " +
 		"openssl pkcs12 -export -in /etc/certificates/server-${POD_IP}.crt -inkey /etc/certificates/server-key-${POD_IP}.pem -chain -CAfile {{ .CAFilePath }} -password pass:{{ .TruststorePassword }} -name $(hostname -f) -out TmpFile && " +
-		"keytool -importkeystore -deststorepass {{ .KeystorePassword }} -destkeypass {{ .KeystorePassword }} -destkeystore /etc/keystore/server-keystore.jks -deststoretype pkcs12 -srcstorepass {{ .TruststorePassword }} -srckeystore TmpFile -srcstoretype PKCS12 -alias $(hostname -f) -noprompt;"))
+		"keytool -importkeystore -deststorepass {{ .KeystorePassword }} -destkeypass {{ .KeystorePassword }} -destkeystore /etc/keystore/server-keystore.jks -deststoretype pkcs12 -srcstorepass {{ .TruststorePassword }} -srckeystore TmpFile -srcstoretype PKCS12 -alias $(hostname -f) -noprompt ;"))
 
-type cassandraInit2CommandData struct {
+type cassandraInitKeystoreCommandData struct {
 	KeystorePassword   string
 	TruststorePassword string
 	CAFilePath         string
@@ -277,6 +278,25 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 	statefulSet.Spec.Template.Spec.Volumes = append(statefulSet.Spec.Template.Spec.Volumes, emptyVolume)
 
+	secret, err := instance.CreateSecret(request.Name+"-secret", r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	_, KPok := secret.Data["keystorePassword"]
+	_, TPok := secret.Data["truststorePassword"]
+	if !KPok || !TPok {
+		cassandraKeystorePassword := v1alpha1.RandomString(10)
+		cassandraTruststorePassword := v1alpha1.RandomString(10)
+		secretData := map[string][]byte{"keystorePassword": []byte(cassandraKeystorePassword), "truststorePassword": []byte(cassandraTruststorePassword)}
+		secret.Data = secretData
+	}
+	if err = r.Client.Update(context.TODO(), secret); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	cassandraKeystorePassword := string(secret.Data["keystorePassword"])
+	cassandraTruststorePassword := string(secret.Data["truststorePassword"])
+
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 
 		if container.Name == "cassandra" {
@@ -284,9 +304,20 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
 			}
+			var cassandraInitKeystoreCommandBuffer bytes.Buffer
+			err = cassandraInitKeystoreCommandTemplate.Execute(&cassandraInitKeystoreCommandBuffer, cassandraInitKeystoreCommandData{
+				KeystorePassword:   cassandraKeystorePassword,
+				TruststorePassword: cassandraTruststorePassword,
+				CAFilePath:         certificates.SignerCAFilepath,
+			})
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"set -x; " +
+						cassandraInitKeystoreCommandBuffer.String() +
 						// for cqlsh cmd tool
 						"ln -sf /etc/contrailconfigmaps/cqlshrc.${POD_IP} /root/.cqlshrc ; " +
 						// cassandra docker-entrypoint tries patch the config, and nodemanager uses hardcoded path to
@@ -432,25 +463,6 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		},
 	}
 
-	secret, err := instance.CreateSecret(request.Name+"-secret", r.Client, r.Scheme, request)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	_, KPok := secret.Data["keystorePassword"]
-	_, TPok := secret.Data["truststorePassword"]
-	if !KPok || !TPok {
-		cassandraKeystorePassword := v1alpha1.RandomString(10)
-		cassandraTruststorePassword := v1alpha1.RandomString(10)
-		secretData := map[string][]byte{"keystorePassword": []byte(cassandraKeystorePassword), "truststorePassword": []byte(cassandraTruststorePassword)}
-		secret.Data = secretData
-	}
-	if err = r.Client.Update(context.TODO(), secret); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	cassandraKeystorePassword := string(secret.Data["keystorePassword"])
-	cassandraTruststorePassword := string(secret.Data["truststorePassword"])
-
 	statefulSet.Spec.Template.Spec.Volumes = append(statefulSet.Spec.Template.Spec.Volumes, initVolume)
 	statefulSet.Spec.Template.Spec.Affinity = &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
@@ -486,45 +498,6 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			(&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = append((&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts, volumeMount)
 		}
-		if container.Name == "init2" {
-			var cassandraInit2CommandBuffer bytes.Buffer
-			err = cassandraInit2CommandTemplate.Execute(&cassandraInit2CommandBuffer, cassandraInit2CommandData{
-				KeystorePassword:   cassandraKeystorePassword,
-				TruststorePassword: cassandraTruststorePassword,
-				CAFilePath:         certificates.SignerCAFilepath,
-			})
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
-			if instanceContainer == nil {
-				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)
-			}
-			if instanceContainer.Command == nil {
-				command := []string{"bash", "-c", cassandraInit2CommandBuffer.String()}
-				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = command
-			} else {
-				(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command
-			}
-			(&statefulSet.Spec.Template.Spec.InitContainers[idx]).Image = instanceContainer.Image
-
-			volumeMount := corev1.VolumeMount{
-				Name:      request.Name + "-keystore",
-				MountPath: "/etc/keystore",
-			}
-			(&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = append((&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-secret-certificates",
-				MountPath: "/etc/certificates",
-			}
-			(&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = append((&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts, volumeMount)
-			volumeMount = corev1.VolumeMount{
-				Name:      csrSignerCaVolumeName,
-				MountPath: certificates.SignerCAMountPath,
-			}
-			(&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = append((&statefulSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts, volumeMount)
-		}
-
 	}
 
 	volumeBindingMode := storagev1.VolumeBindingMode("WaitForFirstConsumer")
