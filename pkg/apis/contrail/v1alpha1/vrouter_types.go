@@ -163,7 +163,7 @@ type VrouterConfiguration struct {
 	// Logging
 	LogDir   string `json:"logDir,omitempty"`
 	LogLevel string `json:"logLevel,omitempty"`
-	LogLocal string `json:"logLocal,omitempty"`
+	LogLocal *int   `json:"logLocal,omitempty"`
 
 	// Metadata
 	MetadataProxySecret   string `json:"metadataProxySecret,omitempty"`
@@ -540,7 +540,11 @@ func (c *Vrouter) VrouterConfigurationParameters() *VrouterConfiguration {
 	defKey := "/etc/certificates/server-key-${POD_IP}.pem"
 
 	if vrouterConfiguration.LogLevel == "" {
-		vrouterConfiguration.LogLevel = "SYS_NOTICE"
+		vrouterConfiguration.LogLevel = LogLevel
+	}
+	if vrouterConfiguration.LogLocal == nil {
+		ll := LogLocal
+		vrouterConfiguration.LogLocal = &ll
 	}
 
 	if vrouterConfiguration.VrouterEncryption == nil {
@@ -872,15 +876,15 @@ func (c *Vrouter) GetAgentConfigsForPod(vrouterPod *VrouterPod, hostVars *map[st
 	agentConfig = agentConfigBuffer.String()
 
 	var lbaasAuthConfigBuffer bytes.Buffer
-	configtemplates.VRouterLbaasAuthConfig.Execute(&lbaasAuthConfigBuffer, *hostVars)
+	configtemplates.VRouterLbaasAuthConfig.Execute(&lbaasAuthConfigBuffer, newMap)
 	lbaasAuthConfig = lbaasAuthConfigBuffer.String()
 
 	var vncAPILibIniConfigBuffer bytes.Buffer
-	configtemplates.VRouterVncApiLibIni.Execute(&vncAPILibIniConfigBuffer, *hostVars)
+	configtemplates.VRouterVncApiLibIni.Execute(&vncAPILibIniConfigBuffer, newMap)
 	vncAPILibIniConfig = vncAPILibIniConfigBuffer.String()
 
 	var nodemgrConfigBuffer bytes.Buffer
-	configtemplates.VrouterNodemanagerConfig.Execute(&nodemgrConfigBuffer, *hostVars)
+	configtemplates.VrouterNodemanagerConfig.Execute(&nodemgrConfigBuffer, newMap)
 	nodemgrConfig = nodemgrConfigBuffer.String()
 
 	return

@@ -93,7 +93,7 @@ INTROSPECT_SSL_ENABLE="{{ .ServiceConfig.IntrospectSslEnable }}"
 # Logging
 #LOG_DIR="{{ .ServiceConfig.LogDir }}"
 LOG_LEVEL="{{ .ServiceConfig.LogLevel }}"
-#LOG_LOCAL="{{ .ServiceConfig.LogLocal }}"
+LOG_LOCAL="{{ .ServiceConfig.LogLocal }}"
 
 # Metadata
 #METADATA_PROXY_SECRET="{{ .ServiceConfig.MetadataProxySecret }}"
@@ -349,8 +349,8 @@ kubernetes_api_secure_port={{ default "6443" .KUBERNETES_API_SECURE_PORT }}`))
 var VrouterNodemanagerConfig = template.Must(template.New("").Parse(`[DEFAULTS]
 http_server_ip={{ .INTROSPECT_IP }}
 log_file=/var/log/contrail/contrail-vrouter-nodemgr.log
-log_level={{ .LogLevel }}
-log_local=1
+log_level={{ .LOG_LEVEL }}
+log_local={{ .LOG_LOCAL }}
 hostname={{ .Hostname }}
 hostip={{ .CONTROL_NETWORK_IP }}
 #db_port={{ .CassandraPort }}
