@@ -1306,9 +1306,9 @@ spec:
                                 type: string
                               gateway:
                                 type: string
-                              hugePages1g:
+                              hugePages1G:
                                 type: integer
-                              hugePages2m:
+                              hugePages2M:
                                 description: HugePages
                                 type: integer
                               hypervisorType:

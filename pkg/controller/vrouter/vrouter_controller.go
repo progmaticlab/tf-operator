@@ -205,9 +205,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	configMapName = request.Name + "-" + instanceType + "-configmap-1"
-	_, err = instance.CreateConfigMap(configMapName, r.Client, r.Scheme, request)
-	if err != nil {
+	if err := instance.CreateEnvConfigMap(instanceType, request, r.Client); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -245,8 +243,6 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 	for idx, container := range daemonSet.Spec.Template.Spec.Containers {
 		if container.Name == "vrouteragent" {
 			command := []string{"bash", "-c", `mkdir -p /var/log/contrail/vrouter-agent;
-				ln -sf /etc/certificates/server-${POD_IP}.crt /server.crt;
-				ln -sf /etc/certificates/server-key-${POD_IP}.pem /server-key.pem;
 				ln -sf /etc/agentconfigmaps/contrail-vrouter-agent.conf.${POD_IP} /etc/contrail/contrail-vrouter-agent.conf;
 				ln -sf /etc/agentconfigmaps/contrail-lbaas.auth.conf.${POD_IP} /etc/contrail/contrail-lbaas.auth.conf;
 				ln -sf /etc/agentconfigmaps/vnc_api_lib.ini.${POD_IP} /etc/contrail/vnc_api_lib.ini;
@@ -306,6 +302,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
 					"ln -sf /etc/agentconfigmaps/nodemanager.conf.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf ;" +
+						"ln -sf /etc/agentconfigmaps/vnc_api_lib.ini.${POD_IP} /etc/contrail/vnc_api_lib.ini ; " +
 						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
 				}
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -524,10 +521,6 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 	if len(podIPMap) > 0 {
-		if err = instance.InstanceConfiguration(request, podIPList, r.Client); err != nil {
-			return reconcile.Result{}, err
-		}
-
 		if err := r.ensureCertificatesExist(instance, podIPList, instanceType); err != nil {
 			return reconcile.Result{}, err
 		}

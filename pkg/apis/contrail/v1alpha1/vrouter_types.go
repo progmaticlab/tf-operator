@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 
 	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
@@ -223,8 +222,8 @@ type VrouterConfiguration struct {
 	XmppSslEnable        *bool  `json:"xmmpSslEnable,omitempty"`
 
 	// HugePages
-	HugePages2M int `json:"hugePages2m,omitempty"`
-	HugePages1G int `json:"hugePages1g,omitempty"`
+	HugePages2M *int `json:"hugePages2M,omitempty"`
+	HugePages1G *int `json:"hugePages1G,omitempty"`
 }
 
 // VrouterNodesConfiguration is the static configuration for vrouter.
@@ -494,12 +493,9 @@ func (c *Vrouter) PodsCertSubjects(podList *corev1.PodList) []certificates.Certi
 	return PodsCertSubjects(podList, c.Spec.CommonConfiguration.HostNetwork, altIPs)
 }
 
-// InstanceConfiguration creates vRouter configMaps with rendered values
-func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
-	podList *corev1.PodList,
-	client client.Client,
-) error {
-	envVariablesConfigMapName := request.Name + "-" + "vrouter" + "-configmap-1"
+// CreateEnvConfigMap creates vRouter configMaps with rendered values
+func (c *Vrouter) CreateEnvConfigMap(instanceType string, request reconcile.Request, client client.Client) error {
+	envVariablesConfigMapName := request.Name + "-" + instanceType + "-configmap-1"
 	envVariablesConfigMap := &corev1.ConfigMap{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: envVariablesConfigMapName, Namespace: request.Namespace}, envVariablesConfigMap); err != nil {
 		return err
@@ -534,57 +530,83 @@ func (c *Vrouter) ManageNodeStatus(podNameIPMap map[string]string,
 	return nil
 }
 
-// ConfigurationParameters is a method for gathering data used in rendering vRouter configuration
-func (c *Vrouter) ConfigurationParameters() VrouterConfiguration {
-	vrouterConfiguration := VrouterConfiguration{}
-	var physicalInterface string
-	var gateway string
-	var metaDataSecret string
-	if c.Spec.ServiceConfiguration.PhysicalInterface != "" {
-		physicalInterface = c.Spec.ServiceConfiguration.PhysicalInterface
+// VrouterConfigurationParameters is a method for gathering data used in rendering vRouter configuration
+func (c *Vrouter) VrouterConfigurationParameters() *VrouterConfiguration {
+	vrouterConfiguration := c.Spec.ServiceConfiguration.DeepCopy()
+
+	trueVal := true
+	falseVal := false
+	defCert := "/etc/certificates/server-${POD_IP}.crt"
+	defKey := "/etc/certificates/server-key-${POD_IP}.pem"
+
+	if vrouterConfiguration.VrouterEncryption == nil {
+		vrouterConfiguration.VrouterEncryption = &falseVal
 	}
 
-	if c.Spec.ServiceConfiguration.Gateway != "" {
-		gateway = c.Spec.ServiceConfiguration.Gateway
+	if vrouterConfiguration.CloudOrchestrator == "" {
+		vrouterConfiguration.CloudOrchestrator = "kubernetes"
 	}
 
-	if c.Spec.ServiceConfiguration.MetaDataSecret != "" {
-		metaDataSecret = c.Spec.ServiceConfiguration.MetaDataSecret
-	} else {
-		metaDataSecret = MetadataProxySecret
+	if vrouterConfiguration.HypervisorType == "" {
+		vrouterConfiguration.HypervisorType = "kvm"
 	}
 
-	if c.Spec.ServiceConfiguration.VrouterEncryption != nil {
-		vrouterConfiguration.VrouterEncryption = c.Spec.ServiceConfiguration.VrouterEncryption
-	} else {
-		vrouterEncryption := false
-		vrouterConfiguration.VrouterEncryption = &vrouterEncryption
+	if vrouterConfiguration.SslEnable == nil {
+		vrouterConfiguration.SslEnable = &trueVal
+	}
+	if vrouterConfiguration.ServerCaCertfile == "" {
+		vrouterConfiguration.ServerCaCertfile = certificates.SignerCAFilepath
+	}
+	if vrouterConfiguration.ServerCertfile == "" {
+		vrouterConfiguration.ServerCertfile = defCert
+	}
+	if vrouterConfiguration.ServerKeyfile == "" {
+		vrouterConfiguration.ServerKeyfile = defKey
 	}
 
-	vrouterConfiguration.PhysicalInterface = physicalInterface
-	vrouterConfiguration.Gateway = gateway
-	vrouterConfiguration.MetaDataSecret = metaDataSecret
-	vrouterConfiguration.EnvVariablesConfig = c.Spec.ServiceConfiguration.EnvVariablesConfig
-	vrouterConfiguration.HugePages2M = c.Spec.ServiceConfiguration.HugePages2M
+	if vrouterConfiguration.ConfigApiSslEnable == nil {
+		vrouterConfiguration.ConfigApiSslEnable = vrouterConfiguration.SslEnable
+	}
+	if vrouterConfiguration.ConfigApiServerCaCertfile == "" {
+		vrouterConfiguration.ConfigApiServerCaCertfile = vrouterConfiguration.ServerCaCertfile
+	}
+
+	if vrouterConfiguration.XmppSslEnable == nil {
+		vrouterConfiguration.XmppSslEnable = vrouterConfiguration.SslEnable
+	}
+	if vrouterConfiguration.XmppServerCaCertfile == "" {
+		vrouterConfiguration.XmppServerCaCertfile = vrouterConfiguration.ServerCaCertfile
+	}
+	if vrouterConfiguration.XmppServerCertfile == "" {
+		vrouterConfiguration.XmppServerCertfile = vrouterConfiguration.ServerCertfile
+	}
+	if vrouterConfiguration.XmppServerKeyfile == "" {
+		vrouterConfiguration.XmppServerKeyfile = vrouterConfiguration.ServerKeyfile
+	}
+
+	if vrouterConfiguration.SandeshSslEnable == nil {
+		vrouterConfiguration.SandeshSslEnable = vrouterConfiguration.SslEnable
+	}
+	if vrouterConfiguration.SandeshCaCertfile == "" {
+		vrouterConfiguration.SandeshCaCertfile = vrouterConfiguration.ServerCaCertfile
+	}
+	if vrouterConfiguration.SandeshCertfile == "" {
+		vrouterConfiguration.SandeshCertfile = vrouterConfiguration.ServerCertfile
+	}
+	if vrouterConfiguration.SandeshKeyfile == "" {
+		vrouterConfiguration.SandeshKeyfile = vrouterConfiguration.ServerKeyfile
+	}
+
+	if vrouterConfiguration.IntrospectSslEnable == nil {
+		vrouterConfiguration.IntrospectSslEnable = vrouterConfiguration.SslEnable
+	}
 
 	return vrouterConfiguration
 }
 
 func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
-	vrouterConfig := c.ConfigurationParameters()
+	vrouterConfig := c.VrouterConfigurationParameters()
 	envVariables := make(map[string]string)
-	envVariables["CLOUD_ORCHESTRATOR"] = "kubernetes"
-	if vrouterConfig.VrouterEncryption != nil {
-		envVariables["VROUTER_ENCRYPTION"] = strconv.FormatBool(*vrouterConfig.VrouterEncryption)
-	}
-	// If PhysicalInterface is set, environment variable from the config map will
-	// override the value from the annotations.
-	if vrouterConfig.PhysicalInterface != "" {
-		envVariables["PHYSICAL_INTERFACE"] = vrouterConfig.PhysicalInterface
-	}
-	if vrouterConfig.HugePages2M > 0 {
-		envVariables["HUGE_PAGES_2MB"] = strconv.Itoa(vrouterConfig.HugePages2M)
-	}
 	if len(vrouterConfig.EnvVariablesConfig) != 0 {
 		for key, value := range vrouterConfig.EnvVariablesConfig {
 			envVariables[key] = value
@@ -662,7 +684,7 @@ func (c *Vrouter) GetConfigNodes(clnt client.Client) string {
 
 // GetParamsEnv
 func (c *Vrouter) GetParamsEnv(clnt client.Client) string {
-	vrouterConfig := c.Spec.ServiceConfiguration
+	vrouterConfig := c.VrouterConfigurationParameters()
 	clusterParams := ClusterParams{ConfigNodes: c.GetConfigNodes(clnt), ControlNodes: c.GetConfigNodes(clnt)}
 
 	var vrouterManifestParamsEnv bytes.Buffer
@@ -670,7 +692,7 @@ func (c *Vrouter) GetParamsEnv(clnt client.Client) string {
 		ServiceConfig VrouterConfiguration
 		ClusterParams ClusterParams
 	}{
-		ServiceConfig: vrouterConfig,
+		ServiceConfig: *vrouterConfig,
 		ClusterParams: clusterParams,
 	})
 	return vrouterManifestParamsEnv.String()

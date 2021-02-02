@@ -43,8 +43,8 @@ CONFIG_NODES="{{ .ClusterParams.ConfigNodes }}"
 ANALYTICS_NODES="{{ .ClusterParams.ConfigNodes }}"
 
 # Cloud Orchestration
-#CLOUD_ORCHESTRATOR="{{ .ServiceConfig.CloudOrchestrator }}"
-#HYPERVISOR_TYPE="{{ .ServiceConfig.HypervisorType }}"
+CLOUD_ORCHESTRATOR="{{ .ServiceConfig.CloudOrchestrator }}"
+HYPERVISOR_TYPE="{{ .ServiceConfig.HypervisorType }}"
 
 # Collector
 #STATS_COLLECTOR_DESTINATION_PATH="{{ .ServiceConfig.StatsCollectorDestinationPath }}"
@@ -52,8 +52,8 @@ ANALYTICS_NODES="{{ .ClusterParams.ConfigNodes }}"
 
 # Config
 #CONFIG_API_PORT="{{ .ServiceConfig.ConfigApiPort }}"
-CONFIG_API_SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt" #"{{ .ServiceConfig.ConfigApiServerCaCertfile }}"
-CONFIG_API_SSL_ENABLE="True"                                            #"{{ bool2string .ServiceConfig.ConfigApiSslEnable }}"
+CONFIG_API_SERVER_CA_CERTFILE="{{ .ServiceConfig.ConfigApiServerCaCertfile }}
+CONFIG_API_SSL_ENABLE={{ bool2string .ServiceConfig.ConfigApiSslEnable }}
 
 # DNS
 #DNS_SERVER_PORT="{{ .ServiceConfig.DnsServerPort }}"
@@ -66,7 +66,7 @@ CONFIG_API_SSL_ENABLE="True"                                            #"{{ boo
 
 # Introspect
 #INTROSPECT_LISTEN_ALL="{{ bool2string .ServiceConfig.IntrospectListenAll }}"
-INTROSPECT_SSL_ENABLE="True"  #"{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
+INTROSPECT_SSL_ENABLE="{{ bool2string .ServiceConfig.IntrospectSslEnable }}"
 
 # Keystone authentication
 #KEYSTONE_AUTH_ADMIN_PORT="{{ .ServiceConfig.KeystoneAuthAdminPort }}"
@@ -109,16 +109,16 @@ INTROSPECT_SSL_ENABLE="True"  #"{{ bool2string .ServiceConfig.IntrospectSslEnabl
 #BARBICAN_USER="{{ .ServiceConfig.BarbicanUser }}"
 
 # Sandesh
-SANDESH_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt"    #"{{ .ServiceConfig.SandeshCaCertfile }}"
-SANDESH_CERTFILE="/server.crt"    #"{{ .ServiceConfig.SandeshCertfile }}"
-SANDESH_KEYFILE="/server-key.pem" #"{{ .ServiceConfig.SandeshKeyfile }}"
-SANDESH_SSL_ENABLE="True"                          #"{{ bool2string .ServiceConfig.SandeshSslEnable }}"
+SANDESH_CA_CERTFILE="{{ .ServiceConfig.SandeshCaCertfile }}"
+SANDESH_CERTFILE="{{ .ServiceConfig.SandeshCertfile }}"
+SANDESH_KEYFILE="{{ .ServiceConfig.SandeshKeyfile }}"
+SANDESH_SSL_ENABLE="{{ bool2string .ServiceConfig.SandeshSslEnable }}"
 
 # Server SSL
-SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt" #"{{ .ServiceConfig.ServerCaCertfile }}"
-SERVER_CERTFILE="/server.crt"               #"{{ .ServiceConfig.ServerCertfile }}"
-SERVER_KEYFILE="/server-key.pem"            #"{{ .ServiceConfig.ServerKeyfile }}"
-SSL_ENABLE="True"   #"{{ bool2string .ServiceConfig.SslEnable }}"
+SERVER_CA_CERTFILE="{{ .ServiceConfig.ServerCaCertfile }}"
+SERVER_CERTFILE="{{ .ServiceConfig.ServerCertfile }}"
+SERVER_KEYFILE="{{ .ServiceConfig.ServerKeyfile }}"
+SSL_ENABLE="{{ bool2string .ServiceConfig.SslEnable }}"
 #SSL_INSECURE="{{ bool2string .ServiceConfig.SslInsecure }}"
 
 # TSN
@@ -145,15 +145,19 @@ SSL_ENABLE="True"   #"{{ bool2string .ServiceConfig.SslEnable }}"
 
 # XMPP
 #SUBCLUSTER="{{ .ServiceConfig.Subclaster }}"
-XMPP_SERVER_CA_CERTFILE="/etc/ssl/certs/kubernetes/ca-bundle.crt"     #"{{ .ServiceConfig.XmppServerCaCertfile }}"
-XMPP_SERVER_CERTFILE="/server.crt"     #"{{ .ServiceConfig.XmppServerCertfile }}"
-XMPP_SERVER_KEYFILE="/server-key.pem"  #"{{ .ServiceConfig.XmppServerKeyfile }}"
+XMPP_SERVER_CA_CERTFILE="{{ .ServiceConfig.XmppServerCaCertfile }}"
+XMPP_SERVER_CERTFILE="{{ .ServiceConfig.XmppServerCertfile }}"
+XMPP_SERVER_KEYFILE="{{ .ServiceConfig.XmppServerKeyfile }}"
 #XMPP_SERVER_PORT="{{ .ServiceConfig.XmppServerPort }}"
-XMPP_SSL_ENABLE="True"                                                #"{{ bool2string .ServiceConfig.XmppSslEnable }}"
+XMPP_SSL_ENABLE="{{ bool2string ServiceConfig.XmppSslEnable }}"
 
 # HugePages
-#HUGE_PAGES_2MB="{{ .ServiceConfig.HugePages2M }}"
-#HUGE_PAGES_1GB="{{ .ServiceConfig.HugePages1G }}"
+{{ if .ServiceConfig.HugePages2M }}
+HUGE_PAGES_2MB="{{ .ServiceConfig.HugePages2M }}"
+{{ end }}
+{{ if .ServiceConfig.HugePages1G }}
+HUGE_PAGES_1GB="{{ .ServiceConfig.HugePages1G }}"
+{{ end }}
 
 set +o allexport
 `))
@@ -203,8 +207,10 @@ sandesh_ssl_enable={{ .SANDESH_SSL_ENABLE }}
 
 [NETWORKS]
 control_network_ip={{ .CONTROL_NETWORK_IP }}
+
 [DNS]
 servers={{ .DNS_SERVERS_LIST }}
+
 [METADATA]
 metadata_proxy_secret={{ .METADATA_PROXY_SECRET }}
 
@@ -230,6 +236,7 @@ gateway={{ .VROUTER_GATEWAY }}
 [SERVICE-INSTANCE]
 netns_command=/usr/bin/opencontrail-vrouter-netns
 docker_command=/usr/bin/opencontrail-vrouter-docker
+
 [HYPERVISOR]
 type = {{ .HYPERVISOR_TYPE }}
 {{ if and (eq .CLOUD_ORCHESTRATOR "vcenter") (not .TSN_AGENT_MODE ) }}
