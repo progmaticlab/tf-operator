@@ -264,7 +264,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMount := corev1.VolumeMount{
 				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
+				MountPath: "/etc/agentconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
@@ -304,7 +304,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command == nil {
 				command := []string{"bash", "-c",
-					"ln -sf /etc/contrailconfigmaps/nodemanager.conf.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf ;" +
+					"ln -sf /etc/agentconfigmaps/nodemanager.conf.${POD_IP} /etc/contrail/contrail-vrouter-nodemgr.conf ;" +
 						"exec /usr/bin/contrail-nodemgr --nodetype=contrail-vrouter",
 				}
 				(&daemonSet.Spec.Template.Spec.Containers[idx]).Command = command
@@ -318,7 +318,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMount := corev1.VolumeMount{
 				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
+				MountPath: "/etc/agentconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
@@ -438,7 +438,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 						"mkdir -p /var/lib/contrail/ports/vm && " +
 						"cp -f /usr/bin/contrail-k8s-cni /host/opt_cni_bin && " +
 						"chmod 0755 /host/opt_cni_bin/contrail-k8s-cni && " +
-						"cp -f /etc/contrailconfigmaps/10-contrail.conf /host/etc_cni/net.d/10-contrail.conf && " +
+						"cp -f /etc/agentconfigmaps/10-tf-cni.conf /host/etc_cni/net.d/10-tf-cni.conf && " +
 						"tar -C /host/opt_cni_bin -xzf /opt/cni-v0.3.0.tgz"}
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
@@ -450,7 +450,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMount := corev1.VolumeMount{
 				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
+				MountPath: "/etc/agentconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
@@ -482,7 +482,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMount := corev1.VolumeMount{
 				Name:      request.Name + "-" + instanceType + "-volume",
-				MountPath: "/etc/contrailconfigmaps",
+				MountPath: "/etc/agentconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList

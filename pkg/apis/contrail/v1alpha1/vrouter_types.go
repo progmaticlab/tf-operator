@@ -877,7 +877,7 @@ func (c *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
 	data["contrail-lbaas.auth.conf."+podIP] = lbaasAuthConfig
 	data["vnc_api_lib.ini."+podIP] = vncAPILibIniConfig
 	data["nodemanager.conf."+podIP] = nodemgrConfig
-	data["10-contrail.conf"] = cniConfig
+	data["10-tf-cni.conf"] = cniConfig
 
 	// Save config data
 	configMap.Data = data
@@ -976,7 +976,7 @@ func (vrouterPod *VrouterPod) IsAgentConfigsAvaliable(vrouter *Vrouter, hostVars
 		return eq, nil
 	}
 
-	path = VrouterAgentConfigMountPath + "/10-contrail.conf"
+	path = VrouterAgentConfigMountPath + "/10-tf-cni.conf"
 	eq, err = vrouterPod.IsFileInAgentContainerEqualTo(path, cniConfig)
 	if err != nil || !eq {
 		return eq, nil
