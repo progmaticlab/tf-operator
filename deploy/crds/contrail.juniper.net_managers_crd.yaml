@@ -1362,7 +1362,7 @@ spec:
                               logLevel:
                                 type: string
                               logLocal:
-                                type: string
+                                type: integer
                               metaDataSecret:
                                 type: string
                               metadataProxySecret:
