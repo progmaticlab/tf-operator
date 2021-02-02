@@ -92,7 +92,7 @@ INTROSPECT_SSL_ENABLE="{{ .ServiceConfig.IntrospectSslEnable }}"
 
 # Logging
 #LOG_DIR="{{ .ServiceConfig.LogDir }}"
-#LOG_LEVEL="{{ .ServiceConfig.LogLevel }}"
+LOG_LEVEL="{{ .ServiceConfig.LogLevel }}"
 #LOG_LOCAL="{{ .ServiceConfig.LogLocal }}"
 
 # Metadata

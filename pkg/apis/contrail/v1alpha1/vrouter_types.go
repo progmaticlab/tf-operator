@@ -539,6 +539,10 @@ func (c *Vrouter) VrouterConfigurationParameters() *VrouterConfiguration {
 	defCert := "/etc/certificates/server-${POD_IP}.crt"
 	defKey := "/etc/certificates/server-key-${POD_IP}.pem"
 
+	if vrouterConfiguration.LogLevel == "" {
+		vrouterConfiguration.LogLevel = "SYS_NOTICE"
+	}
+
 	if vrouterConfiguration.VrouterEncryption == nil {
 		vrouterConfiguration.VrouterEncryption = &falseVal
 	}
