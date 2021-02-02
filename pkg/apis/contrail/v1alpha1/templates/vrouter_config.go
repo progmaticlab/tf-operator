@@ -52,8 +52,8 @@ HYPERVISOR_TYPE="{{ .ServiceConfig.HypervisorType }}"
 
 # Config
 #CONFIG_API_PORT="{{ .ServiceConfig.ConfigApiPort }}"
-CONFIG_API_SERVER_CA_CERTFILE="{{ .ServiceConfig.ConfigApiServerCaCertfile }}
-CONFIG_API_SSL_ENABLE={{ .ServiceConfig.ConfigApiSslEnable }}
+CONFIG_API_SERVER_CA_CERTFILE="{{ .ServiceConfig.ConfigApiServerCaCertfile }}"
+CONFIG_API_SSL_ENABLE="{{ .ServiceConfig.ConfigApiSslEnable }}"
 
 # DNS
 #DNS_SERVER_PORT="{{ .ServiceConfig.DnsServerPort }}"
@@ -139,8 +139,8 @@ SSL_ENABLE="{{ .ServiceConfig.SslEnable }}"
 #SLO_DESTINATION="{{ .ServiceConfig.SloDestination }}"
 #VROUTER_CRYPT_INTERFACE="{{ .ServiceConfig.VrouterCryptInterface }}"
 #VROUTER_DECRYPT_INTERFACE="{{ .ServiceConfig.VrouterDecryptInterface }}"
-#VROUTER_DECRYPT_KEY={{ .ServiceConfig.VrouterDecyptKey }}
-#VROUTER_ENCRYPTION={{ .ServiceConfig.VrouterEncryption }}"
+#VROUTER_DECRYPT_KEY="{{ .ServiceConfig.VrouterDecyptKey }}"
+#VROUTER_ENCRYPTION="{{ .ServiceConfig.VrouterEncryption }}"
 #VROUTER_GATEWAY="{{ .ServiceConfig.VrouterGateway }}"
 
 # XMPP
@@ -149,7 +149,7 @@ XMPP_SERVER_CA_CERTFILE="{{ .ServiceConfig.XmppServerCaCertfile }}"
 XMPP_SERVER_CERTFILE="{{ .ServiceConfig.XmppServerCertfile }}"
 XMPP_SERVER_KEYFILE="{{ .ServiceConfig.XmppServerKeyfile }}"
 #XMPP_SERVER_PORT="{{ .ServiceConfig.XmppServerPort }}"
-XMPP_SSL_ENABLE="{{ ServiceConfig.XmppSslEnable }}"
+XMPP_SSL_ENABLE="{{ .ServiceConfig.XmppSslEnable }}"
 
 # HugePages
 HUGE_PAGES_2MB="{{ .ServiceConfig.HugePages2M }}"

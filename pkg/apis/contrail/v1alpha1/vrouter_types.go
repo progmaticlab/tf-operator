@@ -494,10 +494,10 @@ func (c *Vrouter) PodsCertSubjects(podList *corev1.PodList) []certificates.Certi
 }
 
 // CreateEnvConfigMap creates vRouter configMaps with rendered values
-func (c *Vrouter) CreateEnvConfigMap(instanceType string, request reconcile.Request, client client.Client) error {
+func (c *Vrouter) CreateEnvConfigMap(instanceType string, client client.Client, scheme *runtime.Scheme, request reconcile.Request) error {
 	envVariablesConfigMapName := request.Name + "-" + instanceType + "-configmap-1"
-	envVariablesConfigMap := &corev1.ConfigMap{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: envVariablesConfigMapName, Namespace: request.Namespace}, envVariablesConfigMap); err != nil {
+	envVariablesConfigMap, err := c.CreateConfigMap(envVariablesConfigMapName, client, scheme, request)
+	if err != nil {
 		return err
 	}
 	envVariablesConfigMap.Data = c.getVrouterEnvironmentData()

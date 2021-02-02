@@ -205,7 +205,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	if err := instance.CreateEnvConfigMap(instanceType, request, r.Client); err != nil {
+	if err := instance.CreateEnvConfigMap(instanceType, r.Client, r.Scheme, request); err != nil {
 		return reconcile.Result{}, err
 	}
 
