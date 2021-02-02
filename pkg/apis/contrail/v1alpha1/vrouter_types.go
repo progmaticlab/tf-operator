@@ -508,6 +508,16 @@ func (c *Vrouter) InstanceConfiguration(request reconcile.Request,
 	return client.Update(context.TODO(), envVariablesConfigMap)
 }
 
+// CreateCNIConfigMap creates vRouter configMaps with rendered values
+func (c *Vrouter) CreateCNIConfigMap(client client.Client, scheme *runtime.Scheme, request reconcile.Request) (*corev1.ConfigMap, error) {
+	configMap, err := c.CreateConfigMap(request.Name+"-cni-config", client, scheme, request)
+	if err != nil {
+		return nil, err
+	}
+	configMap.Data["10-tf-cni.conf"] = c.GetCNIConfig()
+	return configMap, client.Update(context.TODO(), configMap)
+}
+
 // SetPodsToReady sets Kubemanager PODs to ready.
 func (c *Vrouter) SetPodsToReady(podIPList *corev1.PodList, client client.Client) error {
 	return SetPodsToReady(podIPList, client)
@@ -824,7 +834,7 @@ func removeQuotes(str string) string {
 }
 
 // GetAgentConfigsForPod returns correct values of `/etc/agentconfigmaps/config_name.{$pod_ip}` files
-func (c *Vrouter) GetAgentConfigsForPod(vrouterPod *VrouterPod, hostVars *map[string]string) (agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig, cniConfig string) {
+func (c *Vrouter) GetAgentConfigsForPod(vrouterPod *VrouterPod, hostVars *map[string]string) (agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig string) {
 	newMap := make(map[string]string)
 	for key, val := range *hostVars {
 		newMap[key] = val
@@ -847,11 +857,13 @@ func (c *Vrouter) GetAgentConfigsForPod(vrouterPod *VrouterPod, hostVars *map[st
 	configtemplates.VrouterNodemanagerConfig.Execute(&nodemgrConfigBuffer, *hostVars)
 	nodemgrConfig = nodemgrConfigBuffer.String()
 
+	return
+}
+
+func (c *Vrouter) GetCNIConfig() string {
 	var contrailCNIBuffer bytes.Buffer
 	configtemplates.ContrailCNIConfig.Execute(&contrailCNIBuffer, struct{}{})
-	cniConfig = contrailCNIBuffer.String()
-
-	return
+	return contrailCNIBuffer.String()
 }
 
 // UpdateAgentConfigMapForPod recalculates files `/etc/agentconfigmaps/config_name.{$pod_ip}` in the agent configMap
@@ -863,21 +875,20 @@ func (c *Vrouter) UpdateAgentConfigMapForPod(vrouterPod *VrouterPod,
 		Name:      c.ObjectMeta.Name + "-vrouter-agent-config",
 		Namespace: c.ObjectMeta.Namespace,
 	}
-	podIP := vrouterPod.Pod.Status.PodIP
 
 	configMap := &corev1.ConfigMap{}
 	if err := client.Get(context.Background(), configMapNamespacedName, configMap); err != nil {
 		return err
 	}
 
-	agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig, cniConfig := c.GetAgentConfigsForPod(vrouterPod, hostVars)
+	agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig := c.GetAgentConfigsForPod(vrouterPod, hostVars)
 
+	podIP := vrouterPod.Pod.Status.PodIP
 	data := configMap.Data
 	data["contrail-vrouter-agent.conf."+podIP] = agentConfig
 	data["contrail-lbaas.auth.conf."+podIP] = lbaasAuthConfig
 	data["vnc_api_lib.ini."+podIP] = vncAPILibIniConfig
 	data["nodemanager.conf."+podIP] = nodemgrConfig
-	data["10-tf-cni.conf"] = cniConfig
 
 	// Save config data
 	configMap.Data = data
@@ -950,7 +961,7 @@ func (c *Vrouter) UpdateAgent(nodeName string, vrouterPod *VrouterPod, clnt clie
 func (vrouterPod *VrouterPod) IsAgentConfigsAvaliable(vrouter *Vrouter, hostVars *map[string]string, clnt client.Client) (bool, error) {
 	podIP := vrouterPod.Pod.Status.PodIP
 
-	agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig, cniConfig := vrouter.GetAgentConfigsForPod(vrouterPod, hostVars)
+	agentConfig, lbaasAuthConfig, vncAPILibIniConfig, nodemgrConfig := vrouter.GetAgentConfigsForPod(vrouterPod, hostVars)
 
 	path := VrouterAgentConfigMountPath + "/contrail-vrouter-agent.conf." + podIP
 	eq, err := vrouterPod.IsFileInAgentContainerEqualTo(path, agentConfig)
@@ -972,12 +983,6 @@ func (vrouterPod *VrouterPod) IsAgentConfigsAvaliable(vrouter *Vrouter, hostVars
 
 	path = VrouterAgentConfigMountPath + "/nodemanager.conf." + podIP
 	eq, err = vrouterPod.IsFileInAgentContainerEqualTo(path, nodemgrConfig)
-	if err != nil || !eq {
-		return eq, nil
-	}
-
-	path = VrouterAgentConfigMountPath + "/10-tf-cni.conf"
-	eq, err = vrouterPod.IsFileInAgentContainerEqualTo(path, cniConfig)
 	if err != nil || !eq {
 		return eq, nil
 	}

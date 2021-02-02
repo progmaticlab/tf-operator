@@ -211,6 +211,11 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
+	cniConfigMap, err := instance.CreateCNIConfigMap(r.Client, r.Scheme, request)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	configMapName = request.Name + "-vrouter-agent-config"
 	configMapAgent, err := instance.CreateConfigMap(configMapName, r.Client, r.Scheme, request)
 	if err != nil {
@@ -233,6 +238,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		configMap.Name:                     request.Name + "-" + instanceType + "-volume",
 		configMapAgent.Name:                request.Name + "-agent-volume",
 		certificates.SignerCAConfigMapName: csrSignerCaVolumeName,
+		cniConfigMap.Name:                  cniConfigMap.Name + "-volume",
 	})
 	instance.AddSecretVolumesToIntendedDS(daemonSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
@@ -432,12 +438,13 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 						"mkdir -p /var/lib/contrail/ports/vm && " +
 						"cp -f /usr/bin/contrail-k8s-cni /host/opt_cni_bin && " +
 						"chmod 0755 /host/opt_cni_bin/contrail-k8s-cni && " +
-						"cp -f /etc/agentconfigmaps/10-tf-cni.conf /host/etc_cni/net.d/10-tf-cni.conf && " +
+						"cp -f /etc/cniconfigmaps/10-tf-cni.conf /host/etc_cni/net.d/10-tf-cni.conf && " +
 						"tar -C /host/opt_cni_bin -xzf /opt/cni-v0.3.0.tgz"}
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = command
 			} else {
 				(&daemonSet.Spec.Template.Spec.InitContainers[idx]).Command = instanceContainer.Command
 			}
+
 			volumeMountList := []corev1.VolumeMount{}
 			if len((&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts) > 0 {
 				volumeMountList = (&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts
@@ -448,8 +455,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
-				Name:      request.Name + "-agent-volume",
-				MountPath: v1alpha1.VrouterAgentConfigMountPath,
+				Name:      cniConfigMap.Name + "-volume",
+				MountPath: "/etc/cniconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).VolumeMounts = volumeMountList

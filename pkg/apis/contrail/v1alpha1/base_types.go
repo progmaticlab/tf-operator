@@ -304,8 +304,7 @@ func CreateConfigMap(configMapName string,
 		if k8serrors.IsNotFound(err) {
 			configMap.SetName(configMapName)
 			configMap.SetNamespace(request.Namespace)
-			configMap.SetLabels(map[string]string{"contrail_manager": instanceType,
-				instanceType: request.Name})
+			configMap.SetLabels(map[string]string{"contrail_manager": instanceType, instanceType: request.Name})
 			configMap.Data = make(map[string]string)
 			if err = controllerutil.SetControllerReference(object, configMap, scheme); err != nil {
 				return nil, err
