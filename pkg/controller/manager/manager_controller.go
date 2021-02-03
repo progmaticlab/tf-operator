@@ -157,7 +157,11 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, nil
 	}
 
-	nodesHostAliases := r.getNodesHostAliases(nodes)
+	//nodesHostAliases := r.getNodesHostAliases(nodes)
+	if err := r.processAnalyticsSnmp(instance, replicas); err != nil {
+		return reconcile.Result{}, err
+	}
+/*
 	if err := r.processCassandras(instance, replicas, nodesHostAliases); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -193,7 +197,7 @@ func (r *ReconcileManager) Reconcile(request reconcile.Request) (reconcile.Resul
 	if err := r.processContrailCNIs(instance); err != nil {
 		return reconcile.Result{}, err
 	}
-
+*/
 	r.setConditions(instance)
 
 	err = r.client.Status().Update(context.TODO(), instance)
@@ -255,6 +259,44 @@ func (r *ReconcileManager) getNodesHostAliases(nodes []corev1.Node) []corev1.Hos
 	}
 
 	return hostAliases
+}
+
+func (r *ReconcileManager) processAnalyticsSnmp(manager *v1alpha1.Manager, replicas int32) error {
+	if manager.Spec.Services.AnalyticsSnmp == nil {
+		if manager.Status.AnalyticsSnmp != nil {
+			oldAnalyticsSnmp := &v1alpha1.AnalyticsSnmp{}
+			oldAnalyticsSnmp.ObjectMeta = v1.ObjectMeta{
+				Namespace: manager.Namespace,
+				Name:      *manager.Status.AnalyticsSnmp.Name,
+				Labels: map[string]string{
+					"contrail_cluster": manager.Name,
+				},
+			}
+			err := r.client.Delete(context.TODO(), oldAnalyticsSnmp)
+			if err != nil && !errors.IsNotFound(err) {
+				return err
+			}
+			manager.Status.AnalyticsSnmp = nil
+		}
+		return nil
+	}
+
+	analyticsSnmp := &v1alpha1.AnalyticsSnmp{}
+	analyticsSnmp.ObjectMeta = manager.Spec.Services.AnalyticsSnmp.ObjectMeta
+	analyticsSnmp.ObjectMeta.Namespace = manager.Namespace
+	_, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, analyticsSnmp, func() error {
+		analyticsSnmp.Spec = manager.Spec.Services.AnalyticsSnmp.Spec
+		analyticsSnmp.Spec.CommonConfiguration = utils.MergeCommonConfiguration(manager.Spec.CommonConfiguration, analyticsSnmp.Spec.CommonConfiguration)
+		if analyticsSnmp.Spec.CommonConfiguration.Replicas == nil {
+			analyticsSnmp.Spec.CommonConfiguration.Replicas = &replicas
+		}
+		return controllerutil.SetControllerReference(manager, analyticsSnmp, r.scheme)
+	})
+	status := &v1alpha1.ServiceStatus{}
+	status.Name = &analyticsSnmp.Name
+	status.Active = analyticsSnmp.Status.Active
+	manager.Status.AnalyticsSnmp = status
+	return err
 }
 
 func (r *ReconcileManager) processZookeepers(manager *v1alpha1.Manager, replicas int32) error {

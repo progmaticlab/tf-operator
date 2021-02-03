@@ -112,3 +112,9 @@ images:
 - name: contrail-nodemgr
   newTag: nightly
   newName: tf-nexus.progmaticlab.com:5102/contrail-nodemgr
+- name: contrail-analytics-snmp-collector
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-analytics-snmp-collector
+- name: contrail-analytics-snmp-topology
+  newTag: nightly
+  newName: tf-nexus.progmaticlab.com:5102/contrail-analytics-snmp-topology

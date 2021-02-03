@@ -116,3 +116,9 @@ images:
 - name: contrail-nodemgr
   newTag: latest
   newName: tungstenfabric/contrail-nodemgr
+- name: contrail-analytics-snmp-collector
+  newTag: latest
+  newName: tungstenfabric/contrail-analytics-snmp-collector
+- name: contrail-analytics-snmp-topology
+  newTag: latest
+  newName: tungstenfabric/contrail-analytics-snmp-topology

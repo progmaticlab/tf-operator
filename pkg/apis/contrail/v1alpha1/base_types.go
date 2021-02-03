@@ -290,13 +290,14 @@ func PodsCertSubjects(podList *corev1.PodList, hostNetwork *bool, podAltIPs PodA
 	return pods
 }
 
-// CreateConfigMap creates a config map based on the instance type.
-func CreateConfigMap(configMapName string,
+// GetOrCreateConfigMap get configMap. If it doesn't exist creates it and sets boolean return to true.
+func GetOrCreateConfigMap(configMapName string,
 	client client.Client,
 	scheme *runtime.Scheme,
 	request reconcile.Request,
 	instanceType string,
-	object v1.Object) (*corev1.ConfigMap, error) {
+	object v1.Object) (*corev1.ConfigMap, bool, error) {
+
 	configMap := &corev1.ConfigMap{}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: request.Namespace}, configMap)
 	// TODO: Bug. If config map exists without labels and references, they won't be updated
@@ -308,14 +309,29 @@ func CreateConfigMap(configMapName string,
 				instanceType: request.Name})
 			configMap.Data = make(map[string]string)
 			if err = controllerutil.SetControllerReference(object, configMap, scheme); err != nil {
-				return nil, err
+				return nil, false, err
 			}
 			if err = client.Create(context.TODO(), configMap); err != nil && !k8serrors.IsAlreadyExists(err) {
-				return nil, err
+				return nil, false, err
 			}
+			return configMap, true, nil
 		}
+		return nil, false, err
 	}
-	return configMap, nil
+
+	return configMap, false, nil
+}
+
+// CreateConfigMap creates a config map based on the instance type.
+func CreateConfigMap(configMapName string,
+	client client.Client,
+	scheme *runtime.Scheme,
+	request reconcile.Request,
+	instanceType string,
+	object v1.Object) (*corev1.ConfigMap, error) {
+
+	configMap, _, err := GetOrCreateConfigMap(configMapName, client, scheme, request, instanceType, object)
+	return configMap, err
 }
 
 // CreateSecret creates a secret based on the instance type.
