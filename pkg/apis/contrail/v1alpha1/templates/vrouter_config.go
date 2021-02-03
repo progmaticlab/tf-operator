@@ -380,7 +380,7 @@ var ContrailCNIConfig = template.Must(template.New("").Parse(`{
       "config-dir"    : "/var/lib/contrail/ports/vm",
       "poll-timeout"  : 5,
       "poll-retries"  : 15,
-      "log-file"      : "/var/log/contrail/cni/tf-cni.log",
+      "log-file"      : "/var/log/contrail/cni/opencontrail.log",
       "log-level"     : "4",
       "cnisocket-path": "/var/run/contrail/cni.socket"
   },

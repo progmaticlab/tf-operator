@@ -235,7 +235,7 @@ func GetDaemonset() *apps.DaemonSet {
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
-					Name:      "vrouter-logs",
+					Name:      "vrouter-agent-logs",
 					MountPath: "/var/log/contrail",
 				},
 				{
@@ -286,10 +286,20 @@ func GetDaemonset() *apps.DaemonSet {
 
 	var podVolumes = []core.Volume{
 		{
+			// for agent as it use tf-container-builder logic
+			Name: "vrouter-agent-logs",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/var/log/contrail",
+				},
+			},
+		},
+		{
+			// for nodemgr and provisioner
 			Name: "vrouter-logs",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: "/var/log/contrail/vrouter",
+					Path: "/var/log/contrail/vrouter-agent",
 				},
 			},
 		},
