@@ -451,8 +451,5 @@ func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt 
 		return nil, err
 	}
 	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
-	// TODO: till 2 DBs are not supported
-	data["ANALYTICSDB_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
-	data["CONFIGDB_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
 	return data, nil
 }

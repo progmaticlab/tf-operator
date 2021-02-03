@@ -9,6 +9,8 @@ import (
 	"text/template"
 
 	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
+	configtemplates "github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1/templates"
+
 	"github.com/Juniper/contrail-operator/pkg/certificates"
 	"github.com/Juniper/contrail-operator/pkg/controller/utils"
 	"github.com/Juniper/contrail-operator/pkg/k8s"
@@ -414,8 +416,25 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).VolumeMounts = volumeMountList
+
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
+
+			// TODO: till 2 DBs are not supported
+			dbServers := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+			envVars := []corev1.EnvVar{
+				corev1.EnvVar{
+					Name:  "ANALYTICSDB_NODES",
+					Value: dbServers,
+				},
+				corev1.EnvVar{
+					Name:  "CONFIGDB_NODES",
+					Value: dbServers,
+				},
+			}
+			statefulSet.Spec.Template.Spec.Containers[idx].Env = append(
+				statefulSet.Spec.Template.Spec.Containers[idx].Env, envVars...)
 		}
+
 		if container.Name == "provisioner" {
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer.Command != nil {
