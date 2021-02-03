@@ -167,7 +167,7 @@ spec:
           type: ""
         name: var-run
       - hostPath:
-          path: /var/contrail/crashes
+          path: /var/crashes/contrail/
           type: ""
         name: crashes
       - downwardAPI:

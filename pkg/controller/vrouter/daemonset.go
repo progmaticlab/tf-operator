@@ -313,7 +313,7 @@ func GetDaemonset() *apps.DaemonSet {
 			Name: "var-crashes",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: "/var/contrail/crashes",
+					Path: "/var/crashes/contrail",
 				},
 			},
 		},

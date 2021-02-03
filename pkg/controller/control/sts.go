@@ -158,7 +158,7 @@ spec:
             type: ""
           name: control-logs
         - hostPath:
-            path: /var/contrail/crashes
+            path: /var/crashes/contrail
             type: ""
           name: crashes
         - hostPath:
