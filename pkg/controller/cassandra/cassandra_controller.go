@@ -233,7 +233,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 	instance.Status.ClusterIP = clusterIP
 
-	statefulSet := GetSTS()
+	statefulSet := GetSTS(cassandraConfig)
 	if err = instance.PrepareSTS(statefulSet, &instance.Spec.CommonConfiguration, request, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -281,28 +281,26 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 	}
 	statefulSet.Spec.Template.Spec.Volumes = append(statefulSet.Spec.Template.Spec.Volumes, emptyVolume)
 
-	secret, err := instance.CreateSecret(request.Name+"-secret", r.Client, r.Scheme, request)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	_, KPok := secret.Data["keystorePassword"]
-	_, TPok := secret.Data["truststorePassword"]
-	if !KPok || !TPok {
-		cassandraKeystorePassword := v1alpha1.RandomString(10)
-		cassandraTruststorePassword := v1alpha1.RandomString(10)
-		secretData := map[string][]byte{"keystorePassword": []byte(cassandraKeystorePassword), "truststorePassword": []byte(cassandraTruststorePassword)}
-		secret.Data = secretData
-	}
-	if err = r.Client.Update(context.TODO(), secret); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	cassandraKeystorePassword := string(secret.Data["keystorePassword"])
-	cassandraTruststorePassword := string(secret.Data["truststorePassword"])
-
 	for idx, container := range statefulSet.Spec.Template.Spec.Containers {
 
 		if container.Name == "cassandra" {
+			secret, err := instance.CreateSecret(request.Name+"-secret", r.Client, r.Scheme, request)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			_, KPok := secret.Data["keystorePassword"]
+			_, TPok := secret.Data["truststorePassword"]
+			if !KPok || !TPok {
+				secret.Data = map[string][]byte{
+					"keystorePassword":   []byte(v1alpha1.RandomString(10)),
+					"truststorePassword": []byte(v1alpha1.RandomString(10)),
+				}
+				if err = r.Client.Update(context.TODO(), secret); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+			cassandraKeystorePassword := string(secret.Data["keystorePassword"])
+			cassandraTruststorePassword := string(secret.Data["truststorePassword"])
 			instanceContainer := utils.GetContainerFromList(container.Name, instance.Spec.ServiceConfiguration.Containers)
 			if instanceContainer == nil {
 				instanceContainer = utils.GetContainerFromList(container.Name, v1alpha1.DefaultCassandra.Containers)

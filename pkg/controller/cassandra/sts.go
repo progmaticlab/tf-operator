@@ -1,11 +1,15 @@
 package cassandra
 
 import (
+	"bytes"
+	"text/template"
+
+	"github.com/Juniper/contrail-operator/pkg/apis/contrail/v1alpha1"
 	"github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-var yamlDatacassandra_sts = `
+var yamlDatacassandraSTS = template.Must(template.New("").Parse(`
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -52,8 +56,8 @@ spec:
               command: 
               - /bin/sh
               - -c
-              - nodetool drain
-              #- nodetool decommission
+              - nodetool -p {{ .LocalJmxPort }} drain
+              #- nodetool -p {{ .LocalJmxPort }} decommission
         startupProbe:
           failureThreshold: 30
           periodSeconds: 5
@@ -61,7 +65,7 @@ spec:
             command:
             - /bin/bash
             - -c
-            - "if [[ $(nodetool status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
+            - "if [[ $(nodetool -p {{ .LocalJmxPort }} status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
         readinessProbe:
           initialDelaySeconds: 30
           timeoutSeconds: 3
@@ -70,7 +74,7 @@ spec:
             command:
             - /bin/bash
             - -c
-            - "if [[ $(nodetool status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
+            - "if [[ $(nodetool -p {{ .LocalJmxPort }} status | grep ${POD_IP} |awk '{print $1}') != 'UN' ]]; then exit -1; fi;"
         name: cassandra
         securityContext:
           capabilities:
@@ -192,15 +196,24 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 5G`
+          storage: 5G
+`))
 
-func GetSTS() *appsv1.StatefulSet {
+// GetSTS returns cassandra sts object by template
+func GetSTS(cassandraConfig *v1alpha1.CassandraConfiguration) *appsv1.StatefulSet {
+	var buf bytes.Buffer
+	yamlDatacassandraSTS.Execute(&buf, struct {
+		LocalJmxPort int
+	}{
+		LocalJmxPort: *cassandraConfig.JmxLocalPort,
+	})
+	strSts := buf.String()
 	sts := appsv1.StatefulSet{}
-	err := yaml.Unmarshal([]byte(yamlDatacassandra_sts), &sts)
+	err := yaml.Unmarshal([]byte(strSts), &sts)
 	if err != nil {
 		panic(err)
 	}
-	jsonData, err := yaml.YAMLToJSON([]byte(yamlDatacassandra_sts))
+	jsonData, err := yaml.YAMLToJSON([]byte(strSts))
 	if err != nil {
 		panic(err)
 	}

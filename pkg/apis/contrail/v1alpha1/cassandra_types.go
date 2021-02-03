@@ -344,8 +344,8 @@ func (c *Cassandra) IsUpgrading(name string, namespace string, client client.Cli
 }
 
 // ConfigurationParameters sets the default for the configuration parameters.
-func (c *Cassandra) ConfigurationParameters() CassandraConfiguration {
-	cassandraConfiguration := CassandraConfiguration{}
+func (c *Cassandra) ConfigurationParameters() *CassandraConfiguration {
+	cassandraConfiguration := &CassandraConfiguration{}
 	var port int
 	var cqlPort int
 	var jmxPort int
