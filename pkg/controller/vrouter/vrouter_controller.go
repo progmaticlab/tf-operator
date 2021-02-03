@@ -199,13 +199,8 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, nil
 	}
 
-	configMapName := request.Name + "-" + instanceType + "-configmap"
-	configMap, err := instance.CreateConfigMap(configMapName, r.Client, r.Scheme, request)
+	configMapEnv, err := instance.CreateEnvConfigMap(instanceType, r.Client, r.Scheme, request)
 	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	if err := instance.CreateEnvConfigMap(instanceType, r.Client, r.Scheme, request); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -214,7 +209,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	configMapName = request.Name + "-vrouter-agent-config"
+	configMapName := request.Name + "-vrouter-agent-config"
 	configMapAgent, err := instance.CreateConfigMap(configMapName, r.Client, r.Scheme, request)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -233,10 +228,9 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	csrSignerCaVolumeName := request.Name + "-csr-signer-ca"
 	instance.AddVolumesToIntendedDS(daemonSet, map[string]string{
-		configMap.Name:                     request.Name + "-" + instanceType + "-volume",
 		configMapAgent.Name:                request.Name + "-agent-volume",
+		cniConfigMap.Name:                  cniConfigMap.Name + "-cni-volume",
 		certificates.SignerCAConfigMapName: csrSignerCaVolumeName,
-		cniConfigMap.Name:                  cniConfigMap.Name + "-volume",
 	})
 	instance.AddSecretVolumesToIntendedDS(daemonSet, map[string]string{secretCertificates.Name: request.Name + "-secret-certificates"})
 
@@ -290,7 +284,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			envFromList = append(envFromList, corev1.EnvFromSource{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
+						Name: configMapEnv.Name,
 					},
 				},
 			})
@@ -335,7 +329,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
+						Name: configMapEnv.Name,
 					},
 				},
 			}}
@@ -366,7 +360,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&daemonSet.Spec.Template.Spec.Containers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
+						Name: configMapEnv.Name,
 					},
 				},
 			}}
@@ -414,7 +408,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
+						Name: configMapEnv.Name,
 					},
 				},
 			}}
@@ -452,7 +446,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
 			volumeMount = corev1.VolumeMount{
-				Name:      cniConfigMap.Name + "-volume",
+				Name:      cniConfigMap.Name + "-cni-volume",
 				MountPath: "/etc/cniconfigmaps",
 			}
 			volumeMountList = append(volumeMountList, volumeMount)
@@ -463,7 +457,7 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 			(&daemonSet.Spec.Template.Spec.InitContainers[idx]).EnvFrom = []corev1.EnvFromSource{{
 				ConfigMapRef: &corev1.ConfigMapEnvSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: request.Name + "-" + instanceType + "-configmap-1",
+						Name: configMapEnv.Name,
 					},
 				},
 			}}
