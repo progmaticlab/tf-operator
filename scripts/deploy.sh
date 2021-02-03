@@ -15,9 +15,9 @@ echo "$(date): INFO: apply operator"
 kubectl apply -k ${WORKSPACE}/tf-operator/deploy/kustomize/operator/$OPERATOR_VERSION/
 tries=0
 while ! kubectl wait crds --for=condition=Established --timeout=2m managers.contrail.juniper.net ; do
-  tries=(( tries + 1 ))
+  tries=$(( tries + 1 ))
   if (( 30 > $tries )) ; then
-    echo "$(date): ERROR: operator resource is not ready during timeout $((30*2)) seconds"
+    echo "$(date): ERROR: operator resource is not ready during timeout $(( 30*2 )) seconds"
     exit 1
   fi
   sleep 2s
