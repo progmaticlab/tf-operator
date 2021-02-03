@@ -4,10 +4,11 @@ type go >/dev/null 2>&1 || {
   export PATH=$PATH:/usr/local/go/bin
 }
 
-export  CGO_ENABLED=1
-operator-sdk build  localhost:5000/tf-operator:latest
-sudo docker push localhost:5000/tf-operator:latest
+export CONTRAIL_REPOSITORY=${CONTRAIL_REPOSITORY:-"localhost:5000"}
+export CONTRAIL_CONTAINER_TAG=${CONTRAIL_CONTAINER_TAG:-"latest"}
+export CGO_ENABLED=1
 
-# build CRDS container
-sudo docker build --tag localhost:5000/tf-crdsloader:latest deploy/crds
-sudo docker push localhost:5000/tf-crdsloader:latest
+target=${CONTRAIL_REPOSITORY}/${CONTRAIL_CONTAINER_TAG}
+
+operator-sdk build $target
+docker push $target

@@ -177,9 +177,6 @@ spec:
         - key: node.kubernetes.io/not-ready
           operator: "Exists"
           effect: "NoSchedule"
-      initContainers:
-      - name: init
-        image: tf-crdsloader
       containers:
         - name: tf-operator
           image: tf-operator
