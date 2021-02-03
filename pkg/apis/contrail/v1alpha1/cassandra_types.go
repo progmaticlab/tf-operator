@@ -91,13 +91,9 @@ var CassandraDefaultContainers = []*Container{
 		Name:  "init",
 		Image: "python:3.8.2-alpine",
 	},
-	{
-		Name:  "init2",
-		Image: "cassandra:3.11.4",
-	},
 }
 
-var DefaultCassandra = VrouterConfiguration{
+var DefaultCassandra = CassandraConfiguration{
 	Containers: CassandraDefaultContainers,
 }
 
@@ -271,7 +267,7 @@ func (c *Cassandra) UpdateSTS(sts *appsv1.StatefulSet, instanceType string, requ
 
 // PodIPListAndIPMapFromInstance gets a list with POD IPs and a map of POD names and IPs.
 func (c *Cassandra) PodIPListAndIPMapFromInstance(instanceType string, request reconcile.Request, reconcileClient client.Client) (*corev1.PodList, map[string]string, error) {
-	return PodIPListAndIPMapFromInstance(instanceType, &c.Spec.CommonConfiguration, request, reconcileClient, false, true, false, false, false, false)
+	return PodIPListAndIPMapFromInstance(instanceType, &c.Spec.CommonConfiguration, request, reconcileClient, true, true, false, false, false, false)
 }
 
 //PodsCertSubjects gets list of Cassandra pods certificate subjets which can be passed to the certificate API

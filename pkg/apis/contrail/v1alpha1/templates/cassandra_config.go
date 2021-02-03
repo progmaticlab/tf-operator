@@ -58,9 +58,6 @@ native_transport_port: {{ .CqlPort }}
 start_rpc: {{ .StartRPC }}
 rpc_address: {{ .RPCAddress }}
 rpc_port: {{ .RPCPort }}
-jmx:
-  local:
-    port: {{ .JmxLocalPort }}
 broadcast_rpc_address: {{ .RPCBroadcastAddress}}
 rpc_keepalive: true
 rpc_server_type: sync

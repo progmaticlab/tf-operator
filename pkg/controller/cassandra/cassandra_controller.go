@@ -218,8 +218,9 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
-	cc := instance.ConfigurationParameters()
-	svc := r.Kubernetes.Service(request.Name+"-"+instanceType, corev1.ServiceTypeClusterIP, map[int32]string{int32(*cc.Port): ""}, instanceType, instance)
+	cassandraConfig := instance.ConfigurationParameters()
+	svc := r.Kubernetes.Service(request.Name+"-"+instanceType, corev1.ServiceTypeClusterIP,
+		map[int32]string{int32(*cassandraConfig.Port): ""}, instanceType, instance)
 
 	if err := svc.EnsureExists(); err != nil {
 		return reconcile.Result{}, err
@@ -326,7 +327,7 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 						// detect cassandra data path for size checks
 						"rm -f /etc/cassandra/cassandra.yaml ; " +
 						"cp /etc/contrailconfigmaps/cassandra.${POD_IP}.yaml /etc/cassandra/cassandra.yaml ; " +
-						"exec /docker-entrypoint.sh -f -Dcassandra.config=file:///etc/contrailconfigmaps/cassandra.${POD_IP}.yaml",
+						fmt.Sprintf("exec /docker-entrypoint.sh -f  -Dcassandra.jmx.local.port=%d -Dcassandra.config=file:///etc/contrailconfigmaps/cassandra.${POD_IP}.yaml", *cassandraConfig.JmxLocalPort),
 				}
 				(&statefulSet.Spec.Template.Spec.Containers[idx]).Command = command
 			} else {
