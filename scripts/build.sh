@@ -14,10 +14,10 @@ cd ${WORKSPACE}/tf-operator
 
 function run_cmd(){
   local me=$(whoami)
-  if [[ "root" == "$me" ]] && groups | grep -q 'docker' ; then
+  if [[ "root" == "$me" ]] || groups | grep -q 'docker' ; then
     $@
   fi
-  sg - docker $@
+  echo $@ | sg docker -c bash
 }
 
 operator-sdk build $target

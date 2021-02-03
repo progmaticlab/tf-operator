@@ -15,7 +15,7 @@ EOF
 source ~/.bash_profile
 
 curl -LO https://github.com/operator-framework/operator-sdk/releases/download/v0.17.2/operator-sdk-v0.17.2-x86_64-linux-gnu
-chmod u+x ./operator-sdk-v0.17.2-x86_64-linux-gnu
+chmod u+rx ./operator-sdk-v0.17.2-x86_64-linux-gnu
 sudo mv ./operator-sdk-v0.17.2-x86_64-linux-gnu /usr/local/bin/operator-sdk
 
 # docker setup

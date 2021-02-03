@@ -20,6 +20,7 @@ git clone https://github.com/tungstenfabric/tf-devstack.git
 ```
 ## Prepare SW for build tf-operator
 ```bash
+git clone https://github.com/tungstenfabric/tf-operator.git
 ./tf-operator/scripts/setup_build_software.sh
 ```
 ## Build tf-operator
