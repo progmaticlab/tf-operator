@@ -1,20 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: rabbitmqs.contrail.juniper.net
+  name: cassandras.tf.tungsten.io
 spec:
-  group: contrail.juniper.net
+  group: tf.tungsten.io
   names:
-    kind: Rabbitmq
-    listKind: RabbitmqList
-    plural: rabbitmqs
-    singular: rabbitmq
+    kind: Cassandra
+    listKind: CassandraList
+    plural: cassandras
+    singular: cassandra
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Rabbitmq is the Schema for the rabbitmqs API.
+      description: Cassandra is the Schema for the cassandras API.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -29,7 +29,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: RabbitmqSpec is the Spec for the cassandras API.
+          description: CassandraSpec is the Spec for the cassandras API.
           properties:
             commonConfiguration:
               description: PodConfiguration is the common services struct.
@@ -117,8 +117,10 @@ spec:
                   type: array
               type: object
             serviceConfiguration:
-              description: RabbitmqConfiguration is the Spec for the cassandras API.
+              description: CassandraConfiguration is the Spec for the cassandras API.
               properties:
+                clusterName:
+                  type: string
                 containers:
                   items:
                     description: Container defines name, image and command.
@@ -133,37 +135,66 @@ spec:
                         type: string
                     type: object
                   type: array
-                erlangCookie:
+                cqlPort:
+                  type: integer
+                jmxLocalPort:
+                  type: integer
+                listenAddress:
                   type: string
-                password:
+                maxHeapSize:
                   type: string
+                minHeapSize:
+                  type: string
+                minimumDiskGB:
+                  type: integer
                 port:
                   type: integer
-                secret:
-                  type: string
-                user:
-                  type: string
-                vhost:
-                  type: string
+                sslStoragePort:
+                  type: integer
+                startRPC:
+                  type: boolean
+                storage:
+                  properties:
+                    path:
+                      type: string
+                    size:
+                      pattern: ^([0-9]+)([KMGTPE]i)?$
+                      type: string
+                  type: object
+                storagePort:
+                  type: integer
               type: object
           required:
           - serviceConfiguration
           type: object
         status:
-          description: RabbitmqStatus +k8s:openapi-gen=true
+          description: CassandraStatus defines the status of the cassandra object.
           properties:
             active:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file Add custom validation using kubebuilder
-                tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: boolean
+            clusterIP:
+              type: string
             nodes:
               additionalProperties:
                 type: string
               type: object
-            secret:
-              type: string
+            ports:
+              description: CassandraStatusPorts defines the status of the ports of
+                the cassandra object.
+              properties:
+                cqlPort:
+                  type: string
+                jmxPort:
+                  type: string
+                port:
+                  type: string
+              type: object
+            readyReplicas:
+              format: int32
+              type: integer
+            replicas:
+              format: int32
+              type: integer
           type: object
       type: object
   version: v1alpha1

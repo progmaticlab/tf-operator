@@ -1,20 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kubemanagers.contrail.juniper.net
+  name: zookeepers.tf.tungsten.io
 spec:
-  group: contrail.juniper.net
+  group: tf.tungsten.io
   names:
-    kind: Kubemanager
-    listKind: KubemanagerList
-    plural: kubemanagers
-    singular: kubemanager
+    kind: Zookeeper
+    listKind: ZookeeperList
+    plural: zookeepers
+    singular: zookeeper
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Kubemanager is the Schema for the kubemanagers API.
+      description: Zookeeper is the Schema for the zookeepers API.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -29,7 +29,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: KubemanagerSpec is the Spec for the kubemanagers API.
+          description: ZookeeperSpec is the Spec for the zookeepers API.
           properties:
             commonConfiguration:
               description: PodConfiguration is the common services struct.
@@ -117,60 +117,14 @@ spec:
                   type: array
               type: object
             serviceConfiguration:
-              description: KubemanagerServiceConfiguration is the Spec for the kubemanagers
-                API.
+              description: ZookeeperConfiguration is the Spec for the zookeepers API.
               properties:
-                cassandraNodesConfiguration:
-                  description: CassandraClusterConfiguration stores all information
-                    about Cassandra's endpoints.
-                  properties:
-                    cqlPort:
-                      type: integer
-                    endpoint:
-                      type: string
-                    jmxPort:
-                      type: integer
-                    port:
-                      type: integer
-                    serverIPList:
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                cloudOrchestrator:
-                  type: string
-                clusterRole:
-                  type: string
-                clusterRoleBinding:
-                  type: string
-                configNodesConfiguration:
-                  description: ConfigClusterConfiguration  stores all information
-                    about service's endpoints under the Contrail Config
-                  properties:
-                    analyticsServerIPList:
-                      items:
-                        type: string
-                      type: array
-                    analyticsServerPort:
-                      type: integer
-                    apiServerIPList:
-                      items:
-                        type: string
-                      type: array
-                    apiServerPort:
-                      type: integer
-                    authMode:
-                      enum:
-                      - noauth
-                      - keystone
-                      type: string
-                    collectorPort:
-                      type: integer
-                    collectorServerIPList:
-                      items:
-                        type: string
-                      type: array
-                  type: object
+                adminEnabled:
+                  type: boolean
+                adminPort:
+                  type: integer
+                clientPort:
+                  type: integer
                 containers:
                   items:
                     description: Container defines name, image and command.
@@ -185,90 +139,37 @@ spec:
                         type: string
                     type: object
                   type: array
-                hostNetworkService:
-                  type: boolean
-                ipFabricForwarding:
-                  type: boolean
-                ipFabricSnat:
-                  type: boolean
-                ipFabricSubnets:
-                  type: string
-                kubernetesAPIPort:
+                electionPort:
                   type: integer
-                kubernetesAPISSLPort:
+                serverPort:
                   type: integer
-                kubernetesAPIServer:
-                  type: string
-                kubernetesClusterName:
-                  type: string
-                kubernetesTokenFile:
-                  type: string
-                logLevel:
-                  type: string
-                podSubnets:
-                  type: string
-                publicFIPPool:
-                  type: string
-                rabbitmqNodesConfiguration:
-                  description: RabbitmqClusterConfiguration stores all information
-                    about Rabbitmq's endpoints.
+                storage:
                   properties:
-                    port:
-                      type: integer
-                    secret:
+                    path:
                       type: string
-                    serverIPList:
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                rabbitmqPassword:
-                  type: string
-                rabbitmqUser:
-                  type: string
-                rabbitmqVhost:
-                  type: string
-                secretName:
-                  type: string
-                serviceAccount:
-                  type: string
-                serviceSubnets:
-                  type: string
-                useKubeadmConfig:
-                  type: boolean
-                zookeeperNodesConfiguration:
-                  description: ZookeeperClusterConfiguration stores all information
-                    about Zookeeper's endpoints.
-                  properties:
-                    clientPort:
-                      type: integer
-                    electionPort:
-                      type: integer
-                    serverIPList:
-                      items:
-                        type: string
-                      type: array
-                    serverPort:
-                      type: integer
+                    size:
+                      pattern: ^([0-9]+)([KMGTPE]i)?$
+                      type: string
                   type: object
               type: object
           required:
           - serviceConfiguration
           type: object
         status:
-          description: KubemanagerStatus is the Status for the kubemanagers API.
+          description: ZookeeperStatus defines the status of the zookeeper object.
           properties:
             active:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                code after modifying this file Add custom validation using kubebuilder
-                tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html'
-              type: boolean
-            configChanged:
               type: boolean
             nodes:
               additionalProperties:
                 type: string
+              type: object
+            ports:
+              description: ZookeeperStatusPorts defines the status of the ports of
+                the zookeeper object.
+              properties:
+                clientPort:
+                  type: string
               type: object
           type: object
       type: object
