@@ -5,13 +5,9 @@ images:
 - name: tf-operator
   newTag: latest
   newName: localhost:5000/tf-operator
-- name: tf-crdsloader
-  newTag: latest
-  newName: localhost:5000/tf-crdsloader
+
+# To use pre-built operator from dockehub
 # images:
 # - name: tf-operator
 #   newTag: latest
 #   newName: tungstenfabric/tf-operator
-# - name: tf-crdsloader
-#   newTag: latest
-#   newName: tungstenfabric/tf-crdsloader

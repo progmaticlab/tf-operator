@@ -10,9 +10,15 @@ export CONTRAIL_CONTAINER_TAG=${CONTRAIL_CONTAINER_TAG:-"latest"}
 export CGO_ENABLED=1
 
 target=${CONTRAIL_REPOSITORY}/tf-operator:${CONTRAIL_CONTAINER_TAG}
-pushd ${WORKSPACE}/tf-operator
+cd ${WORKSPACE}/tf-operator
+
+function run_cmd(){
+  local me=$(whoami)
+  if [[ "root" == "$me" ]] && groups | grep -q 'docker' ; then
+    $@
+  fi
+  sg - docker $@
+}
 
 operator-sdk build $target
 docker push $target
-
-popd

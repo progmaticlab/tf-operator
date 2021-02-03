@@ -1,26 +1,35 @@
-# Requirements
+# Supported environments
 - CentOS 7
 - K8s >= 1.16 installed
 
-# Install kubernetes prepared for tf  using kubespray
+# Simple AIO setup with tf-devstack
+## Prepare VM with CentOS 7 with 32GB RAM, 4 CPUs, 64GB diskspace
+## Run tf-operator and AIO Tingsten fabric cluster
 ```bash
 sudo yum install -y git
 git clone https://github.com/tungstenfabric/tf-devstack.git
-./tf-devstack/k8s_manifests/run.sh platform
-```
-# Build tf-operator and CRDs container
-
-```bash
-cd tf-operator
-./scripts/setup_build_software.sh
-# source profile or relogin for add /usr/local/go/bin to the PATH
-./scripts/build.sh
+./tf-devstack/operator/run.sh
 ```
 
-# Run tf-operator and AIO Tingsten fabric cluster
+# Advanced install with building own TF operator
+## Install kubernetes prepared for tf  using kubespray
 ```bash
-./scripts/run_operator.sh
+sudo yum install -y git
+git clone https://github.com/tungstenfabric/tf-devstack.git
+./tf-devstack/operator/run.sh platform
+```
+## Prepare SW for build tf-operator
+```bash
+./tf-operator/scripts/setup_build_software.sh
+```
+## Build tf-operator
+```bash
+./tf-operator/scripts/build.sh
+```
+## Run tf-operator and AIO Tingsten fabric cluster
+```bash
+./tf-operato/scripts/run_operator.sh
 ```
 
 # To descroy AIO environemnt
-./scripts/cleanup_aip.sh
+./tf-operato/scripts/cleanup_aip.sh
