@@ -1,4 +1,6 @@
 bin/
+build/contrail-api-client
+build/contrail-go-api
 .bazel
 bazel-*
 .vscode/*

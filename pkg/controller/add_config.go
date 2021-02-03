@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/tungstenfabric/tf-operator/pkg/controller/config"
+	"github.com/Juniper/contrail-operator/pkg/controller/config"
 )
 
 func init() {

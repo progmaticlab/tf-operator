@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/tungstenfabric/tf-operator/pkg/controller/webui"
+	"github.com/Juniper/contrail-operator/pkg/controller/webui"
 )
 
 func init() {

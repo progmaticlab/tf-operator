@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/tungstenfabric/tf-operator/pkg/certificates"
+	"github.com/Juniper/contrail-operator/pkg/certificates"
 )
 
 var src = mRand.NewSource(time.Now().UnixNano())
