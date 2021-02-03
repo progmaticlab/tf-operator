@@ -615,15 +615,13 @@ func (c *Vrouter) VrouterConfigurationParameters() *VrouterConfiguration {
 func (c *Vrouter) getVrouterEnvironmentData() map[string]string {
 	vrouterConfig := c.VrouterConfigurationParameters()
 	envVariables := make(map[string]string)
-	if len(vrouterConfig.EnvVariablesConfig) != 0 {
-		for key, value := range vrouterConfig.EnvVariablesConfig {
-			envVariables[key] = value
-		}
+	for key, value := range vrouterConfig.EnvVariablesConfig {
+		envVariables[key] = value
 	}
 	return envVariables
 }
 
-// GetNodeDSPod
+// GetNodeDSPod returns daemonset pod by name
 func (c *Vrouter) GetNodeDSPod(nodeName string, daemonset *appsv1.DaemonSet, clnt client.Client) *corev1.Pod {
 	allPods := &corev1.PodList{}
 	// var pod corev1.Pod

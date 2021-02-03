@@ -365,32 +365,34 @@ func (r *ReconcileVrouter) Reconcile(request reconcile.Request) (reconcile.Resul
 				},
 			}}
 
-			envList := []corev1.EnvVar{}
-			if len((&daemonSet.Spec.Template.Spec.Containers[idx]).Env) > 0 {
-				envList = (&daemonSet.Spec.Template.Spec.Containers[idx]).Env
+			envList := []corev1.EnvVar{
+				{
+					Name:  "SSL_ENABLE",
+					Value: "True",
+				},
+				{
+					Name:  "SERVER_CA_CERTFILE",
+					Value: certificates.SignerCAFilepath,
+				},
+				{
+					Name:  "SERVER_CERTFILE",
+					Value: "/etc/certificates/server-$(POD_IP).crt",
+				},
+				{
+					Name:  "SERVER_KEYFILE",
+					Value: "/etc/certificates/server-key-$(POD_IP).pem",
+				},
+				{
+					Name:  "CONFIG_NODES",
+					Value: instance.GetConfigNodes(r.Client),
+				},
+				{
+					Name:  "CLOUD_ORCHESTRATOR",
+					Value: instance.VrouterConfigurationParameters().CloudOrchestrator,
+				},
 			}
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SSL_ENABLE",
-				Value: "True",
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_CA_CERTFILE",
-				Value: certificates.SignerCAFilepath,
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_CERTFILE",
-				Value: "/etc/certificates/server-$(POD_IP).crt",
-			})
-			envList = append(envList, corev1.EnvVar{
-				Name:  "SERVER_KEYFILE",
-				Value: "/etc/certificates/server-key-$(POD_IP).pem",
-			})
-
-			envList = append(envList, corev1.EnvVar{
-				Name:  "CONFIG_NODES",
-				Value: instance.GetConfigNodes(r.Client),
-			})
-			(&daemonSet.Spec.Template.Spec.Containers[idx]).Env = envList
+			(&daemonSet.Spec.Template.Spec.Containers[idx]).Env = append(
+				(&daemonSet.Spec.Template.Spec.Containers[idx]).Env, envList...)
 		}
 	}
 
