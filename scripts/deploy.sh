@@ -8,7 +8,7 @@ CONTRAIL_HA=${CONTRAIL_HA:-'1node'}
 
 # apply crds
 echo "$(date): INFO: apply CRDs"
-kubectl apply -f ${WORKSPACE}/tf-operator/deploy
+kubectl apply -f ${WORKSPACE}/tf-operator/deploy/crds/
 
 # apply operator
 echo "$(date): INFO: apply operator"
