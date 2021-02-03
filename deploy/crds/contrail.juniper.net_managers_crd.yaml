@@ -281,8 +281,6 @@ spec:
                             type: boolean
                           clusterIP:
                             type: string
-                          nodemanagerEnvHash:
-                            type: string
                           nodes:
                             additionalProperties:
                               type: string
@@ -298,8 +296,6 @@ spec:
                               port:
                                 type: string
                             type: object
-                          provisionerEnvHash:
-                            type: string
                           readyReplicas:
                             format: int32
                             type: integer

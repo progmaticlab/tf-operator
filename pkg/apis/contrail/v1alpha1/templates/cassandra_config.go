@@ -54,10 +54,13 @@ ssl_storage_port: {{ .SslStoragePort }}
 listen_address: {{ .ListenAddress }}
 broadcast_address: {{ .BroadcastAddress }}
 start_native_transport: true
-native_transport_port: {{ .CQLPort }}
+native_transport_port: {{ .CqlPort }}
 start_rpc: {{ .StartRPC }}
 rpc_address: {{ .RPCAddress }}
 rpc_port: {{ .RPCPort }}
+jmx:
+  local:
+    port: {{ .JmxLocalPort }}
 broadcast_rpc_address: {{ .RPCBroadcastAddress}}
 rpc_keepalive: true
 rpc_server_type: sync
@@ -135,8 +138,8 @@ log_file=/var/log/contrail/cassandra-nodemgr.log
 log_level={{ .LogLevel }}
 log_local=1
 hostip={{ .ListenAddress }}
-db_port={{ .CassandraPort }}
-db_jmx_port={{ .CassandraJmxPort }}
+db_port={{ .CqlPort }}
+db_jmx_port={{ .JmxLocalPort }}
 db_use_ssl=True
 minimum_diskGB={{ .MinimumDiskGB }}
 

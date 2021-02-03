@@ -420,13 +420,17 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 			(&statefulSet.Spec.Template.Spec.Containers[idx]).Image = instanceContainer.Image
 
 			// TODO: till 2 DBs are not supported
-			dbServers := configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+			configNodes, err := instance.GetConfigNodes(request, r.Client)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			dbServers := configtemplates.JoinListWithSeparator(configNodes, ",")
 			envVars := []corev1.EnvVar{
-				corev1.EnvVar{
+				{
 					Name:  "ANALYTICSDB_NODES",
 					Value: dbServers,
 				},
-				corev1.EnvVar{
+				{
 					Name:  "CONFIGDB_NODES",
 					Value: dbServers,
 				},
@@ -612,28 +616,11 @@ func (r *ReconcileCassandra) Reconcile(request reconcile.Request) (reconcile.Res
 		configMapChanged = true
 	}
 
-	// Restart reconcile if environment in configmap different from needed environment
-	// provisionerEnvConfigHash := EncryptMap(envProvisionerConfigMap.Data)
-	// if provisionerEnvConfigHash != EncryptMap(provisionerEnvMap) {
-	// 	reqLogger.Info(fmt.Sprintf("Here: %s %s", MapToString(provisionerEnvConfigMap.Data), MapToString(provisionerEnvMap)))
-	// 	return reconcile.Result{Requeue: true}, nil
-	// }
-
 	// Create statefulset if it doesn't exist
 	if err = instance.CreateSTS(statefulSet, instanceType, request, r.Client); err != nil {
 		reqLogger.Error(err, "Cannot create statefulset.")
 		return reconcile.Result{}, err
 	}
-
-	// Force update statefulSet if environment changed
-	// if provisionerEnvConfigHash != instance.Status.ProvisionerEnvHash {
-	// 	reqLogger.Info("Reconcile: Updating statefulset when environment changed.")
-	// 	if err = r.Client.Update(context.TODO(), statefulSet); err != nil {
-	// 		reqLogger.Info("Reconcile: Cannot force update statefulset when environment changed.")
-	// 		return reconcile.Result{}, err
-	// 	}
-	// 	instance.Status.ProvisionerEnvHash = provisionerEnvConfigHash
-	// }
 
 	// TODO: have universal update that checks related configmaps
 	if configMapChanged {

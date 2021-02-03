@@ -61,12 +61,10 @@ type CassandraConfiguration struct {
 // CassandraStatus defines the status of the cassandra object.
 // +k8s:openapi-gen=true
 type CassandraStatus struct {
-	Status             `json:",inline"`
-	Nodes              map[string]string    `json:"nodes,omitempty"`
-	Ports              CassandraStatusPorts `json:"ports,omitempty"`
-	ClusterIP          string               `json:"clusterIP,omitempty"`
-	NodemanagerEnvHash string               `json:"nodemanagerEnvHash,omitempty"`
-	ProvisionerEnvHash string               `json:"provisionerEnvHash,omitempty"`
+	Status    `json:",inline"`
+	Nodes     map[string]string    `json:"nodes,omitempty"`
+	Ports     CassandraStatusPorts `json:"ports,omitempty"`
+	ClusterIP string               `json:"clusterIP,omitempty"`
 }
 
 // CassandraStatusPorts defines the status of the ports of the cassandra object.
@@ -142,9 +140,10 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			SslStoragePort      string
 			ListenAddress       string
 			BroadcastAddress    string
-			CQLPort             string
+			CqlPort             string
 			StartRPC            string
 			RPCPort             string
+			JmxLocalPort        string
 			RPCAddress          string
 			RPCBroadcastAddress string
 			KeystorePassword    string
@@ -156,9 +155,10 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			SslStoragePort:      strconv.Itoa(*cassandraConfig.SslStoragePort),
 			ListenAddress:       podList.Items[idx].Status.PodIP,
 			BroadcastAddress:    podList.Items[idx].Status.PodIP,
-			CQLPort:             strconv.Itoa(*cassandraConfig.CqlPort),
+			CqlPort:             strconv.Itoa(*cassandraConfig.CqlPort),
 			StartRPC:            "true",
 			RPCPort:             strconv.Itoa(*cassandraConfig.Port),
+			JmxLocalPort:        strconv.Itoa(*cassandraConfig.JmxLocalPort),
 			RPCAddress:          podList.Items[idx].Status.PodIP,
 			RPCBroadcastAddress: podList.Items[idx].Status.PodIP,
 			KeystorePassword:    string(cassandraSecret.Data["keystorePassword"]),
@@ -181,8 +181,8 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			ListenAddress       string
 			Hostname            string
 			CollectorServerList string
-			CassandraPort       string
-			CassandraJmxPort    string
+			CqlPort             string
+			JmxLocalPort        string
 			CAFilePath          string
 			MinimumDiskGB       int
 			LogLevel            string
@@ -190,8 +190,8 @@ func (c *Cassandra) InstanceConfiguration(request reconcile.Request,
 			ListenAddress:       podList.Items[idx].Status.PodIP,
 			Hostname:            podList.Items[idx].Annotations["hostname"],
 			CollectorServerList: collectorEndpointListSpaceSeparated,
-			CassandraPort:       strconv.Itoa(*cassandraConfig.CqlPort),
-			CassandraJmxPort:    strconv.Itoa(*cassandraConfig.JmxLocalPort),
+			CqlPort:             strconv.Itoa(*cassandraConfig.CqlPort),
+			JmxLocalPort:        strconv.Itoa(*cassandraConfig.JmxLocalPort),
 			CAFilePath:          certificates.SignerCAFilepath,
 			MinimumDiskGB:       *cassandraConfig.MinimumDiskGB,
 			// TODO: move to params
@@ -438,6 +438,15 @@ func (c *Cassandra) seeds(podList *corev1.PodList) []string {
 	return seeds
 }
 
+// GetConfigNodes requests config api nodes
+func (c *Cassandra) GetConfigNodes(request reconcile.Request, clnt client.Client) ([]string, error) {
+	cfg, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, clnt)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.APIServerIPList, err
+}
+
 // EnvProvisionerConfigMapData creates provision configmap
 func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt client.Client) (map[string]string, error) {
 	data := make(map[string]string)
@@ -446,10 +455,10 @@ func (c *Cassandra) EnvProvisionerConfigMapData(request reconcile.Request, clnt 
 	data["SERVER_CERTFILE"] = "/etc/certificates/server-$(POD_IP).crt"
 	data["SERVER_KEYFILE"] = "/etc/certificates/server-key-$(POD_IP).pem"
 
-	configNodesInformation, err := NewConfigClusterConfiguration(c.Labels["contrail_cluster"], request.Namespace, clnt)
+	configNodes, err := c.GetConfigNodes(request, clnt)
 	if err != nil {
 		return nil, err
 	}
-	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodesInformation.APIServerIPList, ",")
+	data["CONFIG_NODES"] = configtemplates.JoinListWithSeparator(configNodes, ",")
 	return data, nil
 }
